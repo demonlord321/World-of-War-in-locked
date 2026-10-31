@@ -47,3 +47,17 @@ Race has no stat effect yet (see QUESTIONS.md).
 ## Not yet defined
 - What "dynamic growth" means in play (how stats change over time).
 - Map, movement, combat.
+
+## Milestone 3: First quest and gear (issues #8 to #10)
+
+Milestone 2 (#4, #6, #7) landed in 1252559 and awaits Dyllan's test.
+
+| # | Issue | What it needs |
+|---|---|---|
+| 8 | Tutorial Quest "Slice and slime" | After Colonel Powers' option 1 he gives a Practice Sword, then a quest prompt (Accept Yes/No). Kill 5 slimes (counter 0/5). Reward 50 XP and the Slash ability. No failure condition. Needs basic combat with slimes, XP and abilities. |
+| 9 | Inventory | Base inventory with 10 slots. The Practice Sword lands here. |
+| 10 | Equipment | Slots: Head, Shoulder, Chest, Legs, Feet (armour), Main Hand (weapon), Off Hand (weapon or shield), 3 Accessory. |
+
+Suggested order: #9 inventory, then #10 equipment, then #8 quest (it depends on both, plus combat).
+
+Open questions for #8: How does slime combat work (turn-based screen or real-time on the map)? What does Slash do, and where does XP go (levels)? What happens if the player says No to the quest? Do slimes respawn?
