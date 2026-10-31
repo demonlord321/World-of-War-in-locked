@@ -11,8 +11,8 @@ namespace WarInLocked.Game.Screens;
 /// </summary>
 public sealed class MainMenuScreen : Screen
 {
-    private readonly Button _newGame = new(new Rectangle(500, 320, 280, 56), "New Game");
-    private readonly Button _exit = new(new Rectangle(500, 396, 280, 56), "Exit");
+    private readonly Button _newGame = new(new Rectangle(500, 310, 280, 56), "New Game");
+    private readonly Button _exit = new(new Rectangle(500, 386, 280, 56), "Exit");
     private int _focus;
 
     public override void Update(GameTime time, InputState input)
@@ -34,8 +34,25 @@ public sealed class MainMenuScreen : Screen
 
     public override void Draw(SpriteBatch sb, Gfx gfx, InputState input, GameTime time)
     {
-        gfx.TextCentered(sb, "World of War-in-locked", new Rectangle(0, 140, WarInLockedGame.ScreenWidth, 80), Theme.Accent, 56f);
+        int w = WarInLockedGame.ScreenWidth, h = WarInLockedGame.ScreenHeight;
+
+        // Framed panel behind the menu.
+        var panel = new Rectangle(w / 2 - 300, 100, 600, 420);
+        gfx.Rect(sb, panel, Theme.Panel);
+        gfx.Border(sb, panel, Theme.PanelBorder, 2);
+        gfx.Border(sb, new Rectangle(panel.X + 8, panel.Y + 8, panel.Width - 16, panel.Height - 16), Theme.PanelBorder * 0.5f, 1);
+
+        // Title with a soft drop shadow, then the tagline between two accent rules.
+        var titleArea = new Rectangle(0, 130, w, 80);
+        gfx.TextCentered(sb, "World of War-in-locked", new Rectangle(titleArea.X + 3, titleArea.Y + 3, titleArea.Width, titleArea.Height), Color.Black * 0.6f, 52f);
+        gfx.TextCentered(sb, "World of War-in-locked", titleArea, Theme.Accent, 52f);
+        gfx.Rect(sb, new Rectangle(w / 2 - 220, 222, 440, 2), Theme.Accent * 0.7f);
+        gfx.TextCentered(sb, "An RPG with dynamic growth", new Rectangle(0, 228, w, 36), Theme.TextDim, 22f);
+        gfx.Rect(sb, new Rectangle(w / 2 - 220, 268, 440, 2), Theme.Accent * 0.7f);
+
         _newGame.Draw(sb, gfx, input, _focus == 0);
         _exit.Draw(sb, gfx, input, _focus == 1);
+
+        gfx.TextCentered(sb, "Up/Down to choose  -  Enter to select", new Rectangle(0, h - 60, w, 30), Theme.TextDim, 18f);
     }
 }
