@@ -2,6 +2,8 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using WarInLocked.Core.Characters;
+using WarInLocked.Core.Dialogue;
+using WarInLocked.Core.Interaction;
 using WarInLocked.Core.World;
 using WarInLocked.Game.Ui;
 
@@ -9,8 +11,9 @@ namespace WarInLocked.Game.Screens;
 
 /// <summary>
 /// Issue #5: the Forest of Beginnings. The player walks the map (arrows/WASD), placeholder
-/// slimes wander about, and Colonel Powers stands at the N marker. No combat or talking yet:
-/// <see cref="NpcPositions"/> is where #6/#7 hook in.
+/// slimes wander about, and Colonel Powers stands at the N marker. No combat yet.
+/// Issue #6/#7: next to an NPC a "Talk (E)" prompt appears; E or Enter starts the dialogue.
+/// While talking, the player and the slimes are paused and Esc does nothing.
 /// </summary>
 public sealed class ForestScreen : Screen
 {
@@ -28,6 +31,9 @@ public sealed class ForestScreen : Screen
     private readonly List<Wanderer> _slimes = new();
     private Vector2 _player;     // top-left, in pixels
     private Vector2 _camera;
+    private readonly DialogueBox _dialogueBox = new();
+    private DialogueRunner? _dialogue;
+    private NpcSpot? _talkTarget;
 
     /// <summary>NPC tiles by id; "colonel-powers" is the first one on the map.</summary>
     public Dictionary<string, Point> NpcPositions { get; } = new();
@@ -48,6 +54,14 @@ public sealed class ForestScreen : Screen
 
     public override void Update(GameTime time, InputState input)
     {
+        if (_dialogue != null)
+        {
+            // Dialogue is modal: no walking, slimes wait, and Esc is ignored.
+            _dialogueBox.Update(_dialogue, input);
+            if (_dialogue.IsEnded) _dialogue = null;
+            return;
+        }
+
         float dt = (float)time.ElapsedGameTime.TotalSeconds;
         var k = Keyboard.GetState();
         var dir = Vector2.Zero;
@@ -72,7 +86,20 @@ public sealed class ForestScreen : Screen
         _camera.X = MathHelper.Clamp(_player.X + PlayerSize / 2f - w / 2f, 0, Math.Max(0, _map.Width * TileSize - w));
         _camera.Y = MathHelper.Clamp(_player.Y + PlayerSize / 2f - h / 2f, 0, Math.Max(0, _map.Height * TileSize - h));
 
+        _talkTarget = TalkTarget.Find(playerTile.X, playerTile.Y, NpcSpots());
+        if (_talkTarget != null && (input.Pressed(Keys.E) || input.Pressed(Keys.Enter)))
+        {
+            _dialogue = new DialogueRunner(DialogueLibrary.Get(_talkTarget.DialogueId), _character);
+            return;
+        }
+
         if (input.Pressed(Keys.Escape)) Screens.Replace(new MainMenuScreen());
+    }
+
+    private IEnumerable<NpcSpot> NpcSpots()
+    {
+        foreach (var (id, p) in NpcPositions)
+            yield return new NpcSpot(id, id, p.X, p.Y); // the NPC id doubles as its dialogue id
     }
 
     private bool IsNpc(int x, int y)
@@ -142,6 +169,18 @@ public sealed class ForestScreen : Screen
 
         gfx.Rect(sb, new Rectangle(0, 0, w, 36), Color.Black * 0.55f);
         gfx.TextLeft(sb, $"The Forest of Beginnings  -  {_character.Name}", new Rectangle(0, 0, w, 36), Theme.Text, 18f);
-        gfx.TextLeft(sb, "Arrows/WASD to move  -  Esc for menu", new Rectangle(w - 340, 0, 340, 36), Theme.TextDim, 16f);
+        gfx.TextLeft(sb, "Arrows/WASD to move  -  E to talk  -  Esc for menu", new Rectangle(w - 520, 0, 520, 36), Theme.TextDim, 16f);
+
+        if (_dialogue != null)
+        {
+            _dialogueBox.Draw(sb, gfx, _dialogue);
+        }
+        else if (_talkTarget != null && NpcPositions.TryGetValue(_talkTarget.Id, out var npcTile))
+        {
+            var prompt = Screen(npcTile.X * TileSize - 40, npcTile.Y * TileSize + TileSize + 6, 112, 30);
+            gfx.Rect(sb, prompt, Color.Black * 0.75f);
+            gfx.Border(sb, prompt, Theme.Accent, 2);
+            gfx.TextCentered(sb, "Talk (E)", prompt, Theme.Accent, 18f);
+        }
     }
 }

@@ -14,6 +14,9 @@ Mouse and keyboard both work:
 
 - **Main menu:** Up/Down and Enter, or click.
 - **Character creator:** type a name, pick a Race and a Stat Distribution (click, or Tab to move between fields and the arrow keys to change a choice), and the stats update live. **Create** is disabled until the name is filled in. Esc goes back.
+- **Story:** after Create, the opening text types itself out. Any key or click finishes the typing, and the next one carries on to the forest.
+- **Forest of Beginnings:** Arrows/WASD to walk, Esc for the menu. Stand next to Colonel Powers and a **Talk (E)** prompt appears. Press **E** or **Enter** to talk.
+- **Dialogue:** Up/Down (or W/S) and Enter, or click an option (1-3 also work). Enter, E or a click moves past a line with no options. Esc does nothing while talking, and the slimes wait until you are done.
 
 ## Test it
 
