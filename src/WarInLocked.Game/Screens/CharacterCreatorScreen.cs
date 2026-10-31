@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using WarInLocked.Core.Characters;
+using WarInLocked.Core.Story;
 using WarInLocked.Game.Ui;
 
 namespace WarInLocked.Game.Screens;
@@ -57,7 +58,8 @@ public sealed class CharacterCreatorScreen : Screen
         bool activate = input.Pressed(Keys.Enter) || input.Pressed(Keys.Space);
         if (_create.WasClicked(input) || (activate && _focus == Field.Create && _create.Enabled))
         {
-            Screens.Replace(new ForestScreen(_creation.Create()));
+            var character = _creation.Create();
+            Screens.Replace(new StoryScreen(StoryTexts.Opening, () => new ForestScreen(character)));
             return;
         }
         if (_back.WasClicked(input) || (activate && _focus == Field.Back) || (!listOpen && input.Pressed(Keys.Escape)))

@@ -48,4 +48,26 @@ public sealed class Gfx
         var m = Measure(text, size);
         Text(sb, text, new Vector2(area.X + pad, area.Y + (area.Height - m.Y) / 2f), color, size);
     }
+
+    /// <summary>Splits text into lines no wider than <paramref name="maxWidth"/> pixels, breaking at spaces.</summary>
+    public List<string> Wrap(string text, float maxWidth, float size = 24f)
+    {
+        var lines = new List<string>();
+        string current = string.Empty;
+        foreach (string word in text.Split(' '))
+        {
+            string trial = current.Length == 0 ? word : current + " " + word;
+            if (current.Length > 0 && Measure(trial, size).X > maxWidth)
+            {
+                lines.Add(current);
+                current = word;
+            }
+            else
+            {
+                current = trial;
+            }
+        }
+        if (current.Length > 0) lines.Add(current);
+        return lines;
+    }
 }

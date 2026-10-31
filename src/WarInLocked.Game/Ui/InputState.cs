@@ -40,5 +40,13 @@ public sealed class InputState
     /// <summary>True on the frame the key went down.</summary>
     public bool Pressed(Keys key) => _keys.IsKeyDown(key) && _prevKeys.IsKeyUp(key);
 
+    /// <summary>True on the frame any key went down.</summary>
+    public bool AnyKeyPressed()
+    {
+        foreach (var key in _keys.GetPressedKeys())
+            if (_prevKeys.IsKeyUp(key)) return true;
+        return false;
+    }
+
     public void ConsumeClick() => Clicked = false;
 }
