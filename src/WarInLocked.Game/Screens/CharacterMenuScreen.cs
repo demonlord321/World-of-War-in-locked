@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using WarInLocked.Core.Characters;
+using WarInLocked.Core.Items;
 using WarInLocked.Game.Ui;
 
 namespace WarInLocked.Game.Screens;
@@ -17,11 +18,9 @@ public sealed class CharacterMenuScreen : Screen
     private readonly Screen _back;
     private readonly Character _character;
 
-    // TODO: swap for Core Inventory/Equipment (#9/#10). Placeholder model: null = empty slot.
-    private static readonly string[] EquipmentSlotNames =
-        { "Head", "Shoulder", "Chest", "Legs", "Feet", "Main Hand", "Off Hand", "Accessory 1", "Accessory 2", "Accessory 3" };
-    private readonly string?[] _equipment = new string?[EquipmentSlotNames.Length];
-    private readonly string?[] _inventory = new string?[10];
+    private const int InventoryCount = 10;
+    private string? _message;
+    private static string[] EquipmentSlotNames => EquipmentSlots.All.Select(EquipmentSlots.Label).ToArray();
 
     private const int EquipCount = 10;
     private readonly Rectangle[] _slots = new Rectangle[EquipCount + 10]; // 0-9 equipment, 10-19 inventory
@@ -67,10 +66,47 @@ public sealed class CharacterMenuScreen : Screen
             for (int i = 0; i < _slots.Length; i++)
                 if (_slots[i].Contains(input.MousePosition)) _focus = i;
 
+        bool activate = input.Pressed(Keys.Enter);
+        if (input.Clicked)
+        {
+            for (int i = 0; i < _slots.Length; i++)
+                if (_slots[i].Contains(input.MousePosition)) { _focus = i; activate = true; input.ConsumeClick(); break; }
+        }
+        if (activate) Activate(_focus);
+
         if (input.Pressed(Keys.Left) || input.Pressed(Keys.A)) Move(-1, 0);
         if (input.Pressed(Keys.Right) || input.Pressed(Keys.D)) Move(1, 0);
         if (input.Pressed(Keys.Up) || input.Pressed(Keys.W)) Move(0, -1);
         if (input.Pressed(Keys.Down) || input.Pressed(Keys.S)) Move(0, 1);
+    }
+
+    /// <summary>Enter or click: equips the item in an inventory slot, or unequips the item in an equipment slot (Core rules).</summary>
+    private void Activate(int i)
+    {
+        if (i < EquipCount)
+        {
+            var slot = EquipmentSlots.All[i];
+            var item = _character.Equipment.Get(slot);
+            var result = _character.Equipment.Unequip(slot);
+            _message = result switch
+            {
+                UnequipResult.Success => $"Unequipped {item!.Name}",
+                UnequipResult.InventoryFull => "Inventory is full",
+                _ => null,
+            };
+        }
+        else
+        {
+            var stack = _character.Inventory.Get(i - EquipCount);
+            var result = _character.Equipment.Equip(i - EquipCount);
+            _message = result switch
+            {
+                EquipResult.Success => $"Equipped {stack!.Item.Name}",
+                EquipResult.NotEquippable => $"{stack!.Item.Name} cannot be equipped",
+                EquipResult.WrongSlot => $"{stack!.Item.Name} does not fit there",
+                _ => null,
+            };
+        }
     }
 
     /// <summary>Moves the focus to the nearest slot in the given direction (spatial, so it works across both halves).</summary>
@@ -94,7 +130,12 @@ public sealed class CharacterMenuScreen : Screen
     }
 
     private string SlotType(int i) => i < EquipCount ? EquipmentSlotNames[i] : $"Inventory slot {i - EquipCount + 1}";
-    private string? ItemAt(int i) => i < EquipCount ? _equipment[i] : _inventory[i - EquipCount];
+    private string? ItemAt(int i)
+    {
+        if (i < EquipCount) return _character.Equipment.Get(EquipmentSlots.All[i])?.Name;
+        var stack = _character.Inventory.Get(i - EquipCount);
+        return stack?.ToString();
+    }
 
     public override void Draw(SpriteBatch sb, Gfx gfx, InputState input, GameTime time)
     {
@@ -103,7 +144,7 @@ public sealed class CharacterMenuScreen : Screen
 
         gfx.Rect(sb, new Rectangle(0, 0, w, 56), Theme.Panel);
         gfx.TextLeft(sb, $"Character  -  {_character.Name}", new Rectangle(0, 0, w, 56), Theme.Accent, 26f, 30);
-        gfx.TextLeft(sb, "Arrows/mouse: select  -  I or Esc: close", new Rectangle(w - 520, 0, 520, 56), Theme.TextDim, 16f);
+        gfx.TextLeft(sb, "Arrows/mouse: select  -  Enter/click: equip or unequip  -  I/Esc: close", new Rectangle(w - 700, 0, 700, 56), Theme.TextDim, 16f);
 
         var left = new Rectangle(30, 76, 600, 548);
         var right = new Rectangle(650, 76, 600, 548);
@@ -124,6 +165,7 @@ public sealed class CharacterMenuScreen : Screen
         gfx.Border(sb, tip, Theme.PanelBorder, 2);
         string? item = ItemAt(_focus);
         string text = item == null ? $"{SlotType(_focus)}  -  Empty" : $"{item}  -  {SlotType(_focus)}";
+        if (_message != null) text += "     |     " + _message;
         gfx.TextLeft(sb, text, tip, item == null ? Theme.TextDim : Theme.Text, 20f, 20);
     }
 

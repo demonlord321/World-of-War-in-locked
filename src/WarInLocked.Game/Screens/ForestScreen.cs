@@ -2,8 +2,10 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using WarInLocked.Core.Characters;
+using WarInLocked.Core.Combat;
 using WarInLocked.Core.Dialogue;
 using WarInLocked.Core.Interaction;
+using WarInLocked.Core.Quests;
 using WarInLocked.Core.World;
 using WarInLocked.Game.Ui;
 
@@ -34,6 +36,10 @@ public sealed class ForestScreen : Screen
     private readonly DialogueBox _dialogueBox = new();
     private DialogueRunner? _dialogue;
     private NpcSpot? _talkTarget;
+    private string? _dialogueNpc;
+    private QuestPrompt? _questPrompt;
+    private string? _toast;
+    private float _toastLeft;
 
     /// <summary>NPC tiles by id; "colonel-powers" is the first one on the map.</summary>
     public Dictionary<string, Point> NpcPositions { get; } = new();
@@ -54,11 +60,38 @@ public sealed class ForestScreen : Screen
 
     public override void Update(GameTime time, InputState input)
     {
+        if (_toastLeft > 0) _toastLeft -= (float)time.ElapsedGameTime.TotalSeconds;
+
+        if (_questPrompt != null)
+        {
+            // The quest prompt is modal too: the world waits and Esc is ignored.
+            bool? answer = _questPrompt.Update(input);
+            if (answer == true)
+            {
+                ColonelPowersQuest.Accept(_character, out var notice); // gives + equips the Practice Sword once
+                _questPrompt = null;
+                if (notice != null) Toast(notice);
+            }
+            else if (answer == false)
+            {
+                _questPrompt = null; // nothing is given; talk to the Colonel again to be re-offered
+            }
+            return;
+        }
+
         if (_dialogue != null)
         {
             // Dialogue is modal: no walking, slimes wait, and Esc is ignored.
             _dialogueBox.Update(_dialogue, input);
-            if (_dialogue.IsEnded) _dialogue = null;
+            if (_dialogue.IsEnded)
+            {
+                _dialogue = null;
+                if (_dialogueNpc == "colonel-powers")
+                {
+                    var offer = ColonelPowersQuest.QuestToOfferAfterDialogue(_character);
+                    if (offer != null) _questPrompt = new QuestPrompt(offer);
+                }
+            }
             return;
         }
 
@@ -89,14 +122,51 @@ public sealed class ForestScreen : Screen
         _talkTarget = TalkTarget.Find(playerTile.X, playerTile.Y, NpcSpots());
         if (_talkTarget != null && (input.Pressed(Keys.E) || input.Pressed(Keys.Enter)))
         {
-            _dialogue = new DialogueRunner(DialogueLibrary.Get(_talkTarget.DialogueId), _character);
+            _dialogueNpc = _talkTarget.Id;
+            _dialogue = _talkTarget.Id == "colonel-powers"
+                ? ColonelPowersQuest.CreateDialogue(_character)   // intro first, then the quest offer / progress lines
+                : new DialogueRunner(DialogueLibrary.Get(_talkTarget.DialogueId), _character);
             return;
         }
+
+        if (input.Pressed(Keys.Space)) Attack(playerTile);
 
         // I opens the character menu; it gets this same screen back on close, so the position is kept.
         if (input.Pressed(Keys.I)) { Screens.Replace(new CharacterMenuScreen(this, _character)); return; }
 
         if (input.Pressed(Keys.Escape)) Screens.Replace(new MainMenuScreen());
+    }
+
+    private void Toast(string text, float seconds = 3f)
+    {
+        _toast = text;
+        _toastLeft = seconds;
+    }
+
+    /// <summary>PLACEHOLDER combat (QUESTIONS.md): Space with a weapon defeats an adjacent slime.</summary>
+    private void Attack(Point playerTile)
+    {
+        var tiles = _slimes.Select(sl => (sl.TileX, sl.TileY)).ToList();
+        var result = PlaceholderCombat.Attack(_character, playerTile.X, playerTile.Y, tiles, "slime");
+        switch (result.Outcome)
+        {
+            case AttackOutcome.NoWeapon:
+                Toast(PlaceholderCombat.NeedWeaponText, 2f);
+                break;
+            case AttackOutcome.Defeated:
+                _slimes.RemoveAt(result.TargetIndex);
+                if (result.CompletedQuests.Count > 0)
+                {
+                    var q = result.CompletedQuests[0];
+                    Toast($"Quest complete: {QuestLibrary.SliceAndSlimeShortTitle}!  +{q.Reward.Xp} XP, learned {string.Join(", ", q.Reward.AbilityIds.Select(AbilityLibrary.NameOf))}", 6f);
+                }
+                else
+                {
+                    var active = _character.Quests.Active;
+                    Toast(active.Count > 0 ? "Slime defeated  -  " + active[0].ProgressText : "Slime defeated", 2f);
+                }
+                break;
+        }
     }
 
     private IEnumerable<NpcSpot> NpcSpots()
@@ -172,9 +242,36 @@ public sealed class ForestScreen : Screen
 
         gfx.Rect(sb, new Rectangle(0, 0, w, 36), Color.Black * 0.55f);
         gfx.TextLeft(sb, $"The Forest of Beginnings  -  {_character.Name}", new Rectangle(0, 0, w, 36), Theme.Text, 18f);
-        gfx.TextLeft(sb, "WASD move  -  E talk  -  I character  -  Esc menu", new Rectangle(w - 520, 0, 520, 36), Theme.TextDim, 16f);
+        gfx.TextLeft(sb, "WASD move  -  E talk  -  Space attack  -  I character  -  Esc menu", new Rectangle(w - 640, 0, 640, 36), Theme.TextDim, 16f);
 
-        if (_dialogue != null)
+        // Quest tracker while a quest is active, e.g. "Slice and slime 0/5".
+        var activeQuests = _character.Quests.Active;
+        if (activeQuests.Count > 0)
+        {
+            var q = activeQuests[0];
+            string tracker = q.Id == QuestLibrary.SliceAndSlimeId
+                ? $"{QuestLibrary.SliceAndSlimeShortTitle} {q.Objectives[0].Current}/{q.Objectives[0].Required}"
+                : q.ProgressText;
+            var box = new Rectangle(10, 46, 250, 30);
+            gfx.Rect(sb, box, Color.Black * 0.6f);
+            gfx.Border(sb, box, Theme.Accent, 1);
+            gfx.TextLeft(sb, tracker, box, Theme.Text, 17f, 10);
+        }
+
+        if (_toastLeft > 0 && _toast != null)
+        {
+            var size = gfx.Measure(_toast, 20f);
+            var box = new Rectangle((w - (int)size.X - 40) / 2, 90, (int)size.X + 40, 40);
+            gfx.Rect(sb, box, Color.Black * 0.8f);
+            gfx.Border(sb, box, Theme.Accent, 2);
+            gfx.TextCentered(sb, _toast, box, Theme.Text, 20f);
+        }
+
+        if (_questPrompt != null)
+        {
+            _questPrompt.Draw(sb, gfx, input);
+        }
+        else if (_dialogue != null)
         {
             _dialogueBox.Draw(sb, gfx, _dialogue);
         }

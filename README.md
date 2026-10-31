@@ -15,8 +15,9 @@ Mouse and keyboard both work:
 - **Main menu:** Up/Down and Enter, or click.
 - **Character creator:** type a name, pick a Race and a Stat Distribution (click, or Tab to move between fields and the arrow keys to change a choice), and the stats update live. **Create** is disabled until the name is filled in. Esc goes back.
 - **Story:** after Create, the opening text types itself out. Any key or click finishes the typing, and the next one carries on to the forest.
-- **Forest of Beginnings:** Arrows/WASD to walk, Esc for the menu. Stand next to Colonel Powers and a **Talk (E)** prompt appears. Press **E** or **Enter** to talk.
+- **Forest of Beginnings:** Arrows/WASD to walk, Esc for the menu. Stand next to Colonel Powers and a **Talk (E)** prompt appears. Press **E** or **Enter** to talk. **Space** attacks an adjacent slime (needs a weapon in Main Hand; placeholder combat). **I** opens the character menu: arrows or mouse to pick a slot, **Enter**/click to equip an inventory item or unequip a worn one.
 - **Dialogue:** Up/Down (or W/S) and Enter, or click an option (1-3 also work). Enter, E or a click moves past a line with no options. Esc does nothing while talking, and the slimes wait until you are done.
+- **Tutorial quest "Slice and slime":** after the Colonel's intro he offers a quest panel. **Yes** (click, Y, or Enter) accepts it, which gives and equips the Practice Sword ("Practice sword given") and shows a tracker "Slice and slime 0/5"; **No** (click or N) closes it, and talking to him again re-offers it. Defeat 5 slimes with Space for 50 XP and the Slash ability.
 
 ## Test it
 
