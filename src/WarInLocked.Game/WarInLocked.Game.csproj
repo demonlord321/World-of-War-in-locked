@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- MonoGame DesktopGL front end. Builds and runs on Linux and Windows. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>WarInLocked.Game</RootNamespace>
+    <AssemblyName>WarInLocked</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MonoGame.Framework.DesktopGL" Version="3.8.6" />
+    <PackageReference Include="FontStashSharp.MonoGame" Version="1.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WarInLocked.Core\WarInLocked.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Text is drawn with FontStashSharp from this TTF, so no MonoGame content pipeline (mgcb) is needed. -->
+    <None Include="Assets\Fonts\*" CopyToOutputDirectory="PreserveNewest" LinkBase="Assets\Fonts" />
+  </ItemGroup>
+
+</Project>
