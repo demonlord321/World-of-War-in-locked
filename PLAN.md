@@ -17,6 +17,16 @@ An RPG with dynamic growth. Built in C# so it can move to Unity later.
 | #2 | Character creator: name, race (Human/Elf/Dwarf), stat distribution | Developer | Built (abf6f78, 30 tests), awaiting Dyllan's test |
 | #3 | Stat distributions (each adds +15) | Developer | Done in rules |
 
+## Milestone 2: The Forest of Beginning
+| Issue | What | Status |
+|---|---|---|
+| #4 | Opening story text after character creation | To do |
+| #5 | First map: forest, wandering Slime placeholders, one NPC, no combat | To do |
+| #6 | NPC interaction: Talk option | To do |
+| #7 | Colonel Powers dialogue: 3 options, 2 and 3 loop back, 1 continues | To do |
+
+Flow: Main menu > Character creator > Opening story > Forest of Beginning > talk to Colonel Powers.
+
 ## Character rules so far
 All eight stats start at 8: Strength, Dexterity, Constitution, Wisdom, Intelligence, Perception, Charisma, Luck.
 
