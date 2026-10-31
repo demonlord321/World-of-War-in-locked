@@ -8,7 +8,7 @@ using WarInLocked.Game.Ui;
 namespace WarInLocked.Game.Screens;
 
 /// <summary>
-/// Issue #5: the Forest of Beginning. The player walks the map (arrows/WASD), placeholder
+/// Issue #5: the Forest of Beginnings. The player walks the map (arrows/WASD), placeholder
 /// slimes wander about, and Colonel Powers stands at the N marker. No combat or talking yet:
 /// <see cref="NpcPositions"/> is where #6/#7 hook in.
 /// </summary>
@@ -35,7 +35,7 @@ public sealed class ForestScreen : Screen
     public ForestScreen(Character character)
     {
         _character = character;
-        string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "forest-of-beginning.txt");
+        string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "forest-of-beginnings.txt");
         _map = TileMap.Parse(File.ReadAllText(path));
 
         var rng = new Random();
@@ -141,7 +141,7 @@ public sealed class ForestScreen : Screen
         gfx.Border(sb, pr, Color.Black, 2);
 
         gfx.Rect(sb, new Rectangle(0, 0, w, 36), Color.Black * 0.55f);
-        gfx.TextLeft(sb, $"The Forest of Beginning  -  {_character.Name}", new Rectangle(0, 0, w, 36), Theme.Text, 18f);
+        gfx.TextLeft(sb, $"The Forest of Beginnings  -  {_character.Name}", new Rectangle(0, 0, w, 36), Theme.Text, 18f);
         gfx.TextLeft(sb, "Arrows/WASD to move  -  Esc for menu", new Rectangle(w - 340, 0, 340, 36), Theme.TextDim, 16f);
     }
 }

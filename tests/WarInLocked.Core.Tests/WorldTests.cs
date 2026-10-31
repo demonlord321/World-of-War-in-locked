@@ -43,7 +43,7 @@ public class WorldTests
     [Fact]
     public void ForestMapLoads()
     {
-        var path = System.IO.Path.Combine(AppContext.BaseDirectory, "../../../../../src/WarInLocked.Game/Assets/Maps/forest-of-beginning.txt");
+        var path = System.IO.Path.Combine(AppContext.BaseDirectory, "../../../../../src/WarInLocked.Game/Assets/Maps/forest-of-beginnings.txt");
         var map = TileMap.Parse(System.IO.File.ReadAllText(path));
         Assert.Single(map.Npcs);
         Assert.NotEmpty(map.SlimeSpawns);
