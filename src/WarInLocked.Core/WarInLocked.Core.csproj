@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Pure game rules. No engine references, so this library can be dropped into Unity as-is. -->
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <LangVersion>9.0</LangVersion>
+    <Nullable>disable</Nullable>
+    <RootNamespace>WarInLocked.Core</RootNamespace>
+  </PropertyGroup>
+
+</Project>
