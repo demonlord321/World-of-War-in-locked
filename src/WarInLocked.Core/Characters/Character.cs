@@ -36,15 +36,13 @@ namespace WarInLocked.Core.Characters
         /// <summary>Always 1 for now: levelling is on hold (#12). XP just accumulates in <see cref="Xp"/>.</summary>
         public int Level => 1;
 
-        /// <summary>100 per full 5 points of Constitution (rounded down), at least 100. Warrior (Con 13) = 200, Mystic (Con 5) = 100.</summary>
-        public const int HealthPerFiveCon = 100;
-        public const int MinHealth = 100;
-        /// <summary>25 per full 5 points of Wisdom (rounded down), at least 25. Warrior (Wis 7) = 25, Mystic (Wis 13) = 50.</summary>
-        public const int EnergyPerFiveWis = 25;
-        public const int MinEnergy = 25;
+        /// <summary>Health per point of Constitution. Warrior (Con 13) = 260, Merchant (Con 9) = 180, Mystic (Con 5) = 100.</summary>
+        public const int HealthPerCon = 20;
+        /// <summary>Energy per point of Wisdom. Warrior (Wis 7) = 35, Merchant (Wis 9) = 45, Mystic (Wis 13) = 65.</summary>
+        public const int EnergyPerWis = 5;
 
-        public int MaxHealth => Math.Max(MinHealth, HealthPerFiveCon * (Stats.Constitution / 5));
-        public int MaxEnergy => Math.Max(MinEnergy, EnergyPerFiveWis * (Stats.Wisdom / 5));
+        public int MaxHealth => HealthPerCon * Stats.Constitution;
+        public int MaxEnergy => EnergyPerWis * Stats.Wisdom;
 
         /// <summary>Current health, 0..<see cref="MaxHealth"/>. Starts full.</summary>
         public int Health { get; private set; }

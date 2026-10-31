@@ -45,30 +45,32 @@ public class CombatTests
     // ---- vitals (#12)
 
     [Fact]
-    public void HealthAndEnergyMaximaFollowTheFloorFormulaPerClass()
+    public void MaxHealthIs20TimesConAndMaxEnergyIs5TimesWisPerClass()
     {
-        var w = Warrior();   // Con 13 -> 2 x 100, Wis 7 -> 1 x 25
+        var w = Warrior();   // Con 13, Wis 7
         Assert.Equal(13, w.Stats.Constitution);
-        Assert.Equal(200, w.MaxHealth);
-        Assert.Equal(25, w.MaxEnergy);
+        Assert.Equal(7, w.Stats.Wisdom);
+        Assert.Equal(260, w.MaxHealth);
+        Assert.Equal(35, w.MaxEnergy);
 
-        var m = Make(StatDistribution.Mystic);   // Con 5 -> 100, Wis 13 -> 2 x 25
-        Assert.Equal(5, m.Stats.Constitution);
-        Assert.Equal(13, m.Stats.Wisdom);
+        var me = Make(StatDistribution.Merchant);   // Con 9, Wis 9
+        Assert.Equal(180, me.MaxHealth);
+        Assert.Equal(45, me.MaxEnergy);
+
+        var m = Make(StatDistribution.Mystic);   // Con 5, Wis 13
         Assert.Equal(100, m.MaxHealth);
-        Assert.Equal(50, m.MaxEnergy);
+        Assert.Equal(65, m.MaxEnergy);
     }
 
     [Fact]
-    public void MaximaHaveMinimumsForLowStats()
+    public void MaximaScaleLinearlyWithNoFloorOrMinimum()
     {
-        // Con 5 is exactly one block; below 5 would be 0 blocks, so the minimum kicks in.
+        var odd = new Character("Odd", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(7));
+        Assert.Equal(140, odd.MaxHealth);   // 20 * 7, no rounding to blocks of 5
+        Assert.Equal(35, odd.MaxEnergy);    // 5 * 7
         var low = new Character("Low", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(3));
-        Assert.Equal(100, low.MaxHealth);
-        Assert.Equal(25, low.MaxEnergy);
-        var high = new Character("High", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(20));
-        Assert.Equal(400, high.MaxHealth);
-        Assert.Equal(100, high.MaxEnergy);
+        Assert.Equal(60, low.MaxHealth);    // no minimum
+        Assert.Equal(15, low.MaxEnergy);
     }
 
     [Fact]
@@ -85,16 +87,16 @@ public class CombatTests
     {
         var c = Warrior();
         Assert.Equal(60, c.TakeDamage(60));
-        Assert.Equal(140, c.Health);
-        Assert.Equal(140, c.TakeDamage(1000));
+        Assert.Equal(200, c.Health);
+        Assert.Equal(200, c.TakeDamage(1000));
         Assert.True(c.IsDead);
         c.Heal(10000);
         Assert.Equal(c.MaxHealth, c.Health);
 
         Assert.True(c.SpendEnergy(10));
-        Assert.Equal(15, c.Energy);
-        Assert.False(c.SpendEnergy(16));
-        Assert.Equal(15, c.Energy);
+        Assert.Equal(25, c.Energy);
+        Assert.False(c.SpendEnergy(26));
+        Assert.Equal(25, c.Energy);
         c.RegenEnergy(1000);
         Assert.Equal(c.MaxEnergy, c.Energy);
     }
@@ -103,12 +105,12 @@ public class CombatTests
     public void EnergyRegeneratesTwoPerSecond()
     {
         var c = Warrior();
-        c.SpendEnergy(20);
+        c.SpendEnergy(30);
         Assert.Equal(5, c.Energy);
         Wait(c, 3.0);
         Assert.InRange(c.EnergyExact, 10.9, 11.1);
         Wait(c, 30);
-        Assert.Equal(25, c.Energy);
+        Assert.Equal(35, c.Energy);
     }
 
     // ---- damage formula (#11)
@@ -327,7 +329,7 @@ public class CombatTests
         Assert.Equal(CombatOutcome.Hit, r.Outcome);
         Assert.Equal(24, r.Damage);
         Assert.Equal(6, s.Hp);
-        Assert.Equal(15, c.Energy);
+        Assert.Equal(25, c.Energy);
         var slot = c.Combat.Hotbar[0];
         Assert.False(slot.IsReady);
         Assert.Equal(2.0, slot.CooldownRemaining, 2);
@@ -343,7 +345,7 @@ public class CombatTests
     [Fact]
     public void SlashCannotBeUsedOnCooldownOrWithoutEnoughEnergy()
     {
-        var c = ArmedWarrior();   // 25 energy: two Slashes fit (20), the third does not
+        var c = ArmedWarrior();   // 35 energy
         c.LearnAbility(AbilityLibrary.Slash);
         var enemies = One(SlimeAt(6, 5));
         enemies[0].TakeDamage(0);
@@ -351,7 +353,7 @@ public class CombatTests
         Assert.True(c.Combat.UseHotbar(0, 5, 5, enemies).Succeeded);
         Wait(c, 0.6);
         Assert.Equal(CombatOutcome.OnCooldown, c.Combat.UseHotbar(0, 5, 5, enemies).Outcome);
-        Assert.InRange(c.Energy, 15, 17);
+        Assert.InRange(c.Energy, 25, 27);
 
         var far = new List<Enemy> { SlimeAt(9, 9) };
         Wait(c, 2.5);
@@ -359,7 +361,7 @@ public class CombatTests
 
         var rich = ArmedWarrior();
         rich.LearnAbility(AbilityLibrary.Slash);
-        rich.SpendEnergy(20);   // 5 left
+        rich.SpendEnergy(30);   // 5 left
         Assert.Equal(CombatOutcome.NotEnoughEnergy, rich.Combat.UseHotbar(0, 5, 5, One(SlimeAt(6, 5))).Outcome);
         Assert.Equal(5, rich.Energy);
     }

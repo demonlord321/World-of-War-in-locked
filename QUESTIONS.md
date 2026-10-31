@@ -25,9 +25,9 @@ Placeholders until you confirm them:
 - **Energy** regenerates 2 per second (placeholder).
 - Which stats should scale damage besides Strength?
 
-## 4b. Health and energy maximum (#12)
+## 4b. Health and energy maximum (#12) - ANSWERED
 
-Read as "100 per **full** 5 points of Constitution, rounded down" and "25 per full 5 points of Wisdom", with a **minimum of 100 health and 25 energy** so low stats never give 0. That makes a Warrior (Con 13, Wis 7) 200 health and 25 energy, and a Mystic (Con 5, Wis 13) 100 health and 50 energy. Is that what you meant? The issue says "levels"; we took it as stat points. Level is always shown as 1 and XP just adds up for now.
+Answered by Dyllan: **MaxHealth = 20 x Constitution** and **MaxEnergy = 5 x Wisdom**, with no rounding down and no minimum. Warrior (Con 13, Wis 7) = 260 health / 35 energy, Merchant (Con 9, Wis 9) = 180 / 45, Mystic (Con 5, Wis 13) = 100 / 65. Level is always shown as 1 and XP just adds up for now.
 
 ## 5. Colonel Powers' other lines (#8)
 
