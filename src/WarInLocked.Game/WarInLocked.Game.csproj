@@ -22,6 +22,7 @@
   <ItemGroup>
     <!-- Text is drawn with FontStashSharp from this TTF, so no MonoGame content pipeline (mgcb) is needed. -->
     <None Include="Assets\Fonts\*" CopyToOutputDirectory="PreserveNewest" LinkBase="Assets\Fonts" />
+    <None Include="Assets\Maps\*" CopyToOutputDirectory="PreserveNewest" LinkBase="Assets\Maps" />
   </ItemGroup>
 
 </Project>

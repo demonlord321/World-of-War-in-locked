@@ -57,7 +57,7 @@ public sealed class CharacterCreatorScreen : Screen
         bool activate = input.Pressed(Keys.Enter) || input.Pressed(Keys.Space);
         if (_create.WasClicked(input) || (activate && _focus == Field.Create && _create.Enabled))
         {
-            Screens.Replace(new CharacterSummaryScreen(_creation.Create()));
+            Screens.Replace(new ForestScreen(_creation.Create()));
             return;
         }
         if (_back.WasClicked(input) || (activate && _focus == Field.Back) || (!listOpen && input.Pressed(Keys.Escape)))
