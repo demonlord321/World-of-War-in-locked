@@ -61,3 +61,14 @@ Milestone 2 (#4, #6, #7) landed in 1252559 and awaits Dyllan's test.
 Suggested order: #9 inventory, then #10 equipment, then #8 quest (it depends on both, plus combat).
 
 Open questions for #8: How does slime combat work (turn-based screen or real-time on the map)? What does Slash do, and where does XP go (levels)? What happens if the player says No to the quest? Do slimes respawn?
+
+### Added 31 Oct: #11 Combat and #12 Player UI (levelling is on hold, per Dyllan)
+
+| # | Issue | What it needs |
+|---|---|---|
+| 11 | Combat | Real-time hotkey combat on the map. A basic attack command deals the weapon's base damage, scaled by stats. A hotbar holds abilities (Slash goes here). Hit slimes show damage with a flicker or a shrinking health bar over their heads. Replaces #8's Space-to-defeat placeholder. |
+| 12 | Player UI | Top right: name, level, health bar and energy bar. Health is 100 per 5 Constitution, and energy is 25 per 5 Wisdom. |
+
+Character menu (#9/#10 screen) is in 6686abc, opened with I; Developer is doing the Core rules and #8.
+
+Open questions: Which stats scale weapon damage? What does Slash do and cost (energy)? For health and energy, does it round down per full 5 points (Warrior Con 13 gives 200 HP, Mystic Con 5 gives 100)? Do slimes fight back?
