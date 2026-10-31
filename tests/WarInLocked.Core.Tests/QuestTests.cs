@@ -179,59 +179,6 @@ public class QuestTests
     }
 
     [Fact]
-    public void PlaceholderAttackNeedsAWeapon()
-    {
-        var c = Hero();
-        var result = PlaceholderCombat.Attack(c, 5, 5, new List<(int X, int Y)> { (6, 5) }, "slime");
-        Assert.Equal(AttackOutcome.NoWeapon, result.Outcome);
-        Assert.Equal("You need a weapon", PlaceholderCombat.NeedWeaponText);
-    }
-
-    [Fact]
-    public void PlaceholderAttackNeedsAnAdjacentTargetEightWay()
-    {
-        var c = HeroWithActiveQuest();
-        Assert.Equal(AttackOutcome.NoTarget, PlaceholderCombat.Attack(c, 5, 5, new List<(int X, int Y)> { (7, 5), (5, 3), (9, 9) }, "slime").Outcome);
-        foreach (var tile in new[] { (6, 5), (4, 5), (5, 4), (5, 6), (6, 6), (4, 4), (6, 4), (4, 6) })
-        {
-            var r = PlaceholderCombat.Attack(c, 5, 5, new List<(int X, int Y)> { tile }, "slime");
-            Assert.Equal(AttackOutcome.Defeated, r.Outcome);
-        }
-    }
-
-    [Fact]
-    public void PlaceholderAttackPicksAStraightNeighbourFirstAndCountsTheKill()
-    {
-        var c = HeroWithActiveQuest();
-        var slimes = new List<(int X, int Y)> { (6, 6), (6, 5) };
-
-        var r = PlaceholderCombat.Attack(c, 5, 5, slimes, "slime");
-
-        Assert.Equal(1, r.TargetIndex);
-        Assert.Equal("Slimes slain 1/5", c.Quests.Get(QuestLibrary.SliceAndSlimeId).ProgressText);
-    }
-
-    [Fact]
-    public void FiveAttacksCompleteTheQuest()
-    {
-        var c = HeroWithActiveQuest();
-        var slimes = SlimesAround(5, 5, 5);
-        IReadOnlyList<Quest> completed = new Quest[0];
-
-        while (slimes.Count > 0)
-        {
-            var r = PlaceholderCombat.Attack(c, 5, 5, slimes, "slime");
-            Assert.Equal(AttackOutcome.Defeated, r.Outcome);
-            slimes.RemoveAt(r.TargetIndex);
-            if (r.CompletedQuests.Count > 0) completed = r.CompletedQuests;
-        }
-
-        Assert.Single(completed);
-        Assert.Equal(50, c.Xp);
-        Assert.Contains("slash", c.Abilities);
-    }
-
-    [Fact]
     public void ForestHasEnoughSlimesForTheQuest()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

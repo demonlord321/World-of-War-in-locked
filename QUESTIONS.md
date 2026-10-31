@@ -14,9 +14,20 @@ Human, Elf and Dwarf are choosable but have **no stat effect yet**. There is a p
 
 Assumed for now: 1 to 20 characters, letters, digits, spaces, `'` and `-`. Is that fine?
 
-## 4. Real combat for "Slice and slime" (#8)
+## 4. Combat numbers (#11)
 
-Placeholder in place until a combat system exists: with a **weapon in Main Hand** and a slime on one of the 8 tiles around you, **Space** defeats it (it is removed from the map) and counts toward the quest. Without a weapon the game says "You need a weapon". Is that acceptable for now? What should real combat look like (health, damage, cooldown, respawning slimes)?
+Placeholders until you confirm them:
+- **Basic attack (Space)** hits one adjacent slime (8 tiles around you, or your own tile) with a 0.5 s cooldown.
+- **Damage** = weapon base damage + floor(Strength / 2). The Practice Sword's base damage is **10**, so Strength 13 deals 16.
+- **Unarmed** (no weapon in Main Hand) = 2 + floor(Strength / 4), so Strength 13 deals 5. There is no "you need a weapon" message any more.
+- **Slimes** have 30 HP, and the Practice Sword needs 2 hits. They do **not fight back yet**: should they? How much damage do they do, and should they respawn?
+- **Slash** (hotbar slot 1 once learned): 1.5x basic attack damage rounded down (24 with the sword and Strength 13), costs 10 energy, 2 s cooldown. Using Slash also starts the 0.5 s attack delay. It does nothing if no slime is next to you, and then costs nothing. Is that right?
+- **Energy** regenerates 2 per second (placeholder).
+- Which stats should scale damage besides Strength?
+
+## 4b. Health and energy maximum (#12)
+
+Read as "100 per **full** 5 points of Constitution, rounded down" and "25 per full 5 points of Wisdom", with a **minimum of 100 health and 25 energy** so low stats never give 0. That makes a Warrior (Con 13, Wis 7) 200 health and 25 energy, and a Mystic (Con 5, Wis 13) 100 health and 50 energy. Is that what you meant? The issue says "levels"; we took it as stat points. Level is always shown as 1 and XP just adds up for now.
 
 ## 5. Colonel Powers' other lines (#8)
 

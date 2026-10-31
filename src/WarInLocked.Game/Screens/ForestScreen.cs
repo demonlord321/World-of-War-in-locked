@@ -31,6 +31,7 @@ public sealed class ForestScreen : Screen
     private readonly Character _character;
     private readonly TileMap _map;
     private readonly List<Wanderer> _slimes = new();
+    private readonly Dictionary<Wanderer, Enemy> _enemies = new();   // combat state (Hp, flicker) of each slime
     private Vector2 _player;     // top-left, in pixels
     private Vector2 _camera;
     private readonly DialogueBox _dialogueBox = new();
@@ -44,6 +45,9 @@ public sealed class ForestScreen : Screen
     /// <summary>NPC tiles by id; "colonel-powers" is the first one on the map.</summary>
     public Dictionary<string, Point> NpcPositions { get; } = new();
 
+    /// <summary>Combat state of a slime (Hp/MaxHp for a health bar, DamageFlash for the hit flicker); null once it is gone.</summary>
+    public Enemy? EnemyOf(Wanderer slime) => _enemies.TryGetValue(slime, out var e) ? e : null;
+
     public ForestScreen(Character character)
     {
         _character = character;
@@ -51,7 +55,12 @@ public sealed class ForestScreen : Screen
         _map = TileMap.Parse(File.ReadAllText(path));
 
         var rng = new Random();
-        foreach (var s in _map.SlimeSpawns) _slimes.Add(new Wanderer(s.X, s.Y, rng));
+        foreach (var s in _map.SlimeSpawns)
+        {
+            var slime = new Wanderer(s.X, s.Y, rng);
+            _slimes.Add(slime);
+            _enemies[slime] = Enemy.NewSlime();
+        }
         if (_map.Npcs.Count > 0) NpcPositions["colonel-powers"] = new Point(_map.Npcs[0].X, _map.Npcs[0].Y);
 
         var (sx, sy) = _map.PlayerStart;
@@ -114,6 +123,15 @@ public sealed class ForestScreen : Screen
                 (x == playerTile.X && y == playerTile.Y) || IsNpc(x, y) ||
                 _slimes.Exists(o => o != slime && o.TileX == x && o.TileY == y));
 
+        foreach (var slime in _slimes)
+        {
+            var enemy = _enemies[slime];
+            enemy.TileX = slime.TileX;
+            enemy.TileY = slime.TileY;
+            enemy.Update(dt);
+        }
+        _character.Combat.Update(dt);   // cooldowns, energy regen, Slash onto the hotbar
+
         // Clamped follow camera.
         int w = WarInLockedGame.ScreenWidth, h = WarInLockedGame.ScreenHeight;
         _camera.X = MathHelper.Clamp(_player.X + PlayerSize / 2f - w / 2f, 0, Math.Max(0, _map.Width * TileSize - w));
@@ -129,7 +147,9 @@ public sealed class ForestScreen : Screen
             return;
         }
 
-        if (input.Pressed(Keys.Space)) Attack(playerTile);
+        if (input.Pressed(Keys.Space)) Attack(playerTile, -1);
+        for (int slot = 0; slot < Hotbar.SlotCount; slot++)
+            if (input.Pressed(Keys.D1 + slot) || input.Pressed(Keys.NumPad1 + slot)) Attack(playerTile, slot);
 
         // I opens the character menu; it gets this same screen back on close, so the position is kept.
         if (input.Pressed(Keys.I)) { Screens.Replace(new CharacterMenuScreen(this, _character)); return; }
@@ -143,27 +163,29 @@ public sealed class ForestScreen : Screen
         _toastLeft = seconds;
     }
 
-    /// <summary>PLACEHOLDER combat (QUESTIONS.md): Space with a weapon defeats an adjacent slime.</summary>
-    private void Attack(Point playerTile)
+    /// <summary>Space (slot -1) is the basic attack, 1-5 use the hotbar. The rules live in Core (<see cref="CombatController"/>).</summary>
+    private void Attack(Point playerTile, int slot)
     {
-        var tiles = _slimes.Select(sl => (sl.TileX, sl.TileY)).ToList();
-        var result = PlaceholderCombat.Attack(_character, playerTile.X, playerTile.Y, tiles, "slime");
+        var living = _slimes.Where(sl => !_enemies[sl].IsDead).ToList();
+        var targets = living.Select(sl => _enemies[sl]).ToList();
+        var combat = _character.Combat;
+        var result = slot < 0
+            ? combat.BasicAttack(playerTile.X, playerTile.Y, targets)
+            : combat.UseHotbar(slot, playerTile.X, playerTile.Y, targets);
+
         switch (result.Outcome)
         {
-            case AttackOutcome.NoWeapon:
-                Toast(PlaceholderCombat.NeedWeaponText, 2f);
+            case CombatOutcome.NotEnoughEnergy:
+                Toast("Not enough energy", 2f);
                 break;
-            case AttackOutcome.Defeated:
-                _slimes.RemoveAt(result.TargetIndex);
+            case CombatOutcome.Killed:
+                var dead = living[targets.IndexOf(result.Target!)];
+                _slimes.Remove(dead);
+                _enemies.Remove(dead);
                 if (result.CompletedQuests.Count > 0)
                 {
                     var q = result.CompletedQuests[0];
                     Toast($"Quest complete: {QuestLibrary.SliceAndSlimeShortTitle}!  +{q.Reward.Xp} XP, learned {string.Join(", ", q.Reward.AbilityIds.Select(AbilityLibrary.NameOf))}", 6f);
-                }
-                else
-                {
-                    var active = _character.Quests.Active;
-                    Toast(active.Count > 0 ? "Slime defeated  -  " + active[0].ProgressText : "Slime defeated", 2f);
                 }
                 break;
         }
