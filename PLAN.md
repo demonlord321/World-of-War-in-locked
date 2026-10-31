@@ -75,3 +75,6 @@ Open questions: Which stats scale weapon damage? What does Slash do and cost (en
 
 ### Status 31 Oct, 22:00
 #8 to #11 rules are on main up to 5a53e37 (119 tests), and the I menu uses real items (25d4cdb). Developer is drawing #12's bars, the hotbar and the slime health bars in ForestScreen. Placeholder numbers (hit 10 + half Strength, slime 30 HP, Slash 1.5x for 10 energy, energy regenerates 2 per second, health and energy count full blocks of 5) are in QUESTIONS.md for Dyllan. Not yet seen running: Slash in game. Slimes don't fight back yet.
+
+### Status 31 Oct, 22:07
+#8 to #12 are all on main (HUD, hotbar and slime bars in 94a6829; health 20 per Constitution and energy 5 per Wisdom in 8f5abb9). Everything awaits Dyllan's test. Issues are still open.
