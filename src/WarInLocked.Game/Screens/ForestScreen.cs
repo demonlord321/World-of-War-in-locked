@@ -245,9 +245,11 @@ public sealed class ForestScreen : Screen
         foreach (var s in _slimes)
         {
             var r = Screen(s.X * TileSize + 6, s.Y * TileSize + 12, 20, 16);
-            gfx.Rect(sb, r, SlimeColor);
+            var enemy = EnemyOf(s);
+            gfx.Rect(sb, r, Hud.SlimeTint(enemy, SlimeColor, time));
             gfx.Rect(sb, new Rectangle(r.X + 4, r.Y + 4, 3, 3), Color.Black);
             gfx.Rect(sb, new Rectangle(r.X + 13, r.Y + 4, 3, 3), Color.Black);
+            Hud.DrawSlimeBar(sb, gfx, enemy, r);
         }
 
         foreach (var (id, p) in NpcPositions)
@@ -265,6 +267,8 @@ public sealed class ForestScreen : Screen
         gfx.Rect(sb, new Rectangle(0, 0, w, 36), Color.Black * 0.55f);
         gfx.TextLeft(sb, $"The Forest of Beginnings  -  {_character.Name}", new Rectangle(0, 0, w, 36), Theme.Text, 18f);
         gfx.TextLeft(sb, "WASD move  -  E talk  -  Space attack  -  I character  -  Esc menu", new Rectangle(w - 640, 0, 640, 36), Theme.TextDim, 16f);
+
+        Hud.Draw(sb, gfx, _character);   // player panel top-right, hotbar bottom-centre (#11, #12)
 
         // Quest tracker while a quest is active, e.g. "Slice and slime 0/5".
         var activeQuests = _character.Quests.Active;
