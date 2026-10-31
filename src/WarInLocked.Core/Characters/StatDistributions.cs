@@ -4,7 +4,7 @@ namespace WarInLocked.Core.Characters
 {
     /// <summary>
     /// Bonus tables for each stat distribution (issue #3) and the race placeholder hook.
-    /// Numbers are Dyllan's. See QUESTIONS.md for the open points (Mystic totals +17, the others +15).
+    /// Numbers are Dyllan's. Every distribution totals +15.
     /// </summary>
     public static class StatDistributions
     {
@@ -16,7 +16,7 @@ namespace WarInLocked.Core.Characters
 
         // Parameter order: Str, Dex, Con, Wis, Int, Per, Cha, Luck.
         private static readonly StatBlock WarriorBonus = new StatBlock(5, 5, 5, -1, -1, 2, 0, 0);
-        private static readonly StatBlock MysticBonus = new StatBlock(-1, 1, -1, 5, 5, 5, 3, 0);
+        private static readonly StatBlock MysticBonus = new StatBlock(-1, 1, -3, 5, 5, 5, 3, 0);
         private static readonly StatBlock MerchantBonus = new StatBlock(0, 1, 1, 1, 1, 1, 5, 5);
 
         /// <summary>The bonuses (can be negative) a distribution adds to the base stats.</summary>

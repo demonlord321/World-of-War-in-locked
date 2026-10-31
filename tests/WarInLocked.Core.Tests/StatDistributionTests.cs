@@ -29,7 +29,7 @@ public class StatDistributionTests
     // Str, Dex, Con, Wis, Int, Per, Cha, Luck: base 8 plus Dyllan's bonuses.
     [Theory]
     [InlineData(StatDistribution.Warrior, 13, 13, 13, 7, 7, 10, 8, 8)]
-    [InlineData(StatDistribution.Mystic, 7, 9, 7, 13, 13, 13, 11, 8)]
+    [InlineData(StatDistribution.Mystic, 7, 9, 5, 13, 13, 13, 11, 8)]
     [InlineData(StatDistribution.Merchant, 8, 9, 9, 9, 9, 9, 13, 13)]
     public void FinalStatsForEachDistribution(
         StatDistribution distribution, int str, int dex, int con, int wis, int intel, int per, int cha, int luck)
@@ -48,7 +48,7 @@ public class StatDistributionTests
 
     [Theory]
     [InlineData(StatDistribution.Warrior, 5, 5, 5, -1, -1, 2, 0, 0)]
-    [InlineData(StatDistribution.Mystic, -1, 1, -1, 5, 5, 5, 3, 0)]
+    [InlineData(StatDistribution.Mystic, -1, 1, -3, 5, 5, 5, 3, 0)]
     [InlineData(StatDistribution.Merchant, 0, 1, 1, 1, 1, 1, 5, 5)]
     public void BonusTablesMatchTheIssue(
         StatDistribution distribution, int str, int dex, int con, int wis, int intel, int per, int cha, int luck)
@@ -62,9 +62,9 @@ public class StatDistributionTests
     [Fact]
     public void BonusTotalsAreAsSpecified()
     {
-        // Mystic is +17 and the others +15 on purpose; this is an open question in QUESTIONS.md.
+        // Every distribution is balanced at +15 in total.
         Assert.Equal(15, StatDistributions.GetBonus(StatDistribution.Warrior).Total);
-        Assert.Equal(17, StatDistributions.GetBonus(StatDistribution.Mystic).Total);
+        Assert.Equal(15, StatDistributions.GetBonus(StatDistribution.Mystic).Total);
         Assert.Equal(15, StatDistributions.GetBonus(StatDistribution.Merchant).Total);
     }
 
