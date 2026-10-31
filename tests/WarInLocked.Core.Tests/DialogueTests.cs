@@ -81,6 +81,11 @@ public class DialogueTests
 
         d.Advance();
 
+        Assert.False(d.IsEnded);
+        Assert.Equal("I see you lack the skill to survive this world... Take this sword and hunt down 5 Slimes.", d.Text);
+
+        d.Advance();
+
         Assert.True(d.IsEnded);
     }
 
@@ -91,6 +96,7 @@ public class DialogueTests
         d.Choose(1);
         d.Choose(2);
         d.Choose(0);
+        d.Advance();
         d.Advance();
         Assert.True(d.IsEnded);
     }
@@ -105,6 +111,7 @@ public class DialogueTests
 
         d.Choose(0);
         Assert.Throws<InvalidOperationException>(() => d.Choose(0));      // no options now
+        d.Advance();
         d.Advance();
         Assert.Throws<InvalidOperationException>(() => d.Advance());      // ended
         Assert.Throws<InvalidOperationException>(() => _ = d.Text);

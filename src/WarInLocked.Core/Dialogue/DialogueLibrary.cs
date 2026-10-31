@@ -8,13 +8,34 @@ namespace WarInLocked.Core.Dialogue
     {
         public const string ColonelPowersId = "colonel-powers";
 
+        /// <summary>Shown when the intro is done but the quest has not been accepted yet (issue #8: talking again re-offers it).</summary>
+        public const string ColonelPowersReofferId = "colonel-powers-reoffer";
+        /// <summary>Shown while the tutorial quest is active.</summary>
+        public const string ColonelPowersActiveId = "colonel-powers-active";
+        /// <summary>Shown after the tutorial quest is complete.</summary>
+        public const string ColonelPowersDoneId = "colonel-powers-done";
+
+        /// <summary>Dyllan's line from issue #8, said right after the intro.</summary>
+        public const string LackSkillLine =
+            "I see you lack the skill to survive this world... Take this sword and hunt down 5 Slimes.";
+
         public static DialogueGraph Get(string id)
         {
-            if (id == ColonelPowersId) return ColonelPowers();
+            switch (id)
+            {
+                case ColonelPowersId: return ColonelPowers();
+                case ColonelPowersReofferId: return Single("lack", LackSkillLine);
+                case ColonelPowersActiveId: return Single("active", "Keep at it, {name}... Slimes slain {slain}/{required}.");
+                case ColonelPowersDoneId: return Single("done", "Well done, {name}. You have learned to survive... for now.");
+            }
             throw new KeyNotFoundException("No dialogue with id '" + id + "'.");
         }
 
-        public static bool Exists(string id) => id == ColonelPowersId;
+        public static bool Exists(string id) =>
+            id == ColonelPowersId || id == ColonelPowersReofferId || id == ColonelPowersActiveId || id == ColonelPowersDoneId;
+
+        private static DialogueGraph Single(string nodeId, string text) =>
+            new DialogueGraph(nodeId, new[] { new DialogueNode(nodeId, "Colonel Powers", text) });
 
         /// <summary>
         /// Colonel Powers in the Forest of Beginnings (issue #7), Dyllan's words.
@@ -44,7 +65,9 @@ namespace WarInLocked.Core.Dialogue
                     "This is the forest of beginnings. Where you learn to survive.",
                     options: ThreeOptions()),
                 new DialogueNode("introduce", speaker,
-                    "I am Colonel Powers, your drill sergeant... Get ready maggot, it is time to learn to survive."),
+                    "I am Colonel Powers, your drill sergeant... Get ready maggot, it is time to learn to survive.",
+                    nextId: "lack"),
+                new DialogueNode("lack", speaker, LackSkillLine),
             });
         }
     }
