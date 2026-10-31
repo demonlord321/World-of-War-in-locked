@@ -72,3 +72,6 @@ Open questions for #8: How does slime combat work (turn-based screen or real-tim
 Character menu (#9/#10 screen) is in 6686abc, opened with I; Developer is doing the Core rules and #8.
 
 Open questions: Which stats scale weapon damage? What does Slash do and cost (energy)? For health and energy, does it round down per full 5 points (Warrior Con 13 gives 200 HP, Mystic Con 5 gives 100)? Do slimes fight back?
+
+### Status 31 Oct, 22:00
+#8 to #11 rules are on main up to 5a53e37 (119 tests), and the I menu uses real items (25d4cdb). Developer is drawing #12's bars, the hotbar and the slime health bars in ForestScreen. Placeholder numbers (hit 10 + half Strength, slime 30 HP, Slash 1.5x for 10 energy, energy regenerates 2 per second, health and energy count full blocks of 5) are in QUESTIONS.md for Dyllan. Not yet seen running: Slash in game. Slimes don't fight back yet.
