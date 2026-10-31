@@ -2,16 +2,19 @@
 
 An RPG with dynamic growth. Built in C# so it can move to Unity later.
 
+## Run it
+`dotnet run --project src/WarInLocked.Game` (needs the .NET 8 SDK).
+
 ## Structure
-- `src/`: game rules in a plain C# library (netstandard2.1, no engine code), plus a light front end (MonoGame or console) for now.
+- `src/WarInLocked.Core`: game rules (no engine code, Unity-ready). `src/WarInLocked.Game`: front end with `Screens/`.
 - `tests/`: tests on the rules library.
 - Open questions live in `QUESTIONS.md`; work items are GitHub issues.
 
 ## Milestone 1: Start a new game
 | Issue | What | Owner | Status |
 |---|---|---|---|
-| #1 | Main menu: title, New Game, Exit | Mapmaker | To do |
-| #2 | Character creator: name, race (Human/Elf/Dwarf), stat distribution | Developer | Rules in (fee5bed), screen to do |
+| #1 | Main menu: title, New Game, Exit | Mapmaker | Polished (912418e), awaiting Dyllan's test |
+| #2 | Character creator: name, race (Human/Elf/Dwarf), stat distribution | Developer | Built (abf6f78, 30 tests), awaiting Dyllan's test |
 | #3 | Stat distributions (each adds +15) | Developer | Done in rules |
 
 ## Character rules so far
