@@ -67,7 +67,7 @@ Open questions for #8: How does slime combat work (turn-based screen or real-tim
 | # | Issue | What it needs |
 |---|---|---|
 | 11 | Combat | Real-time hotkey combat on the map. A basic attack command deals the weapon's base damage, scaled by stats. A hotbar holds abilities (Slash goes here). Hit slimes show damage with a flicker or a shrinking health bar over their heads. Replaces #8's Space-to-defeat placeholder. |
-| 12 | Player UI | Top right: name, level, health bar and energy bar. Health is 100 per 5 Constitution, and energy is 25 per 5 Wisdom. |
+| 12 | Player UI | Top right: name, level, health bar and energy bar. Health is 20 per Constitution point and energy is 5 per Wisdom point (Warrior 260/35, Merchant 180/45, Mystic 100/65). |
 
 Character menu (#9/#10 screen) is in 6686abc, opened with I; Developer is doing the Core rules and #8.
 
