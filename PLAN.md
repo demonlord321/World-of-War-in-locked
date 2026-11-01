@@ -137,3 +137,4 @@ Status 1 Nov, 11:39: slime attacks every 6 s in 35062b8; combat visuals, In comb
 At 0 health: 'You have fallen... The goddess has seen fit to grant you another chance.' Automatic respawn after 5 s at the bind point. One bind point at a time, set at an inn or rest spot (none exist yet). In the tutorial you respawn next to Colonel Powers. Replaces the placeholder 'You have fallen' screen.
 Open: respawn with full health and energy? Any penalty (XP, copper)? Do angry slimes calm down? Does quest progress stay?
 Status 1 Nov, 12:10 (UTC+2): #29 Core done: bind point, 5 s auto respawn (Character.Respawned), CalmEnemies. Placeholders: full HP/EN, no penalty. Screen must handle the Respawned event.
+Status 1 Nov, 11:47: #29 rules in 9238d93 (322 tests). Placeholders: respawn with full health and energy, no penalty, slimes calm down. Advisor's point: calmed slimes should probably reset to full HP.
