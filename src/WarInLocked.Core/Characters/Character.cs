@@ -358,6 +358,8 @@ namespace WarInLocked.Core.Characters
 
         private readonly HashSet<string> _flags = new HashSet<string>();
         public bool HasFlag(string flag) => _flags.Contains(flag);
+        /// <summary>Every flag set so far (for saving, #54). Snapshot copy.</summary>
+        public IReadOnlyList<string> Flags => new List<string>(_flags);
         public void SetFlag(string flag) => _flags.Add(flag);
 
         /// <summary>PLACEHOLDER text shown when the player tries to leave the Forest of Beginnings too early (Dyllan gave none).</summary>
@@ -418,6 +420,45 @@ namespace WarInLocked.Core.Characters
                 _abilityStates.Add(state);
             }
             return true;
+        }
+
+        // ---- Loading a save (#54): used by SaveGame only ----
+        internal void RestoreTitles(IEnumerable<string> titleIds, string equippedId)
+        {
+            _titles.Clear();
+            EquippedTitle = null;
+            foreach (var id in titleIds)
+            {
+                var t = TitleLibrary.Get(id);
+                if (t != null && !HasTitle(id)) _titles.Add(t);
+            }
+            if (equippedId != null && HasTitle(equippedId)) EquippedTitle = TitleLibrary.Get(equippedId);
+        }
+
+        internal void RestoreFlags(IEnumerable<string> flags)
+        {
+            _flags.Clear();
+            foreach (var f in flags) _flags.Add(f);
+        }
+
+        /// <summary>Sets level, XP, points, health, energy and copper straight from a save. Call after the title is restored (it moves the maximums). A fallen save comes back with 1 health.</summary>
+        internal void RestoreProgress(int level, int xp, int freeStatPoints, IList<int> assigned, int health, double energy, int copper)
+        {
+            Level = Math.Max(1, level);
+            Xp = Math.Max(0, xp);
+            FreeStatPoints = Math.Max(0, freeStatPoints);
+            for (int i = 0; i < _assigned.Length; i++) _assigned[i] = assigned != null && i < assigned.Count ? assigned[i] : 0;
+            Health = Math.Max(1, Math.Min(health, MaxHealth));
+            _energy = Math.Max(0, Math.Min(energy, MaxEnergy));
+            Copper = Math.Max(0, copper);
+            RespawnRemaining = 0;
+            Version++;
+        }
+
+        internal void RestoreAbility(string abilityId, int level, int uses, int usesIntoLevel)
+        {
+            LearnAbility(abilityId);
+            GetAbility(abilityId)?.Restore(level, uses, usesIntoLevel);
         }
 
         public string Name { get; }

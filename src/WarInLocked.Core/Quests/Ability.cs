@@ -51,6 +51,15 @@ namespace WarInLocked.Core.Quests
             return BaseUsesToLevel * (1 << (level - 1));
         }
 
+        /// <summary>Sets level and uses straight from a save (#54).</summary>
+        internal void Restore(int level, int uses, int usesIntoLevel)
+        {
+            Level = Math.Max(1, level);
+            Uses = Math.Max(0, uses);
+            _usesIntoLevel = Math.Max(0, Math.Min(usesIntoLevel, UsesForNextLevel - 1));
+            Version++;
+        }
+
         /// <summary>Counts one cast that fired. Returns true if it caused a level up.</summary>
         public bool RecordUse()
         {

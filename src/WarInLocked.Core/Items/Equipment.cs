@@ -157,6 +157,13 @@ namespace WarInLocked.Core.Items
             return EquipResult.InventoryFull;
         }
 
+        /// <summary>Puts an item straight into a worn slot, whatever it replaces (loading a save, #54).</summary>
+        internal void Restore(EquipmentSlot slot, Item item)
+        {
+            _worn[(int)slot] = item;
+            NotifyChanged();
+        }
+
         private void NotifyChanged()
         {
             Version++;

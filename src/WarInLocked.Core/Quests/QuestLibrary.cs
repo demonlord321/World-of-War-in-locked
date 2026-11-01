@@ -68,6 +68,20 @@ namespace WarInLocked.Core.Quests
             "Whiplash",
             completesOnObjectives: true);
 
+        /// <summary>A fresh copy of the quest with this id (state Offered, nothing done), or null when the id is unknown. Used when loading a save (#54).</summary>
+        public static Quest Create(string id)
+        {
+            switch (id)
+            {
+                case SliceAndSlimeId: return SliceAndSlime();
+                case SlashingPracticeId: return SlashingPractice();
+                case EnergyBallPracticeId: return EnergyBallPractice();
+                case ShoppingBeforeAdventureId: return ShoppingBeforeAdventure();
+                case AdventurersStartId: return AdventurersStart();
+                default: return null;
+            }
+        }
+
         /// <summary>Short name for the HUD tracker: "Slice and slime".</summary>
         public const string SliceAndSlimeShortTitle = "Slice and slime";
         public const string SlashingPracticeShortTitle = "Slashing Practice";
