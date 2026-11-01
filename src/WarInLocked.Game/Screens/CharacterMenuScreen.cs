@@ -75,6 +75,7 @@ public sealed class CharacterMenuScreen : Screen
 
     public override void Update(GameTime time, InputState input)
     {
+        if (_dropSlot >= 0) { UpdateDropSlider(input); return; }
         if (input.Pressed(Keys.I) || input.Pressed(Keys.Escape))
         {
             Screens.Replace(_back);
@@ -149,11 +150,52 @@ public sealed class CharacterMenuScreen : Screen
         _message = _character.UnassignPoint(stat) ? $"{stat} -1" : null;
     }
 
+    private int _dropSlot = -1, _dropAmount = 1;
+
+    /// <summary>#62 drop slider: Left/Right (A/D) by 1, Up/Down (W/S) by 10, Enter drops, Esc/X cancels.</summary>
+    private void UpdateDropSlider(InputState input)
+    {
+        var stack = _character.Inventory.Get(_dropSlot);
+        if (stack == null || input.Pressed(Keys.Escape) || input.Pressed(Keys.X)) { _dropSlot = -1; return; }
+        int max = stack.Count;
+        if (input.Pressed(Keys.Right) || input.Pressed(Keys.D)) _dropAmount++;
+        if (input.Pressed(Keys.Left) || input.Pressed(Keys.A)) _dropAmount--;
+        if (input.Pressed(Keys.Up) || input.Pressed(Keys.W)) _dropAmount += 10;
+        if (input.Pressed(Keys.Down) || input.Pressed(Keys.S)) _dropAmount -= 10;
+        _dropAmount = Math.Clamp(_dropAmount, 1, max);
+        if (input.Pressed(Keys.Enter))
+        {
+            var r = _character.DropItem(_dropSlot, _dropAmount, _playerTile.X, _playerTile.Y);
+            _message = r.Message ?? (r.Dropped ? $"Dropped {r.Item.Name}" + (r.Count > 1 ? $" x{r.Count}" : "") : null);
+            _dropSlot = -1;
+        }
+    }
+
+    private void DrawDropSlider(SpriteBatch sb, Gfx gfx, int w, int h)
+    {
+        if (_dropSlot < 0) return;
+        var stack = _character.Inventory.Get(_dropSlot);
+        if (stack == null) return;
+        gfx.Rect(sb, new Rectangle(0, 0, w, h), Color.Black * 0.5f);
+        var p = new Rectangle(w / 2 - 220, h / 2 - 80, 440, 160);
+        gfx.Rect(sb, p, Theme.Background);
+        gfx.Border(sb, p, Theme.Accent, 2);
+        gfx.TextCentered(sb, $"Drop how many {stack.Item.Name}?", new Rectangle(p.X, p.Y + 10, p.Width, 30), Theme.Text, 22f);
+        var track = new Rectangle(p.X + 40, p.Y + 66, p.Width - 80, 8);
+        gfx.Rect(sb, track, Theme.TextDim * 0.5f);
+        float f = stack.Count <= 1 ? 1f : (_dropAmount - 1) / (float)(stack.Count - 1);
+        gfx.Rect(sb, new Rectangle(track.X, track.Y, (int)(track.Width * f), track.Height), Theme.Accent);
+        gfx.Rect(sb, new Rectangle(track.X + (int)(track.Width * f) - 6, track.Y - 8, 12, 24), Theme.Text);
+        gfx.TextCentered(sb, $"{_dropAmount} / {stack.Count}", new Rectangle(p.X, p.Y + 86, p.Width, 28), Theme.Text, 20f);
+        gfx.TextCentered(sb, "Left/Right 1  -  Up/Down 10  -  Enter drop  -  Esc cancel", new Rectangle(p.X, p.Bottom - 32, p.Width, 24), Theme.TextDim, 14f);
+    }
+
     /// <summary>#62: X drops one of the focused bag item onto the player's tile, Shift+X the whole stack. Equipped gear is not in the bag; quest items are refused by Core.</summary>
     private void DropFocused(int invSlot, bool wholeStack)
     {
         var stack = _character.Inventory.Get(invSlot);
         if (stack == null) { _message = null; return; }
+        if (!wholeStack && stack.Count > 1) { _dropSlot = invSlot; _dropAmount = 1; _message = null; return; }   // slider for 1..Count
         var r = wholeStack ? _character.DropStack(invSlot, _playerTile.X, _playerTile.Y) : _character.DropItem(invSlot, 1, _playerTile.X, _playerTile.Y);
         _message = r.Message ?? (r.Dropped ? $"Dropped {r.Item.Name}" + (r.Count > 1 ? $" x{r.Count}" : "") : null);
     }
@@ -265,7 +307,7 @@ public sealed class CharacterMenuScreen : Screen
 
         gfx.Rect(sb, new Rectangle(0, 0, w, 56), Theme.Panel);
         gfx.TextLeft(sb, $"Character  -  {_character.Name}", new Rectangle(0, 0, w, 56), Theme.Accent, 26f, 30);
-        gfx.TextLeft(sb, "Arrows/mouse: select  -  Enter: equip/use  -  U: use  -  1-5: hotbar  -  X: drop (Shift: all)  -  T: titles  -  I/Esc: close", new Rectangle(w - 900, 0, 900, 56), Theme.TextDim, 15f);
+        gfx.TextLeft(sb, "Arrows/mouse: select  -  Enter: equip/use  -  U: use  -  1-5: hotbar  -  X: drop (Shift+X: all)  -  T: titles  -  I/Esc: close", new Rectangle(w - 900, 0, 900, 56), Theme.TextDim, 15f);
 
         var left = new Rectangle(30, 76, 600, 548);
         var right = new Rectangle(650, 76, 600, 548);
@@ -289,6 +331,7 @@ public sealed class CharacterMenuScreen : Screen
         string text = _focus >= StatBase ? StatTip(_focus - StatBase) : item == null ? $"{SlotType(_focus)}  -  Empty" : $"{item}  -  {SlotType(_focus)}";
         if (_message != null) text += "     |     " + _message;
         gfx.TextLeft(sb, text, tip, item == null && _focus < StatBase ? Theme.TextDim : Theme.Text, 20f, 20);
+        DrawDropSlider(sb, gfx, w, h);
     }
 
     /// <summary>
