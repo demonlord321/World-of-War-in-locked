@@ -6,29 +6,39 @@ using WarInLocked.Game.Ui;
 namespace WarInLocked.Game.Screens;
 
 /// <summary>
-/// Bare-bones main menu stub (issue #1 is Mapmaker's to style): a title, New Game and Exit.
+/// Bare-bones main menu stub (issue #1 is Mapmaker's to style): a title, New Game, Load Game (disabled for now) and Exit.
 /// Keyboard: Up/Down and Enter. Mouse: click.
 /// </summary>
 public sealed class MainMenuScreen : Screen
 {
-    private readonly Button _newGame = new(new Rectangle(500, 310, 280, 56), "New Game");
-    private readonly Button _exit = new(new Rectangle(500, 386, 280, 56), "Exit");
+    private readonly Button _newGame = new(new Rectangle(500, 292, 280, 56), "New Game");
+    // Load Game is shown but disabled until Core has saving (#54); focus skips it and clicks ignore it.
+    private readonly Button _loadGame = new(new Rectangle(500, 360, 280, 56), "Load Game") { Enabled = false };
+    private readonly Button _exit = new(new Rectangle(500, 428, 280, 56), "Exit");
     private int _focus;
+
+    private Button[] Buttons => new[] { _newGame, _loadGame, _exit };
+
+    private void MoveFocus(int step)
+    {
+        var b = Buttons;
+        do _focus = (_focus + step + b.Length) % b.Length; while (!b[_focus].Enabled);
+    }
 
     public override void Update(GameTime time, InputState input)
     {
-        if (input.Pressed(Keys.Down) || input.Pressed(Keys.Tab)) _focus = (_focus + 1) % 2;
-        if (input.Pressed(Keys.Up)) _focus = (_focus + 1) % 2;
+        if (input.Pressed(Keys.Down) || input.Pressed(Keys.Tab)) MoveFocus(1);
+        if (input.Pressed(Keys.Up)) MoveFocus(-1);
         if (input.MouseMoved)
         {
             if (_newGame.IsHovered(input)) _focus = 0;
-            else if (_exit.IsHovered(input)) _focus = 1;
+            else if (_exit.IsHovered(input)) _focus = 2;
         }
 
         bool activate = input.Pressed(Keys.Enter) || input.Pressed(Keys.Space);
         if (_newGame.WasClicked(input) || (activate && _focus == 0))
             Screens.Replace(new CharacterCreatorScreen());
-        else if (_exit.WasClicked(input) || (activate && _focus == 1))
+        else if (_exit.WasClicked(input) || (activate && _focus == 2))
             Screens.Exit();
     }
 
@@ -51,7 +61,8 @@ public sealed class MainMenuScreen : Screen
         gfx.Rect(sb, new Rectangle(w / 2 - 220, 268, 440, 2), Theme.Accent * 0.7f);
 
         _newGame.Draw(sb, gfx, input, _focus == 0);
-        _exit.Draw(sb, gfx, input, _focus == 1);
+        _loadGame.Draw(sb, gfx, input, false);
+        _exit.Draw(sb, gfx, input, _focus == 2);
 
         gfx.TextCentered(sb, "Up/Down to choose  -  Enter to select", new Rectangle(0, h - 60, w, 30), Theme.TextDim, 18f);
     }

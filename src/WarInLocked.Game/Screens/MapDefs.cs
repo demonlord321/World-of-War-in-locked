@@ -21,7 +21,7 @@ public static class MapDefs
     {
         [ForestId] = new(ForestId, "forest-of-beginnings.txt", "The Forest of Beginnings", new[] { "colonel-powers" }, (Enemy.MinSlimeLevel, Enemy.MaxSlimeLevel)),
         [PathId] = new(PathId, "path.txt", "The Path", new string[0], (Enemy.PathMinSlimeLevel, Enemy.PathMaxSlimeLevel)),
-        [EncampmentId] = new(EncampmentId, "adventurers-encampment.txt", "Adventurers' Encampment", new[] { "whiplash" }),
+        [EncampmentId] = new(EncampmentId, "adventurers-encampment.txt", "Adventurers' Encampment", new[] { "whiplash", "barracks-master" }),
     };
 
     // (map, door symbol) -> destination map. Route west to east: Forest -> Path -> Encampment (each edge leads to the opposite edge of the next map).
@@ -37,11 +37,14 @@ public static class MapDefs
     {
         ["colonel-powers"] = "Colonel Powers",
         ["whiplash"] = "Whiplash",
+        ["barracks-master"] = "Barracks Master",
     };
 
     public static bool Exists(string mapId) => Maps.ContainsKey(mapId);
     public static Def Get(string mapId) => Maps[mapId];
     public static string? Destination(string mapId, char door) => Doors.TryGetValue((mapId, door), out var d) ? d : null;
+    /// <summary>NPCs with a dialogue to talk to. The Barracks Master is only placed and labelled for now (no Core dialogue yet).</summary>
+    public static bool HasDialogue(string npcId) => npcId != "barracks-master";
     public static string NpcName(string npcId) => NpcNames.TryGetValue(npcId, out var n) ? n : npcId;
 
     public static char Opposite(char door) => door switch { '<' => '>', '>' => '<', '^' => 'v', _ => '^' };

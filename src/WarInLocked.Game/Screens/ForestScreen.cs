@@ -350,7 +350,8 @@ public sealed class ForestScreen : Screen
     private IEnumerable<NpcSpot> NpcSpots()
     {
         foreach (var (id, p) in NpcPositions)
-            yield return new NpcSpot(id, id, p.X, p.Y); // the NPC id doubles as its dialogue id
+            if (MapDefs.HasDialogue(id))
+                yield return new NpcSpot(id, id, p.X, p.Y); // the NPC id doubles as its dialogue id
     }
 
     private bool IsNpc(int x, int y)
@@ -379,6 +380,7 @@ public sealed class ForestScreen : Screen
 
     private static readonly Color SandA = new(206, 182, 130), SandB = new(200, 176, 124);
     private static readonly Color FenceWood = new(122, 88, 52), FencePost = new(88, 62, 36);
+    private static readonly Color BedFrame = new(96, 68, 40), BedBlanketA = new(150, 70, 70), BedBlanketB = new(70, 100, 140), BedPillow = new(235, 232, 220);
     private static readonly Color Canvas = new(214, 200, 160), CanvasShade = new(190, 174, 132), CanvasDark = new(120, 100, 70);
 
     /// <summary>A door is a brighter path tile with a bar along the edge it leads out through.</summary>
@@ -423,6 +425,26 @@ public sealed class ForestScreen : Screen
         }
     }
 
+    /// <summary>Barracks bed: a wooden frame with a blanket, and a pillow at the head (left end of a row of beds).</summary>
+    private void DrawBed(SpriteBatch sb, Gfx gfx, Rectangle r, int x, int y)
+    {
+        gfx.Rect(sb, r, ((x + y) & 1) == 0 ? SandA : SandB);
+        gfx.Rect(sb, new Rectangle(r.X + 2, r.Y + 3, r.Width - 4, r.Height - 6), BedFrame);
+        gfx.Rect(sb, new Rectangle(r.X + 4, r.Y + 5, r.Width - 8, r.Height - 10), (y & 1) == 0 ? BedBlanketA : BedBlanketB);
+        if (_map[x - 1, y] != Tile.Bed) gfx.Rect(sb, new Rectangle(r.X + 4, r.Y + 5, 8, r.Height - 10), BedPillow);
+    }
+
+    /// <summary>Save point (#54, cosmetic for now): a pulsing blue-white glow with a bright core.</summary>
+    private void DrawSavePoint(SpriteBatch sb, Gfx gfx, Rectangle r, Color ground, GameTime time)
+    {
+        gfx.Rect(sb, r, ground);
+        float pulse = 0.5f + 0.5f * MathF.Sin((float)time.TotalGameTime.TotalSeconds * 3f);
+        int grow = (int)(pulse * 4);
+        gfx.Rect(sb, new Rectangle(r.X + 3 - grow, r.Y + 3 - grow, r.Width - 6 + grow * 2, r.Height - 6 + grow * 2), new Color(110, 190, 255) * (0.25f + 0.2f * pulse));
+        gfx.Rect(sb, new Rectangle(r.X + 7, r.Y + 7, r.Width - 14, r.Height - 14), new Color(130, 210, 255) * 0.8f);
+        gfx.Rect(sb, new Rectangle(r.X + 11, r.Y + 11, r.Width - 22, r.Height - 22), new Color(245, 252, 255));
+    }
+
     private Rectangle Screen(float x, float y, int w, int h) => new((int)(x - _camera.X), (int)(y - _camera.Y), w, h);
 
     public override void Draw(SpriteBatch sb, Gfx gfx, InputState input, GameTime time)
@@ -445,6 +467,8 @@ public sealed class ForestScreen : Screen
                     case Tile.Floor: gfx.Rect(sb, r, ((x + y) & 1) == 0 ? SandA : SandB); break;
                     case Tile.Fence: DrawFence(sb, gfx, r, x, y, ground); break;
                     case Tile.Tent: DrawTent(sb, gfx, r, x, y, ground); break;
+                    case Tile.Bed: DrawBed(sb, gfx, r, x, y); break;
+                    case Tile.SavePoint: DrawSavePoint(sb, gfx, r, ground, time); break;
                     case Tile.Water: gfx.Rect(sb, r, WaterColor); break;
                     case Tile.Wall: gfx.Rect(sb, r, WallColor); break;
                     case Tile.Tree:
@@ -470,7 +494,7 @@ public sealed class ForestScreen : Screen
         foreach (var (id, p) in NpcPositions)
         {
             var r = Screen(p.X * TileSize + 5, p.Y * TileSize + 2, 22, 28);
-            gfx.Rect(sb, r, id == "whiplash" ? new Color(130, 60, 60) : new Color(90, 100, 60));
+            gfx.Rect(sb, r, id == "whiplash" ? new Color(130, 60, 60) : id == "barracks-master" ? new Color(70, 85, 120) : new Color(90, 100, 60));
             gfx.Border(sb, r, Color.Black, 2);
             gfx.TextCentered(sb, MapDefs.NpcName(id), Screen(p.X * TileSize - 60, p.Y * TileSize - 22, 152, 20), Theme.Text, 14f);
         }

@@ -72,7 +72,7 @@ public class WorldTests
     public void EncampmentMapHasWhiplashNoSlimesAndAWestDoor()
     {
         var camp = LoadMapFile("adventurers-encampment.txt");
-        Assert.Single(camp.Npcs);
+        Assert.Equal(2, camp.Npcs.Count);   // whiplash, then barracks-master (reading order)
         Assert.Empty(camp.SlimeSpawns);
         var door = Assert.Single(camp.Doors);
         Assert.Equal('<', door.Symbol);
@@ -114,5 +114,63 @@ public class WorldTests
             todo.Push((x + 1, y)); todo.Push((x - 1, y)); todo.Push((x, y + 1)); todo.Push((x, y - 1));
         }
         Assert.Contains((east.X, east.Y), seen);
+    }
+
+    [Fact]
+    public void BedBlocksWalkingAndSavePointIsWalkableAndListed()
+    {
+        var map = TileMap.Parse("#####\n#bS.#\n#P..#\n#####");
+        Assert.Equal(Tile.Bed, map[1, 1]);
+        Assert.False(map.IsWalkable(1, 1));
+        Assert.Equal(Tile.SavePoint, map[2, 1]);
+        Assert.True(map.IsWalkable(2, 1));
+        var sp = Assert.Single(map.SavePoints);
+        Assert.Equal((2, 1), (sp.X, sp.Y));
+        Assert.True(map.IsSavePoint(2, 1));
+        Assert.False(map.IsSavePoint(1, 1));
+    }
+
+    [Fact]
+    public void EncampmentHasABarracksWithBedsAndMasterClearOfTheOtherThings()
+    {
+        var camp = LoadMapFile("adventurers-encampment.txt");
+        int beds = 0, minX = 99, maxX = 0, minY = 99, maxY = 0;
+        for (int y = 0; y < camp.Height; y++)
+            for (int x = 0; x < camp.Width; x++)
+                if (camp[x, y] == Tile.Bed) { beds++; minX = System.Math.Min(minX, x); maxX = System.Math.Max(maxX, x); minY = System.Math.Min(minY, y); maxY = System.Math.Max(maxY, y); }
+        Assert.True(beds >= 16);
+        var master = camp.Npcs[1];                 // barracks-master, in front of (north of) the beds
+        Assert.True(master.Y < minY);
+        Assert.True(camp.IsWalkable(master.X, master.Y + 1));
+        // Clear of the ring (x 16..24, y 11..17) and the west door.
+        Assert.True(minX > 24);
+        Assert.NotEqual(0, minX);
+        // Walking from the west door reaches the master's tile and the aisle between the beds.
+        var door = camp.Doors.Single();
+        var seen = new System.Collections.Generic.HashSet<(int, int)>();
+        var todo = new System.Collections.Generic.Stack<(int, int)>();
+        todo.Push((door.X, door.Y));
+        while (todo.Count > 0)
+        {
+            var (x, y) = todo.Pop();
+            if (!camp.IsWalkable(x, y) || !seen.Add((x, y))) continue;
+            todo.Push((x + 1, y)); todo.Push((x - 1, y)); todo.Push((x, y + 1)); todo.Push((x, y - 1));
+        }
+        Assert.Contains((master.X, master.Y), seen);
+        Assert.Contains((32, 16), seen);
+        foreach (var sp in camp.SavePoints) Assert.Contains((sp.X, sp.Y), seen);
+    }
+
+    [Fact]
+    public void SavePointsSitNearColonelPowersInTheForestAndNearWhiplashInTheCamp()
+    {
+        var forest = LoadMapFile("forest-of-beginnings.txt");
+        var colonel = forest.Npcs[0];
+        var fsp = Assert.Single(forest.SavePoints);
+        Assert.InRange(System.Math.Abs(fsp.X - colonel.X) + System.Math.Abs(fsp.Y - colonel.Y), 1, 4);
+        var camp = LoadMapFile("adventurers-encampment.txt");
+        var whiplash = camp.Npcs[0];
+        var csp = Assert.Single(camp.SavePoints);
+        Assert.InRange(System.Math.Abs(csp.X - whiplash.X) + System.Math.Abs(csp.Y - whiplash.Y), 1, 4);
     }
 }
