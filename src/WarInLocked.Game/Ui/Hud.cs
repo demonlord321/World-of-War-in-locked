@@ -36,7 +36,7 @@ public static class Hud
     {
         TrackLevel(character);
         DrawPlayerPanel(sb, gfx, character);
-        DrawHotbar(sb, gfx, character.Combat.Hotbar);
+        DrawHotbar(sb, gfx, character);
         DrawLevelUpBanner(sb, gfx);
     }
 
@@ -108,8 +108,9 @@ public static class Hud
         gfx.TextCentered(sb, $"{value}/{max}", r, Color.White, 14f);
     }
 
-    private static void DrawHotbar(SpriteBatch sb, Gfx gfx, Hotbar hotbar)
+    private static void DrawHotbar(SpriteBatch sb, Gfx gfx, Character character)
     {
+        var hotbar = character.Combat.Hotbar;
         int total = Hotbar.SlotCount * SlotSize + (Hotbar.SlotCount - 1) * SlotGap;
         int x = (WarInLockedGame.ScreenWidth - total) / 2;
         int y = WarInLockedGame.ScreenHeight - SlotSize - 14;
@@ -122,7 +123,11 @@ public static class Hud
 
             if (!slot.IsEmpty)
             {
-                gfx.TextCentered(sb, AbilityLibrary.NameOf(slot.AbilityId), r, Theme.Text, 14f);
+                // An ability that cannot be cast right now (Slash unarmed) is dimmed with a dark veil and a red border.
+                var def = AbilityLibrary.Get(slot.AbilityId);
+                bool unusable = def != null && CombatController.CannotCastReason(character, def) != null;
+                gfx.TextCentered(sb, AbilityLibrary.NameOf(slot.AbilityId), r, unusable ? Theme.TextDim * 0.6f : Theme.Text, 14f);
+                if (unusable) gfx.Rect(sb, r, Color.Black * 0.55f);
                 // Cooldown: dark overlay from the top that shrinks as the ability becomes ready.
                 double p = slot.CooldownProgress;
                 if (p > 0)
@@ -133,7 +138,8 @@ public static class Hud
                 }
             }
 
-            gfx.Border(sb, r, slot.IsEmpty ? Theme.PanelBorder * 0.5f : Theme.Accent, 2);
+            bool dim = !slot.IsEmpty && AbilityLibrary.Get(slot.AbilityId) is { } dd && CombatController.CannotCastReason(character, dd) != null;
+            gfx.Border(sb, r, slot.IsEmpty ? Theme.PanelBorder * 0.5f : dim ? Theme.Negative * 0.6f : Theme.Accent, 2);
             gfx.Text(sb, (i + 1).ToString(), new Vector2(r.X + 4, r.Y + 1), slot.IsEmpty ? Theme.TextDim * 0.6f : Theme.TextDim, 13f);
         }
     }

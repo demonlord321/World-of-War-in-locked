@@ -169,6 +169,9 @@ public sealed class ForestScreen : Screen
         // I opens the character menu; it gets this same screen back on close, so the position is kept.
         if (input.Pressed(Keys.I)) { Screens.Replace(new CharacterMenuScreen(this, _character)); return; }
 
+        // K opens the abilities screen (#20); it also gets this same screen back on close.
+        if (input.Pressed(Keys.K)) { Screens.Replace(new AbilitiesScreen(this, _character)); return; }
+
         if (input.Pressed(Keys.Escape)) Screens.Replace(new MainMenuScreen());
     }
 
@@ -288,7 +291,7 @@ public sealed class ForestScreen : Screen
 
         gfx.Rect(sb, new Rectangle(0, 0, w, 36), Color.Black * 0.55f);
         gfx.TextLeft(sb, $"The Forest of Beginnings  -  {_character.Name}", new Rectangle(0, 0, w, 36), Theme.Text, 18f);
-        gfx.TextLeft(sb, "WASD move  -  E talk  -  Space attack  -  I character  -  Esc menu", new Rectangle(w - 640, 0, 640, 36), Theme.TextDim, 16f);
+        gfx.TextLeft(sb, "WASD move  -  E talk  -  Space attack  -  I character  -  K abilities  -  Esc menu", new Rectangle(w - 760, 0, 760, 36), Theme.TextDim, 16f);
 
         Hud.Draw(sb, gfx, _character);   // player panel top-right, hotbar bottom-centre (#11, #12)
 
