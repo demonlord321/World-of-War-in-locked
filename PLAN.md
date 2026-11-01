@@ -140,3 +140,4 @@ Status 1 Nov, 12:10 (UTC+2): #29 Core done: bind point, 5 s auto respawn (Charac
 Status 1 Nov, 11:47: #29 rules in 9238d93 (322 tests). Placeholders: respawn with full health and energy, no penalty, slimes calm down. Advisor's point: calmed slimes should probably reset to full HP.
 Decided 1 Nov (#29): respawn at full health and energy. Death costs 50 XP up to level 5, 100 XP from 5 to 10. Calmed slimes reset to full HP (bfc013f). Open: can you lose a level, or does XP stop at 0 within the level? Penalty after level 10?
 Status 1 Nov, 12:25 (UTC+2): respawn XP penalty in Core: 50 XP (levels 1-5), 100 XP (6+; above 10 is a placeholder), never below the level start or 0. Character.RespawnXpPenalty, LastRespawnXpLost.
+Decided 1 Nov: the death penalty never removes a level; XP stops at 0 within the current level. Levels 1-5 lose 50, 6-10 lose 100; above 10 stays 100 (placeholder).
