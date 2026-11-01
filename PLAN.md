@@ -78,3 +78,8 @@ Open questions: Which stats scale weapon damage? What does Slash do and cost (en
 
 ### Status 31 Oct, 22:07
 #8 to #12 are all on main (HUD, hotbar and slime bars in 94a6829; health 20 per Constitution and energy 5 per Wisdom in 8f5abb9). Everything awaits Dyllan's test. Issues are still open.
+
+### Added 1 Nov: #13 Level up (replaces "levelling on hold")
+XP bar under the energy bar. XP cost to the next level grows by a step: +50 per level up to 5 (50, 100, 150, 200), then +100 per level after 5, the step doubling to +200 from level 10 and then doubling every 10 levels (my reading: +400 from 20, +800 from 30). Each level gives 3 free stat points to assign, and every 5th level gives 5.
+
+Open questions: Is that reading of the curve right (5 to 6 costs 300, 9 to 10 costs 700, 10 to 11 costs 900)? Does a 5th level give 5 points instead of 3, or 3 + 5 = 8? Do health and energy update when points go into Constitution and Wisdom (yes, presumably)? Where are points assigned (the I menu?) Is there a level cap?
