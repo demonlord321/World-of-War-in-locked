@@ -90,4 +90,4 @@ Order (Dyllan): #14 and #16 first; #15 is to be discussed.
 - #14: unarmed damage = 10 x Strength modifier. The modifier is +0.1 per Strength point and +1 at each milestone (10, 25, 50), so 9 Strength gives 0.9. Equipment adds on top. Replaces the 10 + half Strength placeholder.
 - #16: magic damage works the same way but uses Intelligence.
 - #15: defense works the same way but uses Constitution. Its design is still to be discussed with Dyllan.
-Open question: at 10 Strength the issue says 1.9 (0.9 + 1, so the 10th point itself adds nothing?) rather than 2.0. Which is right, and what is 11 Strength: 2.0 or 2.1?
+Decided 1 Nov: a milestone point adds 1 on top of its usual 0.1, so modifier = 0.1 x stat + 1 per milestone reached (9 gives 0.9, 10 gives 2.0, 25 gives 4.5, 50 gives 8.0).
