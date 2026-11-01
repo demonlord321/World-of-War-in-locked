@@ -16,9 +16,9 @@
 #TggggggggggggggF.......FgggggggggggggT#
 #TggggggggggggggF.......FgggggggggggggT#
 #TggggggggggggggFFFF=FFFFgggggggggggggT#
-#TgggggggggggggggggggggggggTggggggggggT#
-#TggggggggggTgggggggggggggggggggggggggT#
-#TTggggggggggggggggXXXgggggggggggggggTT#
-#TTTgggggggggggggggXXXggggggggggggggTTT#
+#TgggggggggggggggggXXXgggggTggggggggggT#
+#TggggggggggTggggggXXXggggggggggggggggT#
+#TTggggggggggggggggggggggggggggggggggTT#
+#TTTggggggggggggggggggggggggggggggggTTT#
 #TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT#
 ########################################
