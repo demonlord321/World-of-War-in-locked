@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using WarInLocked.Core.Characters;
 using WarInLocked.Core.Combat;
+using WarInLocked.Core.Items;
 using WarInLocked.Core.Quests;
 
 namespace WarInLocked.Game.Ui;
@@ -178,13 +179,47 @@ public static class Hud
             var r = new Rectangle(x + i * (SlotSize + SlotGap), y, SlotSize, SlotSize);
             gfx.Rect(sb, r, slot.IsEmpty ? Color.Black * 0.35f : Theme.Panel * 0.92f);
 
+            // An ability that cannot be cast right now (Slash unarmed), or an item with none left, is dimmed with a dark veil and a red border.
+            bool dim = false;
+            if (slot.IsItem)
+            {
+                // #26: a consumable. Name wrapped small, the count left in the bag bottom-right, and the shared item cooldown overlay.
+                var item = ItemLibrary.Get(slot.ItemId);
+                int count = character.Inventory.CountOf(slot.ItemId);
+                dim = count == 0;
+                // The slot is small: a short name is wrapped over two lines; a long one (Potion of lesser healing) shows initials (PLH).
+                string full = item?.Name ?? slot.ItemId;
+                var lines = gfx.Wrap(full, SlotSize - 8, 12f);
+                var nameColor = dim ? Theme.TextDim * 0.6f : Theme.Text;
+                if (lines.Count <= 2)
+                {
+                    int ty = r.Y + 16;
+                    foreach (var line in lines)
+                    {
+                        gfx.TextCentered(sb, line, new Rectangle(r.X, ty, SlotSize, 14), nameColor, 12f);
+                        ty += 14;
+                    }
+                }
+                else
+                {
+                    string abbr = string.Concat(full.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                        .Where(w => w.Length > 2).Select(w => char.ToUpperInvariant(w[0])));
+                    gfx.TextCentered(sb, abbr, new Rectangle(r.X, r.Y + 12, SlotSize, 24), nameColor, 20f);
+                }
+                string cnt = "x" + count;
+                var cm = gfx.Measure(cnt, 14f);
+                gfx.Text(sb, cnt, new Vector2(r.Right - 4 - cm.X, r.Bottom - 3 - cm.Y), dim ? Theme.Negative : Theme.Accent, 14f);
+                if (dim) gfx.Rect(sb, r, Color.Black * 0.55f);
+            }
+            else if (!slot.IsEmpty)
+            {
+                var def = AbilityLibrary.Get(slot.AbilityId);
+                dim = def != null && CombatController.CannotCastReason(character, def) != null;
+                gfx.TextCentered(sb, AbilityLibrary.NameOf(slot.AbilityId), r, dim ? Theme.TextDim * 0.6f : Theme.Text, 14f);
+                if (dim) gfx.Rect(sb, r, Color.Black * 0.55f);
+            }
             if (!slot.IsEmpty)
             {
-                // An ability that cannot be cast right now (Slash unarmed) is dimmed with a dark veil and a red border.
-                var def = AbilityLibrary.Get(slot.AbilityId);
-                bool unusable = def != null && CombatController.CannotCastReason(character, def) != null;
-                gfx.TextCentered(sb, AbilityLibrary.NameOf(slot.AbilityId), r, unusable ? Theme.TextDim * 0.6f : Theme.Text, 14f);
-                if (unusable) gfx.Rect(sb, r, Color.Black * 0.55f);
                 // Cooldown: dark overlay from the top that shrinks as the ability becomes ready.
                 double p = slot.CooldownProgress;
                 if (p > 0)
@@ -195,7 +230,6 @@ public static class Hud
                 }
             }
 
-            bool dim = !slot.IsEmpty && AbilityLibrary.Get(slot.AbilityId) is { } dd && CombatController.CannotCastReason(character, dd) != null;
             gfx.Border(sb, r, slot.IsEmpty ? Theme.PanelBorder * 0.5f : dim ? Theme.Negative * 0.6f : Theme.Accent, 2);
             gfx.Text(sb, (i + 1).ToString(), new Vector2(r.X + 4, r.Y + 1), slot.IsEmpty ? Theme.TextDim * 0.6f : Theme.TextDim, 13f);
         }

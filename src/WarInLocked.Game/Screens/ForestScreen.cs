@@ -5,6 +5,7 @@ using WarInLocked.Core.Characters;
 using WarInLocked.Core.Combat;
 using WarInLocked.Core.Dialogue;
 using WarInLocked.Core.Interaction;
+using WarInLocked.Core.Items;
 using WarInLocked.Core.Quests;
 using WarInLocked.Core.World;
 using WarInLocked.Game.Ui;
@@ -99,7 +100,16 @@ public sealed class ForestScreen : Screen
             _dialogueBox.Update(_dialogue, input);
             if (_dialogue.IsEnded)
             {
+                string? action = _dialogue.Action;
                 _dialogue = null;
+                // The Colonel's "Shop" option ends the dialogue with an open-shop action (#28): the shop screen takes over
+                // and gives this same forest back on Esc.
+                var shop = ShopLibrary.Get(DialogueActions.ShopIdOf(action) ?? "");
+                if (shop != null)
+                {
+                    Screens.Replace(new ShopScreen(this, _character, shop));
+                    return;
+                }
                 if (_dialogueNpc == "colonel-powers")
                 {
                     var offer = ColonelPowersQuest.QuestToOfferAfterDialogue(_character, out var turnedIn); // turn-in gives the reward

@@ -70,10 +70,16 @@ public sealed class AbilitiesScreen : Screen
         string? displaced = bar.Get(slot).AbilityId;
         if (displaced == ability.Id) { _message = $"{ability.Name} is already on slot {slot + 1}"; return; }
         int old = bar.IndexOf(ability.Id);
+        string? displacedItem = bar.Get(slot).ItemId;   // a potion on the target slot swaps too (#26)
         bar.Assign(slot, ability.Id);
-        if (old >= 0) bar.Assign(old, displaced);
-        _message = displaced != null && old >= 0
-            ? $"{ability.Name} to slot {slot + 1}; {AbilityLibrary.NameOf(displaced)} to slot {old + 1}"
+        if (old >= 0)
+        {
+            if (displacedItem != null) bar.AssignItem(old, displacedItem);
+            else bar.Assign(old, displaced);
+        }
+        string? other = displaced != null ? AbilityLibrary.NameOf(displaced) : displacedItem != null ? WarInLocked.Core.Items.ItemLibrary.Get(displacedItem)?.Name : null;
+        _message = other != null && old >= 0
+            ? $"{ability.Name} to slot {slot + 1}; {other} to slot {old + 1}"
             : $"{ability.Name} to slot {slot + 1}";
     }
 

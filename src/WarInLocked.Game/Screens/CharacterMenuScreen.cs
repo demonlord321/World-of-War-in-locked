@@ -63,10 +63,10 @@ public sealed class CharacterMenuScreen : Screen
         // Stat rows: name, value, [-] and [+] buttons (single column, left of the "Free points" box).
         for (int i = 0; i < StatTypes.Count; i++)
         {
-            var row = new Rectangle(674, 190 + i * 26, 250, 26);
+            var row = new Rectangle(674, 190 + i * 26, 290, 26);
             _slots[StatBase + i] = row;
-            _minus[i] = new Rectangle(row.X + 170, row.Y + 2, 32, 22);
-            _plus[i] = new Rectangle(row.X + 210, row.Y + 2, 32, 22);
+            _minus[i] = new Rectangle(row.X + 210, row.Y + 2, 32, 22);
+            _plus[i] = new Rectangle(row.X + 250, row.Y + 2, 32, 22);
         }
     }
 
@@ -76,6 +76,22 @@ public sealed class CharacterMenuScreen : Screen
         {
             Screens.Replace(_back);
             return;
+        }
+
+        // T (or the Titles button) opens the titles screen (#27); it gets this same menu back so the point lock is kept.
+        if (input.Pressed(Keys.T) || (input.Clicked && TitlesButton.Contains(input.MousePosition)))
+        {
+            input.ConsumeClick();
+            Screens.Replace(new TitlesScreen(this, _character));
+            return;
+        }
+
+        // Items (#26): U uses the focused inventory item, keys 1-5 put it on that hotbar slot.
+        if (_focus >= EquipCount && _focus < StatBase)
+        {
+            if (input.Pressed(Keys.U)) UseItem(_focus - EquipCount);
+            for (int slot = 0; slot < Hotbar.SlotCount; slot++)
+                if (input.Pressed(Keys.D1 + slot) || input.Pressed(Keys.NumPad1 + slot)) AssignToHotbar(_focus - EquipCount, slot);
         }
 
         if (input.MouseMoved)
@@ -147,6 +163,7 @@ public sealed class CharacterMenuScreen : Screen
         else
         {
             var stack = _character.Inventory.Get(i - EquipCount);
+            if (stack != null && stack.Item.IsUsable) { UseItem(i - EquipCount); return; }   // Enter on a potion drinks it
             var result = _character.Equipment.Equip(i - EquipCount);
             _message = result switch
             {
@@ -156,6 +173,37 @@ public sealed class CharacterMenuScreen : Screen
                 _ => null,
             };
         }
+    }
+
+    private static Rectangle TitlesButton => new(1116, 160, 110, 24);
+
+    /// <summary>Uses a consumable from an inventory slot (#26). Core decides: cooldown, full health and None left are refused.</summary>
+    private void UseItem(int invSlot)
+    {
+        var stack = _character.Inventory.Get(invSlot);
+        if (stack == null || !stack.Item.IsUsable) { _message = stack == null ? null : $"{stack.Item.Name} cannot be used"; return; }
+        var result = _character.UseItem(stack.Item.Id);
+        _message = result.Success ? $"{result.Item.Name}: healed {result.Healed} HP" : result.Reason;
+    }
+
+    /// <summary>Puts the consumable in an inventory slot on a hotbar slot (#26); keys 1-5 then use it in the forest.</summary>
+    private void AssignToHotbar(int invSlot, int slot)
+    {
+        var stack = _character.Inventory.Get(invSlot);
+        if (stack == null || !stack.Item.IsUsable) { _message = stack == null ? null : $"{stack.Item.Name} cannot go on the hotbar"; return; }
+        var bar = _character.Combat.Hotbar;
+        string? displaced = bar.Get(slot).AbilityId;
+        string? displacedItem = bar.Get(slot).ItemId;
+        if (displacedItem == stack.Item.Id) { _message = $"{stack.Item.Name} is already on slot {slot + 1}"; return; }
+        int old = bar.IndexOfItem(stack.Item.Id);
+        _character.Combat.AssignItemToHotbar(slot, stack.Item.Id);
+        if (old >= 0)
+        {
+            if (displaced != null) bar.Assign(old, displaced);
+            else if (displacedItem != null) bar.AssignItem(old, displacedItem);
+            else bar.Assign(old, null);
+        }
+        _message = $"{stack.Item.Name} to hotbar slot {slot + 1}";
     }
 
     /// <summary>Moves the focus to the nearest slot in the given direction (spatial, so it works across both halves).</summary>
@@ -181,7 +229,10 @@ public sealed class CharacterMenuScreen : Screen
     private string SlotType(int i) => i >= StatBase ? "Stat" : i < EquipCount ? EquipmentSlotNames[i] : $"Inventory slot {i - EquipCount + 1}";
     private string StatTip(int s)
     {
-        string t = $"{StatTypes.All[s]} {_character.Stats[StatTypes.All[s]]}  -  Stat";
+        var st = StatTypes.All[s];
+        int bonus = _character.TitleBonus(st);
+        string t = bonus != 0 ? $"{st} {_character.EffectiveStats[st]} ({_character.Stats[st]} base +{bonus} {_character.EquippedTitle!.Name})  -  Stat"
+                              : $"{st} {_character.Stats[st]}  -  Stat";
         if (_character.FreeStatPoints > 0) t += "  -  Right/+/Enter add";
         if (NewPoints(s) > 0) t += "  -  Left/- remove";
         return t;
@@ -201,7 +252,7 @@ public sealed class CharacterMenuScreen : Screen
 
         gfx.Rect(sb, new Rectangle(0, 0, w, 56), Theme.Panel);
         gfx.TextLeft(sb, $"Character  -  {_character.Name}", new Rectangle(0, 0, w, 56), Theme.Accent, 26f, 30);
-        gfx.TextLeft(sb, "Arrows/mouse: select  -  Enter/click: equip  -  Stats: +/- buttons  -  I/Esc: close", new Rectangle(w - 780, 0, 780, 56), Theme.TextDim, 16f);
+        gfx.TextLeft(sb, "Arrows/mouse: select  -  Enter: equip/use  -  U: use  -  1-5: hotbar  -  T: titles  -  I/Esc: close", new Rectangle(w - 900, 0, 900, 56), Theme.TextDim, 15f);
 
         var left = new Rectangle(30, 76, 600, 548);
         var right = new Rectangle(650, 76, 600, 548);
@@ -252,21 +303,34 @@ public sealed class CharacterMenuScreen : Screen
         var tm = gfx.Measure(slotType, 15f);
         gfx.Text(sb, slotType, new Vector2(r.Right - 14 - tm.X, y + 4), Theme.TextDim, 15f);
 
-        const int descWidth = 360;
+        // Left column: flavour text. Right column: bonus and effect lines in gold. Usable items (#26) show a status line
+        // (the Core reason in red, or the cooldown) bottom-left and the key hints bottom-right.
+        bool usable = item.IsUsable && _focus >= EquipCount;
+        int descWidth = usable ? 300 : 360;
         int ly = y + 32;
         string desc = string.IsNullOrWhiteSpace(item.Description) ? "No description." : item.Description;
-        foreach (var line in gfx.Wrap(desc, descWidth, 14f).Take(3))
+        foreach (var line in gfx.Wrap(desc, descWidth, 14f).Take(usable ? 2 : 3))
         {
             gfx.Text(sb, line, new Vector2(x, ly), Theme.TextDim, 14f);
             ly += 19;
         }
 
-        // Bonuses in gold, right column.
         int bx = x + descWidth + 24, by = y + 34;
-        foreach (var bonus in item.BonusLines)
+        foreach (var bonus in item.DetailLines)
         {
-            gfx.Text(sb, bonus, new Vector2(bx, by), Theme.Accent, 17f);
-            by += 22;
+            gfx.Text(sb, bonus, new Vector2(bx, by), Theme.Accent, usable ? 16f : 17f);
+            by += usable ? 20 : 22;
+        }
+
+        if (usable)
+        {
+            string? why = _character.CanUse(item.Id);
+            string status = why == null ? "Ready to use"
+                : why == ItemUseResult.OnCooldownText ? $"On cooldown {_character.ItemCooldownRemaining:0.0}s (runs in the forest)"
+                : why;
+            gfx.Text(sb, status, new Vector2(x, r.Bottom - 26), why == null ? Theme.Positive : Theme.Negative, 14f);
+            gfx.Text(sb, "Enter/U: use  -  1-5: hotbar", new Vector2(bx, r.Bottom - 26), Theme.TextDim, 14f);
+            return;
         }
         string enter = _focus < EquipCount ? "Enter to unequip" : item.IsEquippable ? "Enter to equip" : "Cannot be equipped";
         gfx.Text(sb, enter, new Vector2(bx, r.Bottom - 26), Theme.TextDim, 14f);
@@ -302,6 +366,9 @@ public sealed class CharacterMenuScreen : Screen
 
         gfx.Text(sb, $"Level {_character.Level}  -  XP {_character.XpIntoLevel}/{_character.XpForNextLevel}", new Vector2(panel.Right - 24 - gfx.Measure($"Level {_character.Level}  -  XP {_character.XpIntoLevel}/{_character.XpForNextLevel}", 18f).X, panel.Y + 50), Theme.Text, 18f);
         gfx.Text(sb, "Stats", new Vector2(panel.X + 24, panel.Y + 90), Theme.TextDim, 16f);
+        string titleLine = _character.EquippedTitle == null ? "No title" : $"Title: {_character.EquippedTitle.Name}";
+        gfx.Text(sb, titleLine, new Vector2(panel.X + 80, panel.Y + 90), _character.EquippedTitle == null ? Theme.TextDim * 0.7f : Theme.Positive, 16f);
+        Button(sb, gfx, TitlesButton, "Titles (T)", true, input, 16f);
         for (int i = 0; i < StatTypes.Count; i++)
         {
             var stat = StatTypes.All[i];
@@ -310,11 +377,14 @@ public sealed class CharacterMenuScreen : Screen
             if (focus) { gfx.Rect(sb, row, Theme.ButtonHover * 0.8f); gfx.Border(sb, row, Theme.Accent, 2); }
             int added = NewPoints(i);
             gfx.Text(sb, stat.ToString(), new Vector2(row.X + 8, row.Y + 2), Theme.Text, 18f);
-            var v = _character.Stats[stat].ToString();
-            gfx.Text(sb, v, new Vector2(row.X + 126 - gfx.Measure(v, 18f).X, row.Y + 2), added > 0 ? Theme.Positive : Theme.Accent, 18f);
+            int bonus = _character.TitleBonus(stat);
+            var v = _character.EffectiveStats[stat].ToString();   // includes the worn title (#27)
+            gfx.Text(sb, v, new Vector2(row.X + 126 - gfx.Measure(v, 18f).X, row.Y + 2), added > 0 ? Theme.Positive : bonus != 0 ? Theme.Positive : Theme.Accent, 18f);
             // #18: the stat's modifier in brackets, dimmer gold so it reads as secondary; recomputed every frame.
             var mod = $"({_character.Modifier(stat).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)})";
             gfx.Text(sb, mod, new Vector2(row.X + 130, row.Y + 5), Theme.Accent * 0.7f, 14f);
+            if (bonus != 0)   // "+2" from the worn title, next to the modifier
+                gfx.Text(sb, $"+{bonus}", new Vector2(row.X + 130 + gfx.Measure(mod, 14f).X + 6, row.Y + 5), Theme.Positive, 14f);
 
             // [-] only while there is a point from this menu session to take back; [+] while free points remain.
             if (added > 0) Button(sb, gfx, _minus[i], "-", true, input);
@@ -344,12 +414,12 @@ public sealed class CharacterMenuScreen : Screen
         gfx.Text(sb, "Inventory", new Vector2(panel.X + 24, _slots[EquipCount].Y - 36), Theme.Accent, 22f);
     }
 
-    private static void Button(SpriteBatch sb, Gfx gfx, Rectangle r, string label, bool enabled, InputState input)
+    private static void Button(SpriteBatch sb, Gfx gfx, Rectangle r, string label, bool enabled, InputState input, float size = 20f)
     {
         bool hover = enabled && r.Contains(input.MousePosition);
         gfx.Rect(sb, r, !enabled ? Theme.ButtonDisabled : hover ? Theme.ButtonHover : Theme.Button);
         gfx.Border(sb, r, enabled ? Theme.Accent : Theme.PanelBorder * 0.6f, 1);
-        gfx.TextCentered(sb, label, r, enabled ? Theme.Text : Theme.TextDim * 0.5f, 20f);
+        gfx.TextCentered(sb, label, r, enabled ? Theme.Text : Theme.TextDim * 0.5f, size);
     }
 
     private void DrawSlot(SpriteBatch sb, Gfx gfx, int i)
