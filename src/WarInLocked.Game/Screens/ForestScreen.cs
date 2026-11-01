@@ -145,6 +145,7 @@ public sealed class ForestScreen : Screen
         var def = MapDefs.Get(mapId);
         _map = TileMap.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", def.File)));
         _mapId = mapId;
+        _character.EnterMap(mapId);   // ground items are per map (#62)
         _mapTitle = def.Title;
         _slimes.Clear(); _enemies.Clear(); _spawnOf.Clear();
         _respawns = new RespawnQueue();
@@ -440,9 +441,8 @@ public sealed class ForestScreen : Screen
                     _floats.Add(new FloatText { Text = "No XP while Death debuff 3", X = kx, Y = ky - 6, Color = new Color(200, 150, 255), Life = 2f });
                 else if (result.XpGained > 0)
                     _floats.Add(new FloatText { Text = $"+{result.XpGained} XP", X = kx, Y = ky - 6, Color = new Color(255, 214, 40), Life = 1.8f });
-                if (result.DroppedItem != null && !result.DropLost)
-                    _floats.Add(new FloatText { Text = $"+1 {result.DroppedItem.Name}", X = kx, Y = ky + 18, Color = new Color(120, 230, 120), JellyIcon = true, Life = 2.2f });
-                if (result.DropLost) Toast(CombatController.DropLostText, 3f);
+                if (result.DroppedItem != null)
+                    _floats.Add(new FloatText { Text = $"{result.DroppedItem.Name} dropped", X = kx, Y = ky + 18, Color = new Color(120, 230, 120), JellyIcon = true, Life = 2.2f });
                 break;
         }
 

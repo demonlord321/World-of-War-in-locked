@@ -230,7 +230,7 @@ Dyllan (1 Nov): the title's +2 stops short of the milestone. Per stat: bonus = m
 Dyllan (1 Nov): level 1 slimes give 5 XP, level 2 give 10, level 3 give 15, and each kill drops one Slime Jelly regardless of level, which can only be sold; no currency drops from monsters. Core: `CombatResult.XpGained`, `LevelsGained`, `DroppedItem`, `DropLost` on a kill; XP is added to the character at once and the jelly goes into the inventory (it stacks). Questions and placeholders:
 - **XP for levels 4 and 5 confirmed (Dyllan: "Level 4 and 5 Slimes follow the same pattern for now. Increasing by 5 over the last level.")**: 20 and 25. Night slimes: Dyllan, "We will discuss night time in another task." (#60). Until then night slimes give 5 x their raised level (a night level 1 slime gives 55), a placeholder.
 - **Slime Jelly base sell price is 2 copper** (`ItemLibrary.SlimeJellySellPrice`; Dyllan: "For now slime jellies sell usually for 2 coppers. No shops exist to sell to yet though and the price can vary depending on the shop."). It stacks to 99 (the general stack cap) and is a Misc item with the text "A wobbling blob of jelly. Good for nothing but selling." (my placeholder text). The shop's Sell tab is still disabled (#28) and no shop buys it yet; when shops get a sell side they may pay more or less than the base 2.
-- **Full inventory (placeholder rule): the jelly is lost** and a notice is shown ("Inventory full: the drop was lost"); the XP is still given and the kill still counts for quests. It still stacks onto an existing jelly stack. Say if the jelly should instead wait on the ground or block the kill.
+- **Full inventory: answered (see "Ground items" below).** The jelly now stays on the ground where the slime fell; the old "drop is lost" rule is gone. The XP is still given and the kill still counts for quests.
 - Kills now give XP, so quest 2's turn-in XP (50) comes on top of the kill XP (5 per level 1 slime): the tutorial now reaches level 2 after the turn-in with 75 XP.
 
 ## Death debuff (#35)
@@ -253,3 +253,16 @@ Dyllan, verbatim: "Oh item stacking, add it in, items of the same thing stack, e
 - Equipment (anything equippable) never stacks: one per slot, and an equippable item cannot be given a stack size. Unequipping puts one item back in a slot.
 - Adding tops up existing partial stacks first, then uses free slots; using an item takes one from the stack (the slot empties at zero); `RemoveItem` takes from the last stacks first. Save/load keeps every slot's count; a saved stack above today's cap spills into other slots instead of vanishing.
 - Guess: all non-equipment items share the one cap (no per-item caps). A full inventory still accepts an item that stacks onto a partial stack.
+
+## Ground items, picking up and dropping (#36, #62)
+
+Dyllan (1 Nov), verbatim: "enemies slain leave the items where they are dropped, player choses to pick them up or not. If players inventory slots are all filled a message pops up. 'Inventory currently at capacity.' With this also add a drop functionality to inventory items, players can drop items to pick up new ones."
+
+Built (Core): kills put the drop on the ground at the slime's tile (`GroundItems`, one per map); `Character.PickUp(x, y)` / `GroundItems.TryPickUp`; `Character.DropItem(slot, count, x, y)`. With no room the item stays and the message is exactly `Inventory currently at capacity.` (`GroundItems.CapacityText`). This answers the #36 full-inventory question. Guesses:
+
+- **Pickup key / reach:** Mapmaker picks the key (suggest E). Core picks the nearest item on the player's tile or the 8 neighbouring tiles (own tile first, then straight, then diagonal). Pickup is manual only (no walking over items to collect).
+- **Partial fit:** a stack with some room takes what fits and leaves the rest on the ground; the capacity message is shown too (the bag is now full).
+- **Ground items are not saved** and have **no despawn timer**. They are kept in memory per map for the session, so leaving a map and coming back finds them still there (a slime respawns fresh, its jelly does not vanish). Loading a save starts with empty ground.
+- **Fallen (dead) player can neither pick up nor drop.**
+- **Drop:** takes a count from a slot (more than owned drops the whole stack) and puts it on the player's own tile; same items on one tile merge up to 99. Worn equipment must be unequipped first (it is not in the bag). **Quest items cannot be dropped** (`Item.IsQuestItem`; none exist yet, "Quest items can't be dropped" is my placeholder text). No confirmation step in Core.
+- Dropped items can be picked up again by anyone nearby (just the one player exists).

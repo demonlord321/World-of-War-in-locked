@@ -1,6 +1,7 @@
 using WarInLocked.Core.Characters;
 using WarInLocked.Core.Combat;
 using WarInLocked.Core.Items;
+using System.Linq;
 
 namespace WarInLocked.Core.Tests;
 
@@ -45,16 +46,19 @@ public class SlimeRewardsTests
     }
 
     [Fact]
-    public void EveryKillDropsExactlyOneSlimeJellyWhateverTheLevelAndTheyStack()
+    public void EveryKillLeavesExactlyOneSlimeJellyOnTheGroundWhateverTheLevel()
     {
         var c = Hero();
         foreach (int level in new[] { 1, 2, 3, 4, 5 })
         {
             var r = Kill(c, SlimeAt(level));
             Assert.Same(ItemLibrary.SlimeJelly, r.DroppedItem);
-            Assert.False(r.DropLost);
+            Assert.Equal(6, r.GroundItem.TileX);       // left where the slime fell, not auto-collected
+            Assert.Equal(5, r.GroundItem.TileY);
         }
-        Assert.Equal(5, c.Inventory.CountOf(ItemLibrary.SlimeJellyId));
+        Assert.Equal(0, c.Inventory.CountOf(ItemLibrary.SlimeJellyId));
+        Assert.Equal(5, c.Combat.Ground.At(6, 5).Sum(g => g.Count));      // they stack on the ground too
+        Assert.Single(c.Combat.Ground.Items);
     }
 
     [Fact]
@@ -89,30 +93,18 @@ public class SlimeRewardsTests
     }
 
     [Fact]
-    public void AFullInventoryLosesTheDropButStillGivesTheXp()
+    public void AFullInventoryStillGivesTheXpAndTheDropWaitsOnTheGround()
     {
         var c = Hero();
-        var junk = new Item("junk", "Junk", ItemType.Misc);
+        var junk = new Item("junk", "Junk", ItemType.Misc, maxStack: 1);
         while (!c.Inventory.IsFull) c.Inventory.Add(junk, 1);
         var r = Kill(c, SlimeAt(2));
-        Assert.True(r.DropLost);
         Assert.Same(ItemLibrary.SlimeJelly, r.DroppedItem);
+        Assert.NotNull(r.GroundItem);
         Assert.Equal(0, c.Inventory.CountOf(ItemLibrary.SlimeJellyId));
         Assert.Equal(10, r.XpGained);
         Assert.Equal(10, c.Xp);
-        Assert.False(string.IsNullOrEmpty(CombatController.DropLostText));
-    }
-
-    [Fact]
-    public void AFullInventoryStillStacksJellyOntoAnExistingStack()
-    {
-        var c = Hero();
-        c.Inventory.Add(ItemLibrary.SlimeJelly, 1);
-        var junk = new Item("junk", "Junk", ItemType.Misc);
-        while (!c.Inventory.IsFull) c.Inventory.Add(junk, 1);
-        var r = Kill(c, SlimeAt(1));
-        Assert.False(r.DropLost);
-        Assert.Equal(2, c.Inventory.CountOf(ItemLibrary.SlimeJellyId));
+        Assert.Single(c.Combat.Ground.Items);
     }
 
     [Fact]
@@ -137,10 +129,11 @@ public class SlimeRewardsTests
     }
 
     [Fact]
-    public void JellySurvivesInTheInventoryLikeAnyItem()
+    public void JellyIsPickedUpFromTheGroundLikeAnyItem()
     {
         var c = Hero();
         Kill(c, SlimeAt(1));
+        Assert.Equal(PickUpOutcome.PickedUp, c.PickUp(5, 5).Outcome);     // the slime fell on the next tile
         Assert.Equal(1, c.Inventory.CountOf("slime-jelly"));
         Assert.Equal("A wobbling blob of jelly. Good for nothing but selling.", ItemLibrary.SlimeJelly.Description.Trim());
     }

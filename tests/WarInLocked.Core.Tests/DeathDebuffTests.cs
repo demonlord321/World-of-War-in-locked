@@ -180,8 +180,8 @@ public class DeathDebuffTests
         Assert.Equal(0, r.XpGained);
         Assert.True(r.XpBlocked);
         Assert.Equal(0, c.Xp);
-        Assert.NotNull(r.DroppedItem);                        // the jelly still drops
-        Assert.Equal(1, c.Inventory.CountOf(ItemLibrary.SlimeJellyId));
+        Assert.NotNull(r.DroppedItem);                        // the jelly still drops (on the ground)
+        Assert.Equal(1, c.Combat.Ground.Count);
         int before = c.Xp;
         c.GainXp(50);                                         // quest rewards go through GainXp and are not blocked
         Assert.Equal(before + 50, c.Xp);

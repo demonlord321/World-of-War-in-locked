@@ -34,13 +34,13 @@ namespace WarInLocked.Core.Combat
 
         public CombatResult(CombatOutcome outcome, Enemy target = null, int damage = 0, IReadOnlyList<Quest> readyQuests = null,
             Ability abilityUsed = null, bool abilityLeveledUp = false, ItemUseResult itemResult = null,
-            int xpGained = 0, int levelsGained = 0, Item dropped = null, bool dropLost = false, bool xpBlocked = false)
+            int xpGained = 0, int levelsGained = 0, Item dropped = null, GroundItem groundItem = null, bool xpBlocked = false)
         {
             XpBlocked = xpBlocked;
             XpGained = xpGained;
             LevelsGained = levelsGained;
             DroppedItem = dropped;
-            DropLost = dropLost;
+            GroundItem = groundItem;
             ItemResult = itemResult;
             Outcome = outcome;
             Target = target;
@@ -67,10 +67,10 @@ namespace WarInLocked.Core.Combat
         public bool XpBlocked { get; }
         /// <summary>Levels the kill's XP brought (usually 0); the character's <c>LeveledUp</c> event also fires.</summary>
         public int LevelsGained { get; }
-        /// <summary>The item the kill dropped (#36), or null. If <see cref="DropLost"/> is false it is already in the inventory. Show "Slime Jelly" with its icon.</summary>
+        /// <summary>The item the kill dropped (#36), or null. It lies on the ground at the slime's tile (<see cref="GroundItem"/>); the player picks it up.</summary>
         public Item DroppedItem { get; }
-        /// <summary>True when the drop did not fit in the full inventory and was lost (PLACEHOLDER rule, #36). Show <see cref="CombatController.DropLostText"/>.</summary>
-        public bool DropLost { get; }
+        /// <summary>The ground item the kill created (null if nothing dropped). It lives in <see cref="CombatController.Ground"/> (the current map's).</summary>
+        public GroundItem GroundItem { get; }
         public bool Succeeded => Outcome == CombatOutcome.Hit || Outcome == CombatOutcome.Killed;
     }
 
@@ -316,8 +316,8 @@ namespace WarInLocked.Core.Combat
             return false;
         }
 
-        /// <summary>PLACEHOLDER notice (#36) when a drop does not fit in a full inventory: the drop is lost.</summary>
-        public const string DropLostText = "Inventory full: the drop was lost";
+        /// <summary>The ground items of the map the player is on (#36, #62). Kills put their drop here; <see cref="Character.EnterMap"/> switches it per map. Never null.</summary>
+        public GroundItems Ground { get; internal set; } = new GroundItems();
 
         private CombatResult Strike(Enemy target, int damage)
         {
@@ -328,9 +328,9 @@ namespace WarInLocked.Core.Combat
             int xp = xpBlocked ? 0 : target.XpReward;
             int levels = xp > 0 ? _owner.GainXp(xp) : 0;                        // #36
             var drop = target.DropItem;
-            bool lost = drop != null && _owner.Inventory.Add(drop, 1) < 1;      // a full inventory loses the drop (placeholder)
+            var ground = drop == null ? null : Ground.Add(drop, 1, target.TileX, target.TileY);   // left where it fell; the player picks it up
             var completed = _owner.Quests.RecordKill(target.Type);
-            return new CombatResult(CombatOutcome.Killed, target, dealt, completed, xpGained: xp, levelsGained: levels, dropped: drop, dropLost: lost, xpBlocked: xpBlocked);
+            return new CombatResult(CombatOutcome.Killed, target, dealt, completed, xpGained: xp, levelsGained: levels, dropped: drop, groundItem: ground, xpBlocked: xpBlocked);
         }
 
         /// <summary>The nearest living enemy on one of the 8 neighbouring tiles or the player's own tile; straight neighbours win over diagonals.</summary>

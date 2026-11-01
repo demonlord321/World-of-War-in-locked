@@ -24,6 +24,18 @@ namespace WarInLocked.Core.Characters
             _energy = MaxEnergy;
         }
 
+        private readonly GroundItemsByMap _ground = new GroundItemsByMap();
+        /// <summary>The map the player is on, as told by <see cref="EnterMap"/> (null before the first call).</summary>
+        public string CurrentMapId { get; private set; }
+        /// <summary>The ground items of every map visited this session (not saved). <see cref="CombatController.Ground"/> is the current map's.</summary>
+        public GroundItemsByMap GroundByMap => _ground;
+        /// <summary>The Game calls this whenever a map is loaded: kills and drops now land on that map's ground.</summary>
+        public void EnterMap(string mapId)
+        {
+            CurrentMapId = mapId;
+            Combat.Ground = _ground.ForMap(mapId);
+        }
+
         /// <summary>The 10 inventory slots (#9).</summary>
         public Inventory Inventory { get; }
         /// <summary>The worn gear (#10); swaps with <see cref="Inventory"/>.</summary>
@@ -381,6 +393,36 @@ namespace WarInLocked.Core.Characters
         /// Uses one consumable from the inventory: heals (capped at max health), removes one from the stack and starts the shared item
         /// cooldown (also shown on hotbar slots holding items). If refused (see <see cref="CanUse"/>) nothing changes.
         /// </summary>
+        public const string CannotDropQuestItemText = "Quest items can't be dropped";
+        public const string CannotDropFallenText = "Can't drop items while fallen";
+
+        /// <summary>
+        /// Drops items from an inventory slot onto the ground of the current map at the given tile (the player's tile), so the player can make room
+        /// (#62). Worn equipment is not in the inventory, so it has to be unequipped first. Quest items cannot be dropped and a fallen player cannot
+        /// drop (both GUESSES). Dropped items can be picked up again with <see cref="GroundItems.TryPickUp(Character,int,int)"/>.
+        /// </summary>
+        public DropResult DropItem(int slot, int count, int tileX, int tileY)
+        {
+            if (IsDead) return new DropResult(false, null, 0, CannotDropFallenText);
+            var stack = slot >= 0 && slot < Inventory.Capacity ? Inventory.Get(slot) : null;
+            if (stack == null || count < 1) return new DropResult(false, null, 0, null);
+            if (stack.Item.IsQuestItem) return new DropResult(false, stack.Item, 0, CannotDropQuestItemText);
+            var item = stack.Item;
+            int n = Inventory.Remove(slot, Math.Min(count, stack.Count));
+            var g = Combat.Ground.Add(item, n, tileX, tileY);
+            return new DropResult(true, item, n, null, g);
+        }
+
+        /// <summary>Drops the whole stack in the slot.</summary>
+        public DropResult DropStack(int slot, int tileX, int tileY)
+        {
+            var stack = slot >= 0 && slot < Inventory.Capacity ? Inventory.Get(slot) : null;
+            return DropItem(slot, stack == null ? 0 : stack.Count, tileX, tileY);
+        }
+
+        /// <summary>Picks up the nearest ground item of the current map around the player's tile (the pickup key). See <see cref="GroundItems.TryPickUp(Character,int,int)"/>.</summary>
+        public PickUpResult PickUp(int tileX, int tileY) => Combat.Ground.TryPickUp(this, tileX, tileY);
+
         public ItemUseResult UseItem(string itemId)
         {
             string reason = CanUse(itemId);

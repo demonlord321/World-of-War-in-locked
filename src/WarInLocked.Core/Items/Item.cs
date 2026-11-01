@@ -14,7 +14,7 @@ namespace WarInLocked.Core.Items
         /// <param name="useCooldownSeconds">Consumables: the shared use cooldown that starts after using one (#26).</param>
         /// <param name="sellPriceCopper">What a shop pays for one (#36), 0 if it cannot be sold.</param>
         /// <param name="maxStack">How many fit in one inventory slot. 0 (the default) means the rule from Dyllan: equipment (anything equippable) never stacks (1), every other item stacks up to <see cref="DefaultStackSize"/>. An explicit value is only for special cases and tests; equippable items must be 1.</param>
-        public Item(string id, string name, ItemType type, EquipSlot? equipSlot = null, int maxStack = 0, int physicalAttack = 0, int magicalAttack = 0, string description = "", int healAmount = 0, double useCooldownSeconds = 0, bool recoversVitals = false, int sellPriceCopper = 0)
+        public Item(string id, string name, ItemType type, EquipSlot? equipSlot = null, int maxStack = 0, int physicalAttack = 0, int magicalAttack = 0, string description = "", int healAmount = 0, double useCooldownSeconds = 0, bool recoversVitals = false, int sellPriceCopper = 0, bool questItem = false)
         {
             if (sellPriceCopper < 0) throw new ArgumentOutOfRangeException(nameof(sellPriceCopper));
             SellPriceCopper = sellPriceCopper;
@@ -36,9 +36,13 @@ namespace WarInLocked.Core.Items
             if (healAmount < 0) throw new ArgumentOutOfRangeException(nameof(healAmount));
             if (useCooldownSeconds < 0) throw new ArgumentOutOfRangeException(nameof(useCooldownSeconds));
             RecoversVitals = recoversVitals;
+            IsQuestItem = questItem;
             HealAmount = healAmount;
             UseCooldownSeconds = useCooldownSeconds;
         }
+
+        /// <summary>A quest item cannot be dropped on the ground (GUESS, logged in QUESTIONS.md). No library item is one yet.</summary>
+        public bool IsQuestItem { get; }
 
         /// <summary>What a shop pays for one, in copper (#36); 0 = cannot be sold. A loot item with no other use (Slime Jelly) exists to be sold.</summary>
         public int SellPriceCopper { get; }
