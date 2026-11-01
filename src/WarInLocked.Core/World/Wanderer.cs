@@ -35,6 +35,22 @@ namespace WarInLocked.Core.World
         public float X => FromX + (TileX - FromX) * _progress;
         public float Y => FromY + (TileY - FromY) * _progress;
 
+        /// <summary>Moves to a neighbouring (or any) tile chosen elsewhere, e.g. by <c>CombatController.UpdateEnemies</c> when the slime chases (#31); it glides there like a normal step.
+        /// Does nothing if it is already on that tile.</summary>
+        public void GlideTo(int x, int y)
+        {
+            if (x == TileX && y == TileY) return;
+            FromX = (int)Math.Round(X); FromY = (int)Math.Round(Y);   // start from where it is drawn now
+            TileX = x; TileY = y;
+            _progress = 0f;
+        }
+
+        /// <summary>Advances only the glide (no wandering): call it instead of <see cref="Update"/> while the slime is chasing.</summary>
+        public void Glide(float seconds)
+        {
+            if (_progress < 1f) _progress = Math.Min(1f, _progress + seconds * Speed);
+        }
+
         /// <param name="blocked">Extra tiles to avoid, e.g. the player or other slimes.</param>
         public void Update(float seconds, TileMap map, Func<int, int, bool>? blocked = null)
         {

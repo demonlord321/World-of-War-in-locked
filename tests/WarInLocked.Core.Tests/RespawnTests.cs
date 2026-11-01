@@ -184,12 +184,39 @@ public class RespawnTests
     }
 
     [Fact]
-    public void RespawnPenaltyIs50UpToLevelFiveAnd100AfterThat()
+    public void RespawnPenaltyIs50To5And100To10AndDoublesEveryTenLevelsAfter()
     {
-        foreach (var (level, pen) in new[] { (1, 50), (4, 50), (5, 50), (6, 100), (10, 100), (11, 100), (14, 100) })
+        foreach (var (level, pen) in new[] { (1, 50), (4, 50), (5, 50), (6, 100), (10, 100), (11, 200), (14, 200) })
             Assert.Equal(pen, AtLevel(level, 0).RespawnXpPenalty);
         Assert.Equal(50, Character.RespawnXpPenaltyLow);
         Assert.Equal(100, Character.RespawnXpPenaltyHigh);
+        Assert.Equal(200, Character.RespawnXpPenaltyLevel11);
+    }
+
+    [Theory]
+    [InlineData(1, 50)] [InlineData(5, 50)] [InlineData(6, 100)] [InlineData(10, 100)]
+    [InlineData(11, 200)] [InlineData(20, 200)]
+    [InlineData(21, 400)] [InlineData(30, 400)]
+    [InlineData(31, 800)] [InlineData(40, 800)]
+    [InlineData(41, 1600)] [InlineData(51, 3200)]
+    public void RespawnPenaltyByLevelBoundaries(int level, int penalty)
+    {
+        Assert.Equal(penalty, Character.RespawnXpPenaltyForLevel(level));
+    }
+
+    [Theory]
+    [InlineData(11, 200)] [InlineData(25, 400)]
+    public void HigherLevelsLoseTheDoubledAmountWhenTheyHaveTheXp(int level, int penalty)
+    {
+        var c = AtLevel(level, 0);
+        c.GainXp(c.XpForNextLevel - 1);
+        Assert.True(c.XpIntoLevel >= penalty);
+        int before = c.Xp;
+        Fall(c);
+        c.UpdateRespawn(5);
+        Assert.Equal(level, c.Level);
+        Assert.Equal(penalty, c.LastRespawnXpLost);
+        Assert.Equal(before - penalty, c.Xp);
     }
 
     [Fact]

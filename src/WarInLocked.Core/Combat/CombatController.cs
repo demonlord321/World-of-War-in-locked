@@ -210,17 +210,81 @@ namespace WarInLocked.Core.Combat
         /// <see cref="Enemy.AttackIntervalSeconds"/> (a cooldown: the first hit is immediate once the player is in reach, and reach is checked before every hit); the damage counts as damage received (starts the combat window).
         /// Passive enemies never attack. A dead player is not attacked. Returns the damage the player lost this call.
         /// </summary>
-        public int UpdateEnemies(IReadOnlyList<Enemy> enemies, double seconds, int playerX, int playerY)
+        public int UpdateEnemies(IReadOnlyList<Enemy> enemies, double seconds, int playerX, int playerY) =>
+            UpdateEnemies(enemies, seconds, playerX, playerY, null);
+
+        /// <summary>
+        /// Same as the other overload, and aggro'd enemies that are out of reach also chase (#31): one tile toward the player every
+        /// <see cref="Enemy.ChaseStepSeconds"/> (8 directions), never onto the player or another living enemy (<see cref="TileOccupancy"/>), then attack
+        /// in the same call if the step brought them into reach and their cooldown is ready. Read the new <see cref="Enemy.TileX"/> / <see cref="Enemy.TileY"/> afterwards to draw them.
+        /// <paramref name="isWalkable"/> (optional) says whether an enemy may stand on a tile: the screen supplies walls, NPCs, doors and map bounds. A diagonal step
+        /// also needs both tiles it passes beside to be walkable (no cutting wall corners). Null means every tile is walkable. A dead player is not chased.
+        /// There is no give-up distance or calming down yet (open question in QUESTIONS.md).
+        /// </summary>
+        public int UpdateEnemies(IReadOnlyList<Enemy> enemies, double seconds, int playerX, int playerY, Func<int, int, bool> isWalkable)
         {
             if (enemies == null) throw new ArgumentNullException(nameof(enemies));
             if (seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
             int total = 0;
             foreach (var e in enemies)
             {
+                if (e.IsAggro && !e.IsDead) Chase(e, seconds, playerX, playerY, enemies, isWalkable);
                 bool inReach = Math.Abs(playerX - e.TileX) <= 1 && Math.Abs(playerY - e.TileY) <= 1;
                 if (e.TickAttack(seconds, inReach && !_owner.IsDead)) total += _owner.TakeDamage(e.Attack);
             }
             return total;
+        }
+
+        private void Chase(Enemy e, double seconds, int playerX, int playerY, IReadOnlyList<Enemy> enemies, Func<int, int, bool> isWalkable)
+        {
+            if (_owner.IsDead || (Math.Abs(playerX - e.TileX) <= 1 && Math.Abs(playerY - e.TileY) <= 1))
+            {
+                e.ChaseTimer = 0;   // in reach (or nothing to chase): it stands and fights
+                return;
+            }
+            e.ChaseTimer += seconds;
+            while (e.ChaseTimer >= Enemy.ChaseStepSeconds)
+            {
+                if (!TryChaseStep(e, playerX, playerY, enemies, isWalkable))
+                {
+                    e.ChaseTimer = Enemy.ChaseStepSeconds;   // blocked: stay ready and try again next call, do not store up a burst of steps
+                    return;
+                }
+                e.ChaseTimer -= Enemy.ChaseStepSeconds;
+                if (Math.Abs(playerX - e.TileX) <= 1 && Math.Abs(playerY - e.TileY) <= 1) { e.ChaseTimer = 0; return; }
+            }
+        }
+
+        private static bool TryChaseStep(Enemy e, int playerX, int playerY, IReadOnlyList<Enemy> enemies, Func<int, int, bool> isWalkable)
+        {
+            int dx = playerX - e.TileX, dy = playerY - e.TileY;
+            int sx = Math.Sign(dx), sy = Math.Sign(dy);
+            var options = new List<int[]>();
+            if (sx != 0 && sy != 0)
+            {
+                options.Add(new[] { sx, sy });
+                if (Math.Abs(dx) >= Math.Abs(dy)) { options.Add(new[] { sx, 0 }); options.Add(new[] { 0, sy }); }
+                else { options.Add(new[] { 0, sy }); options.Add(new[] { sx, 0 }); }
+            }
+            else if (sx != 0)
+            {
+                options.Add(new[] { sx, 0 }); options.Add(new[] { sx, 1 }); options.Add(new[] { sx, -1 });
+            }
+            else
+            {
+                options.Add(new[] { 0, sy }); options.Add(new[] { 1, sy }); options.Add(new[] { -1, sy });
+            }
+            foreach (var o in options)
+            {
+                int nx = e.TileX + o[0], ny = e.TileY + o[1];
+                if (isWalkable != null)
+                {
+                    if (!isWalkable(nx, ny)) continue;
+                    if (o[0] != 0 && o[1] != 0 && (!isWalkable(e.TileX + o[0], e.TileY) || !isWalkable(e.TileX, e.TileY + o[1]))) continue;
+                }
+                if (TileOccupancy.TryMoveEnemy(e, nx, ny, playerX, playerY, enemies)) return true;
+            }
+            return false;
         }
 
         private CombatResult Strike(Enemy target, int damage)

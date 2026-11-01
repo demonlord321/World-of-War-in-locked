@@ -26,6 +26,8 @@ namespace WarInLocked.Core.Combat
         /// <summary>The attack cooldown: after an attack an aggro'd enemy waits this long before the next one (Dyllan: 6 s, was 3).
         /// The first attack has no wait: it lands as soon as the player is in reach.</summary>
         public const double AttackIntervalSeconds = 6.0;
+        /// <summary>PLACEHOLDER pace of an angered slime chasing the player: one tile every this many seconds (#31).</summary>
+        public const double ChaseStepSeconds = 0.5;
         /// <summary>How long <see cref="AttackFlash"/> lasts after an attack, in seconds.</summary>
         public const double AttackFlashDuration = 0.25;
         /// <summary>How long the hit flicker lasts, in seconds.</summary>
@@ -189,6 +191,7 @@ namespace WarInLocked.Core.Combat
         {
             IsAggro = false;
             AttackCooldownRemaining = 0;
+            ChaseTimer = 0;
             if (!IsDead) Hp = MaxHp;
         }
 
@@ -204,6 +207,9 @@ namespace WarInLocked.Core.Combat
             AttackFlash = AttackFlashDuration;
             return true;
         }
+
+        /// <summary>Seconds spent walking toward the player since the last chase step (see <see cref="CombatController.UpdateEnemies"/>).</summary>
+        internal double ChaseTimer { get; set; }
 
         public int TileX { get; set; }
         public int TileY { get; set; }

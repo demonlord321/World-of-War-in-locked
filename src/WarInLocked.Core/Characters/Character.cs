@@ -201,10 +201,23 @@ namespace WarInLocked.Core.Characters
 
         /// <summary>XP lost per respawn at levels 1-5 (Dyllan).</summary>
         public const int RespawnXpPenaltyLow = 50;
-        /// <summary>XP lost per respawn at levels 6-10 (Dyllan). PLACEHOLDER: the same 100 applies above level 10.</summary>
+        /// <summary>XP lost per respawn at levels 6-10 (Dyllan).</summary>
         public const int RespawnXpPenaltyHigh = 100;
-        /// <summary>The most XP a respawn costs at the current level: 50 up to level 5, 100 from level 6. The actual loss can be less (see <see cref="LastRespawnXpLost"/>).</summary>
-        public int RespawnXpPenalty => Level <= 5 ? RespawnXpPenaltyLow : RespawnXpPenaltyHigh;
+        /// <summary>XP lost per respawn at levels 11-20 (Dyllan, #30: "200 exp from 10 to 20"); it doubles every ten levels after that.</summary>
+        public const int RespawnXpPenaltyLevel11 = 200;
+
+        /// <summary>The most XP a respawn costs at a level (#30): 50 for levels 1-5, 100 for 6-10, 200 for 11-20, 400 for 21-30, 800 for 31-40, doubling every ten levels.
+        /// Level 10 stays at 100 (Dyllan said 100 up to level 10); the 200 starts at level 11.</summary>
+        public static int RespawnXpPenaltyForLevel(int level)
+        {
+            if (level <= 5) return RespawnXpPenaltyLow;
+            if (level <= 10) return RespawnXpPenaltyHigh;
+            int doublings = Math.Min((level - 11) / 10, 20);   // 20 doublings is far beyond any real level; it only guards against overflow
+            return RespawnXpPenaltyLevel11 << doublings;
+        }
+
+        /// <summary>The most XP a respawn costs at the current level (see <see cref="RespawnXpPenaltyForLevel"/>). The actual loss can be less (see <see cref="LastRespawnXpLost"/>).</summary>
+        public int RespawnXpPenalty => RespawnXpPenaltyForLevel(Level);
         /// <summary>The XP the last respawn actually took (set before <see cref="Respawned"/> fires; never below the current level's starting XP, never below 0). 0 before any respawn. Show "-50 XP".</summary>
         public int LastRespawnXpLost { get; private set; }
 

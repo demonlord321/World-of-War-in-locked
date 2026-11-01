@@ -107,7 +107,7 @@ public class SlimeAggroTests
         var c = Hero();
         var s = Slime(1, 9, 9);
         s.Provoke();
-        Assert.Equal(0, c.Combat.UpdateEnemies(new[] { s }, 10, 5, 5));
+        Assert.Equal(0, c.Combat.UpdateEnemies(new[] { s }, 10, 5, 5, (x, y) => false));   // cannot chase (walled in): waits
         Assert.Equal(10, c.Combat.UpdateEnemies(new[] { s }, 0.1, 8, 8));
     }
 

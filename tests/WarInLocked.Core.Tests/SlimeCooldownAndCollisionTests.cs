@@ -49,7 +49,7 @@ public class SlimeCooldownAndCollisionTests
         var s = Slime(8, 5);                     // 3 tiles away
         var list = new[] { s };
         s.Provoke();
-        for (int i = 0; i < 10; i++) Assert.Equal(0, c.Combat.UpdateEnemies(list, 1.0, 5, 5));
+        for (int i = 0; i < 10; i++) Assert.Equal(0, c.Combat.UpdateEnemies(list, 1.0, 5, 5, (x, y) => false));   // walled in: cannot chase
         Assert.Equal(c.MaxHealth, c.Health);
         Assert.Equal(0, s.AttackCooldownRemaining);          // still ready, not counting down a stale timer
         Assert.False(c.InCombat);
@@ -65,7 +65,7 @@ public class SlimeCooldownAndCollisionTests
         var list = new[] { s };
         s.Provoke();
         Assert.Equal(10, c.Combat.UpdateEnemies(list, 0.016, 5, 5));
-        Assert.Equal(0, c.Combat.UpdateEnemies(list, 6.0, 9, 9));       // cooldown is over but the player stepped away
+        Assert.Equal(0, c.Combat.UpdateEnemies(list, 6.0, 9, 9, (x, y) => false));   // cooldown is over but the player stepped away (and the slime cannot follow)
         Assert.Equal(0, s.AttackCooldownRemaining);
         Assert.Equal(c.MaxHealth - 10, c.Health);
         Assert.Equal(10, c.Combat.UpdateEnemies(list, 0.016, 6, 6));    // back: immediate again
