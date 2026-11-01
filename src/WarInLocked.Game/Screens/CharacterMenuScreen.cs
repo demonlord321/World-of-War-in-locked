@@ -263,7 +263,10 @@ public sealed class CharacterMenuScreen : Screen
             int added = NewPoints(i);
             gfx.Text(sb, stat.ToString(), new Vector2(row.X + 8, row.Y + 2), Theme.Text, 18f);
             var v = _character.Stats[stat].ToString();
-            gfx.Text(sb, v, new Vector2(row.X + 150 - gfx.Measure(v, 18f).X, row.Y + 2), added > 0 ? Theme.Positive : Theme.Accent, 18f);
+            gfx.Text(sb, v, new Vector2(row.X + 126 - gfx.Measure(v, 18f).X, row.Y + 2), added > 0 ? Theme.Positive : Theme.Accent, 18f);
+            // #18: the stat's modifier in brackets, dimmer gold so it reads as secondary; recomputed every frame.
+            var mod = $"({_character.Modifier(stat).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)})";
+            gfx.Text(sb, mod, new Vector2(row.X + 130, row.Y + 5), Theme.Accent * 0.7f, 14f);
 
             // [-] only while there is a point from this menu session to take back; [+] while free points remain.
             if (added > 0) Button(sb, gfx, _minus[i], "-", true, input);
