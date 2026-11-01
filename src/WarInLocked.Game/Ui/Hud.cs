@@ -19,7 +19,7 @@ public static class Hud
 
     private static readonly Color XpColor = new(240, 200, 50), XpBack = new(58, 48, 14);
 
-    private const int PanelWidth = 280, PanelHeight = 118;
+    private const int PanelWidth = 280, PanelHeight = 136;
     private const double LevelUpSeconds = 2.0;
 
     // Level-up banner state (#13). Hud is static, so it remembers the last level it saw per character
@@ -77,6 +77,12 @@ public static class Hud
         Bar(sb, gfx, new Rectangle(panel.X + 12, panel.Y + 62, panel.Width - 24, 20), c.Energy, c.MaxEnergy, EnergyColor, EnergyBack, "EN");
         XpBar(sb, gfx, new Rectangle(panel.X + 12, panel.Y + 90, panel.Width - 24, 18), c);
 
+        // #21: copper under the XP bar, small and right-aligned.
+        string copper = $"{c.Copper} copper";
+        var cm = gfx.Measure(copper, 14f);
+        gfx.Text(sb, copper, new Vector2(panel.Right - 12 - cm.X, panel.Y + 113), Theme.TextDim, 14f);
+        CoinDot(sb, gfx, panel.Right - 12 - (int)cm.X - 16, panel.Y + 116);
+
         if (c.FreeStatPoints > 0)
         {
             // Gentle pulse so the hint is noticed without being loud.
@@ -87,6 +93,18 @@ public static class Hud
             gfx.Border(sb, hr, XpColor * pulse, 1);
             gfx.TextCentered(sb, hint, hr, XpColor * pulse, 16f);
         }
+    }
+
+    /// <summary>The copper colour, shared by the coin dots.</summary>
+    public static readonly Color CopperColor = new(205, 127, 50), CopperLight = new(240, 176, 110);
+
+    /// <summary>A small round copper coin (10x10) drawn from rectangles, top-left at (x, y).</summary>
+    public static void CoinDot(SpriteBatch sb, Gfx gfx, int x, int y)
+    {
+        gfx.Rect(sb, new Rectangle(x + 2, y, 6, 10), CopperColor);
+        gfx.Rect(sb, new Rectangle(x, y + 2, 10, 6), CopperColor);
+        gfx.Rect(sb, new Rectangle(x + 1, y + 1, 8, 8), CopperColor);
+        gfx.Rect(sb, new Rectangle(x + 3, y + 2, 3, 2), CopperLight);
     }
 
     private static void XpBar(SpriteBatch sb, Gfx gfx, Rectangle r, Character c)
@@ -153,10 +171,24 @@ public static class Hud
         return white ? Color.White : new Color(235, 60, 60);
     }
 
-    /// <summary>A small health bar above a slime's head, only while it is damaged. <paramref name="body"/> is the slime's screen rectangle.</summary>
+    /// <summary>Slime level tag colour (#24): 1 green, 2 yellow, 3 orange.</summary>
+    public static Color SlimeLevelColor(int level) =>
+        level <= 1 ? new Color(110, 220, 110) : level == 2 ? new Color(240, 220, 70) : new Color(245, 150, 50);
+
+    /// <summary>
+    /// Above a slime's head: a "Lv N" tag, always visible and coloured by level (#24), and a small health bar while it is
+    /// damaged. The bar fills by <see cref="Enemy.HpFraction"/>, which is relative to that slime's own max health.
+    /// <paramref name="body"/> is the slime's screen rectangle.
+    /// </summary>
     public static void DrawSlimeBar(SpriteBatch sb, Gfx gfx, Enemy? enemy, Rectangle body)
     {
-        if (enemy == null || !enemy.IsDamaged) return;
+        if (enemy == null) return;
+        string tag = $"Lv {enemy.Level}";
+        var m = gfx.Measure(tag, 12f);
+        var pos = new Vector2(body.X + (body.Width - m.X) / 2f, body.Y - 8 - m.Y - 1);
+        gfx.Text(sb, tag, pos + new Vector2(1, 1), Color.Black * 0.9f, 12f);   // shadow so it reads on grass and paths
+        gfx.Text(sb, tag, pos, SlimeLevelColor(enemy.Level), 12f);
+        if (!enemy.IsDamaged) return;
         var bar = new Rectangle(body.X - 2, body.Y - 8, body.Width + 4, 5);
         gfx.Rect(sb, bar, HealthBack);
         gfx.Rect(sb, new Rectangle(bar.X, bar.Y, Math.Max(1, (int)(bar.Width * enemy.HpFraction)), bar.Height), HealthColor);

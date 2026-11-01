@@ -54,7 +54,7 @@ public sealed class CharacterMenuScreen : Screen
         _slots[4] = Centre(378);                              // Feet
         _slots[5] = new Rectangle(115, 254, w, h);            // Main Hand
         _slots[6] = new Rectangle(cx + 80, 254, w, h);        // Off Hand (mirrors Main Hand)
-        for (int i = 0; i < 3; i++) _slots[7 + i] = new Rectangle(cx - 185 + i * (w + 20), 490, w, h);
+        for (int i = 0; i < 3; i++) _slots[7 + i] = new Rectangle(cx - 185 + i * (w + 20), 452, w, h);
 
         const int box = 80, gap = 10, gx = 730, gy = 445;
         for (int i = 0; i < 10; i++)
@@ -213,6 +213,7 @@ public sealed class CharacterMenuScreen : Screen
 
         DrawEquipmentPanel(sb, gfx, left);
         DrawRightPanel(sb, gfx, input, right);
+        DrawDetailsPanel(sb, gfx, new Rectangle(left.X + 10, 514, left.Width - 20, 102));
 
         for (int i = 0; i < StatBase; i++) DrawSlot(sb, gfx, i);
 
@@ -224,6 +225,51 @@ public sealed class CharacterMenuScreen : Screen
         string text = _focus >= StatBase ? StatTip(_focus - StatBase) : item == null ? $"{SlotType(_focus)}  -  Empty" : $"{item}  -  {SlotType(_focus)}";
         if (_message != null) text += "     |     " + _message;
         gfx.TextLeft(sb, text, tip, item == null && _focus < StatBase ? Theme.TextDim : Theme.Text, 20f, 20);
+    }
+
+    /// <summary>
+    /// #22: details of the focused slot's item (bottom of the left panel): name and slot type, the flavour text wrapped,
+    /// the bonus lines in gold and the Enter hint. Empty slots and stat rows show a dim hint instead.
+    /// </summary>
+    private void DrawDetailsPanel(SpriteBatch sb, Gfx gfx, Rectangle r)
+    {
+        gfx.Rect(sb, r, Color.Black * 0.35f);
+        gfx.Border(sb, r, Theme.PanelBorder, 2);
+
+        Item? item = null;
+        if (_focus < EquipCount) item = _character.Equipment.Get(EquipmentSlots.All[_focus]);
+        else if (_focus < StatBase) item = _character.Inventory.Get(_focus - EquipCount)?.Item;
+        if (item == null)
+        {
+            string hint = _focus >= StatBase ? "Select an equipment or inventory slot to see its item." : $"{SlotType(_focus)}  -  Empty";
+            gfx.TextCentered(sb, hint, r, Theme.TextDim, 16f);
+            return;
+        }
+
+        int x = r.X + 14, y = r.Y + 8;
+        string slotType = item.EquipSlot is not { } es ? "Item" : es == EquipSlot.Accessory ? "Accessory" : EquipmentSlots.Label(Enum.Parse<EquipmentSlot>(es.ToString()));
+        gfx.Text(sb, item.Name, new Vector2(x, y), Theme.Text, 20f);
+        var tm = gfx.Measure(slotType, 15f);
+        gfx.Text(sb, slotType, new Vector2(r.Right - 14 - tm.X, y + 4), Theme.TextDim, 15f);
+
+        const int descWidth = 360;
+        int ly = y + 32;
+        string desc = string.IsNullOrWhiteSpace(item.Description) ? "No description." : item.Description;
+        foreach (var line in gfx.Wrap(desc, descWidth, 14f).Take(3))
+        {
+            gfx.Text(sb, line, new Vector2(x, ly), Theme.TextDim, 14f);
+            ly += 19;
+        }
+
+        // Bonuses in gold, right column.
+        int bx = x + descWidth + 24, by = y + 34;
+        foreach (var bonus in item.BonusLines)
+        {
+            gfx.Text(sb, bonus, new Vector2(bx, by), Theme.Accent, 17f);
+            by += 22;
+        }
+        string enter = _focus < EquipCount ? "Enter to unequip" : item.IsEquippable ? "Enter to equip" : "Cannot be equipped";
+        gfx.Text(sb, enter, new Vector2(bx, r.Bottom - 26), Theme.TextDim, 14f);
     }
 
     private void DrawEquipmentPanel(SpriteBatch sb, Gfx gfx, Rectangle panel)
@@ -244,12 +290,17 @@ public sealed class CharacterMenuScreen : Screen
         gfx.Rect(sb, new Rectangle(330 - 58, 316, 48, 118), Theme.Panel);
         gfx.Rect(sb, new Rectangle(330 + 10, 316, 48, 118), Theme.Panel);
 
-        gfx.Text(sb, "Accessories", new Vector2(_slots[7].X, _slots[7].Y - 26), Theme.TextDim, 16f);
+        gfx.Text(sb, "Accessories", new Vector2(_slots[7].X, _slots[7].Y - 22), Theme.TextDim, 16f);
     }
 
     private void DrawRightPanel(SpriteBatch sb, Gfx gfx, InputState input, Rectangle panel)
     {
         gfx.Text(sb, _character.Name, new Vector2(panel.X + 24, panel.Y + 12), Theme.Text, 28f);
+        // #21: copper at the top right of the header, with a small coin dot.
+        string copper = $"Copper: {_character.Copper}";
+        var cm = gfx.Measure(copper, 20f);
+        gfx.Text(sb, copper, new Vector2(panel.Right - 24 - cm.X, panel.Y + 14), Hud.CopperLight, 20f);
+        Hud.CoinDot(sb, gfx, panel.Right - 24 - (int)cm.X - 18, panel.Y + 20);
         gfx.Text(sb, $"{_character.Race}  -  {_character.Distribution}", new Vector2(panel.X + 24, panel.Y + 50), Theme.Accent, 18f);
 
         gfx.Text(sb, $"Level {_character.Level}  -  XP {_character.XpIntoLevel}/{_character.XpForNextLevel}", new Vector2(panel.Right - 24 - gfx.Measure($"Level {_character.Level}  -  XP {_character.XpIntoLevel}/{_character.XpForNextLevel}", 18f).X, panel.Y + 50), Theme.Text, 18f);
@@ -315,6 +366,8 @@ public sealed class CharacterMenuScreen : Screen
         string? label = i < EquipCount ? EquipmentSlotNames[i] : null;
         if (label != null) gfx.TextCentered(sb, label, new Rectangle(r.X, r.Y + 4, r.Width, 16), Theme.TextDim, 12f);
         var body = label != null ? new Rectangle(r.X, r.Y + 20, r.Width, r.Height - 22) : r;
-        gfx.TextCentered(sb, item ?? "Empty", body, item == null ? Theme.TextDim * 0.7f : Theme.Text, item == null ? 14f : 15f);
+        float fs = item == null ? 14f : 15f;
+        while (fs > 10f && gfx.Measure(item ?? "Empty", fs).X > r.Width - 8) fs -= 1f;   // long names (Practice Staff) fit the slot
+        gfx.TextCentered(sb, item ?? "Empty", body, item == null ? Theme.TextDim * 0.7f : Theme.Text, fs);
     }
 }
