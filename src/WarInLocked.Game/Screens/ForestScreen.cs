@@ -50,6 +50,9 @@ public sealed class ForestScreen : Screen
     private sealed class FloatText { public string Text = ""; public float X, Y, Age; }
     private const float HitFlashSeconds = 0.4f, FloatSeconds = 1.0f;
     private readonly List<FloatText> _floats = new();
+    private const float XpFloatSeconds = 2.0f;
+    private int _xpLost;          // XP lost at the last respawn, shown as a floating "-N XP"
+    private float _xpLostAge = XpFloatSeconds;
     private float _hitFlash;
     private const float FadeInSeconds = 0.5f;
     private float _fadeIn;   // seconds of black fade-in left after a respawn
@@ -77,6 +80,8 @@ public sealed class ForestScreen : Screen
         _floats.Clear();
         _hitFlash = 0;
         _fadeIn = FadeInSeconds;
+        _xpLost = _character.LastRespawnXpLost;   // set by Core before the event
+        _xpLostAge = _xpLost > 0 ? 0 : XpFloatSeconds;
     }
 
     /// <summary>NPC tiles by id; "colonel-powers" is the first one on the map.</summary>
@@ -188,6 +193,7 @@ public sealed class ForestScreen : Screen
 
         if (_hitFlash > 0) _hitFlash = Math.Max(0, _hitFlash - dt);
         if (_fadeIn > 0) _fadeIn = Math.Max(0, _fadeIn - dt);
+        if (_xpLostAge < XpFloatSeconds) _xpLostAge += dt;
         foreach (var ft in _floats) ft.Age += dt;
         _floats.RemoveAll(ft => ft.Age >= FloatSeconds);
 
@@ -387,6 +393,8 @@ public sealed class ForestScreen : Screen
             gfx.Rect(sb, bar, new Color(30, 30, 40));
             gfx.Rect(sb, new Rectangle(bar.X, bar.Y, (int)(bar.Width * Math.Clamp(_character.RespawnProgress, 0, 1)), bar.Height), Theme.Accent);
             gfx.Border(sb, bar, Theme.PanelBorder, 2);
+            if (_character.RespawnXpPenalty > 0)
+                gfx.TextCentered(sb, $"You will lose up to {_character.RespawnXpPenalty} XP", new Rectangle(0, bar.Bottom + 38, w, 30), new Color(230, 150, 90), 20f);
             gfx.TextCentered(sb, $"Respawning in {(int)Math.Ceiling(_character.RespawnRemaining)}s", new Rectangle(0, bar.Bottom + 8, w, 30), Theme.TextDim, 20f);
         }
 
@@ -433,5 +441,16 @@ public sealed class ForestScreen : Screen
 
         // Fade in from black just after a respawn.
         if (_fadeIn > 0) gfx.Rect(sb, new Rectangle(0, 0, w, h), Color.Black * (_fadeIn / FadeInSeconds));
+
+        // "-N XP" floats up from the player and fades over ~2 s after a respawn that cost XP.
+        if (_xpLost > 0 && _xpLostAge < XpFloatSeconds)
+        {
+            float t = _xpLostAge / XpFloatSeconds;
+            var xb = Screen(_player.X + PlayerSize + 4, _player.Y - 6 - t * 40, 100, 28);
+            float a = 1 - t * t;
+            string txt = $"-{_xpLost} XP";
+            gfx.TextCentered(sb, txt, new Rectangle(xb.X + 1, xb.Y + 1, xb.Width, xb.Height), Color.Black * a, 24f);
+            gfx.TextCentered(sb, txt, xb, new Color(200, 140, 255) * a, 24f);
+        }
     }
 }
