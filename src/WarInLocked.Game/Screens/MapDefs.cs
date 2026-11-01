@@ -43,8 +43,8 @@ public static class MapDefs
     public static bool Exists(string mapId) => Maps.ContainsKey(mapId);
     public static Def Get(string mapId) => Maps[mapId];
     public static string? Destination(string mapId, char door) => Doors.TryGetValue((mapId, door), out var d) ? d : null;
-    /// <summary>NPCs with a dialogue to talk to. The Barracks Master is only placed and labelled for now (no Core dialogue yet).</summary>
-    public static bool HasDialogue(string npcId) => npcId != "barracks-master";
+    /// <summary>NPCs with a dialogue to talk to (all of them now: the Barracks Master has his menu since #55).</summary>
+    public static bool HasDialogue(string npcId) => true;
     public static string NpcName(string npcId) => NpcNames.TryGetValue(npcId, out var n) ? n : npcId;
 
     public static char Opposite(char door) => door switch { '<' => '>', '>' => '<', '^' => 'v', _ => '^' };

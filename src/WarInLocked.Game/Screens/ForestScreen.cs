@@ -7,6 +7,7 @@ using WarInLocked.Core.Dialogue;
 using WarInLocked.Core.Interaction;
 using WarInLocked.Core.Items;
 using WarInLocked.Core.Quests;
+using WarInLocked.Core.Saving;
 using WarInLocked.Core.World;
 using WarInLocked.Game.Ui;
 
@@ -46,6 +47,7 @@ public sealed class ForestScreen : Screen
     private readonly DialogueBox _dialogueBox = new();
     private DialogueRunner? _dialogue;
     private NpcSpot? _talkTarget;
+    private Point? _savePointTile;   // the save point the player can use right now (#54)
     private string? _dialogueNpc;
     private QuestPrompt? _questPrompt;
     private string? _toast;
@@ -63,6 +65,17 @@ public sealed class ForestScreen : Screen
     private MapMarker? _leavingThrough;   // door being walked through: the screen fades to black, then the map switches
     private float _fadeOut;
     private float _fadeIn;   // seconds of black fade-in left after a respawn
+
+    // #57: the blue night overlay eases in and out after Core's clock flips IsNight (no hours are hard-coded here).
+    private const float NightFadeSeconds = 2.0f, NightMaxAlpha = 0.5f;
+    private static readonly Color NightTint = new(8, 18, 70);
+    private float _nightFade;   // 0 day .. 1 night, drawn
+
+    // #55: resting or sleeping fades to black and back (about 1 s); the barracks action is applied at the darkest moment.
+    private const float SleepFadeSeconds = 1.0f;
+    private float _sleepT = -1;           // -1 = not sleeping, else seconds into the fade
+    private string? _sleepAction;
+    private bool _sleepApplied;
 
     private void OnDamaged(int amount)
     {
@@ -128,25 +141,34 @@ public sealed class ForestScreen : Screen
         var (tx, ty) = MapDefs.ArrivalTile(_map, MapDefs.Opposite(door.Symbol)) ?? _map.PlayerStart;
         PlaceAtTile(tx, ty);
         _fadeIn = FadeInSeconds;
-        Toast(MapDefs.Get(dest).Title, 2.5f);
+        Toast(MapTitleToast(dest), 2.5f);
     }
 
     /// <summary>Combat state of a slime (Hp/MaxHp for a health bar, DamageFlash for the hit flicker); null once it is gone.</summary>
     public Enemy? EnemyOf(Wanderer slime) => _enemies.TryGetValue(slime, out var e) ? e : null;
 
-    public ForestScreen(Character character)
+    /// <param name="startMapId">Map to open on (a loaded save, #54); null = the Forest of Beginnings at its start tile.</param>
+    public ForestScreen(Character character, string? startMapId = null, int startTileX = 0, int startTileY = 0)
     {
         _character = character;
         _character.Damaged += OnDamaged;
         _character.Respawned += OnRespawned;
-        LoadMap(WarInLocked.Core.World.BindPoint.ForestOfBeginningsMapId);
+        bool loaded = startMapId != null && MapDefs.Exists(startMapId);
+        LoadMap(loaded ? startMapId! : MapIds.Forest);
+        if (loaded && _map.IsWalkable(startTileX, startTileY)) PlaceAtTile(startTileX, startTileY);
+        _nightFade = _character.Clock.IsNight ? 1f : 0f;
+        if (loaded) { _fadeIn = FadeInSeconds; Toast(MapTitleToast(_mapId), 2.5f); }
     }
 
-    /// <summary>A slime of this map's level range: level 1-3 in the forest (#24), 4-5 on the Path (levels come from <see cref="MapDefs"/>).</summary>
+    /// <summary>The map name for the toast on arrival, with "Safe zone" for non-combat maps (#57, <see cref="MapIds.IsSafeZone"/>).</summary>
+    private static string MapTitleToast(string mapId) =>
+        MapDefs.Get(mapId).Title + (MapIds.IsSafeZone(mapId) ? " - Safe zone" : "");
+
+    /// <summary>A slime of this map's level range: level 1-3 in the forest (#24), 4-5 on the Path (levels come from <see cref="MapDefs"/>), +10 at night (#57).</summary>
     private Enemy NewSlimeForMap()
     {
         var (min, max) = MapDefs.Get(_mapId).SlimeLevels;
-        return Enemy.NewRandomSlime(_rng, min, max);
+        return Enemy.NewRandomSlime(_rng, min, max, _character.Clock);   // night spawns and respawns get +10 levels (#57)
     }
 
     private void AddSlime(int x, int y)
@@ -160,6 +182,24 @@ public sealed class ForestScreen : Screen
     public override void Update(GameTime time, InputState input)
     {
         if (_toastLeft > 0) _toastLeft -= (float)time.ElapsedGameTime.TotalSeconds;
+        {
+            float step = (float)time.ElapsedGameTime.TotalSeconds / NightFadeSeconds;
+            float target = _character.Clock.IsNight ? 1f : 0f;
+            _nightFade = target > _nightFade ? Math.Min(target, _nightFade + step) : Math.Max(target, _nightFade - step);
+        }
+
+        if (_sleepT >= 0)
+        {
+            // Rest / sleep: the world waits while the screen goes black, the action lands at the darkest moment, then it fades back.
+            _sleepT += (float)time.ElapsedGameTime.TotalSeconds;
+            if (!_sleepApplied && _sleepT >= SleepFadeSeconds / 2)
+            {
+                _sleepApplied = true;
+                ApplyBarracks(_sleepAction);
+            }
+            if (_sleepT >= SleepFadeSeconds) { _sleepT = -1; _sleepAction = null; }
+            return;
+        }
 
         if (_questPrompt != null)
         {
@@ -193,6 +233,16 @@ public sealed class ForestScreen : Screen
                 {
                     Screens.Replace(new ShopScreen(this, _character, shop));
                     return;
+                }
+                if (_dialogueNpc == BarracksMaster.NpcId)
+                {
+                    // Rest and sleep fade out and back (the notice shows after); "Set as home" and "Leave" act at once.
+                    if (action == BarracksActions.Rest || action == BarracksActions.Sleep)
+                    {
+                        _sleepAction = action; _sleepT = 0; _sleepApplied = false;
+                        return;
+                    }
+                    ApplyBarracks(action);
                 }
                 if (_dialogueNpc == "whiplash" && WhiplashQuest.AfterDialogue(_character, out var whiplashNotice))
                     Toast(whiplashNotice, 6f);   // "Quest complete: Adventurers start! ..."
@@ -276,6 +326,20 @@ public sealed class ForestScreen : Screen
         _camera.Y = MathHelper.Clamp(_player.Y + PlayerSize / 2f - h / 2f, 0, Math.Max(0, _map.Height * TileSize - h));
 
         _talkTarget = _character.IsDead ? null : TalkTarget.Find(playerTile.X, playerTile.Y, NpcSpots());
+        // #54: on or next to a save point the "Save (E)" prompt shows. Where an NPC is in reach too, talking wins unless the player stands on the save tile.
+        _savePointTile = null;
+        if (!_character.IsDead && SavePoints.FindNear(_mapId, _map, playerTile.X, playerTile.Y) != null)
+        {
+            var sp = _map.SavePoints[0];
+            bool onTile = playerTile.X == sp.X && playerTile.Y == sp.Y;
+            if (_talkTarget == null || onTile) { _savePointTile = new Point(sp.X, sp.Y); _talkTarget = null; }
+        }
+        if (_savePointTile != null && (input.Pressed(Keys.E) || input.Pressed(Keys.Enter)))
+        {
+            SavePoints.Interact(_character, _mapId, playerTile.X, playerTile.Y, out var saveNotice);
+            Toast(saveNotice, 3f);
+            return;
+        }
         if (_talkTarget != null && (input.Pressed(Keys.E) || input.Pressed(Keys.Enter)))
         {
             _dialogueNpc = _talkTarget.Id;
@@ -283,7 +347,9 @@ public sealed class ForestScreen : Screen
                 ? ColonelPowersQuest.CreateDialogue(_character)   // intro first, then the quest offer / progress lines
                 : _talkTarget.Id == "whiplash"
                     ? WhiplashQuest.CreateDialogue(_character)
-                    : new DialogueRunner(DialogueLibrary.Get(_talkTarget.DialogueId), _character);
+                    : _talkTarget.Id == BarracksMaster.NpcId
+                        ? BarracksMaster.CreateDialogue(_character)   // Rest / Set as home (Sleep until morning only at night)
+                        : new DialogueRunner(DialogueLibrary.Get(_talkTarget.DialogueId), _character);
             return;
         }
 
@@ -345,6 +411,15 @@ public sealed class ForestScreen : Screen
             if (result.AbilityLeveledUp && result.AbilityUsed != null)
                 Toast($"{result.AbilityUsed.Name} reached level {result.AbilityUsed.Level}!", 4f);
         }
+    }
+
+    /// <summary>#55: does the picked Barracks Master option (Core decides what it does) and toasts the notice it gives.</summary>
+    private void ApplyBarracks(string? action)
+    {
+        if (!NpcPositions.TryGetValue(BarracksMaster.NpcId, out var master)) return;
+        var home = BarracksMaster.HomePointFor(_map, master.X, master.Y);
+        BarracksMaster.Apply(_character, action ?? "", home, out var notice);
+        if (notice != null) Toast(notice, 4f);
     }
 
     private IEnumerable<NpcSpot> NpcSpots()
@@ -480,6 +555,7 @@ public sealed class ForestScreen : Screen
                 }
             }
 
+        var slimeBars = new List<(Enemy? Enemy, Rectangle Body)>();
         foreach (var s in _slimes)
         {
             var r = Screen(s.X * TileSize + 6, s.Y * TileSize + 12, 20, 16);
@@ -488,7 +564,7 @@ public sealed class ForestScreen : Screen
             gfx.Rect(sb, r, Hud.SlimeTint(enemy, SlimeColor, time));
             gfx.Rect(sb, new Rectangle(r.X + 4, r.Y + 4, 3, 3), Color.Black);
             gfx.Rect(sb, new Rectangle(r.X + 13, r.Y + 4, 3, 3), Color.Black);
-            Hud.DrawSlimeBar(sb, gfx, enemy, r);
+            slimeBars.Add((enemy, r));   // tags and bars are drawn after the night overlay so they stay readable
         }
 
         foreach (var (id, p) in NpcPositions)
@@ -503,6 +579,10 @@ public sealed class ForestScreen : Screen
         bool hitBlink = _hitFlash > 0 && (int)(_hitFlash * 20) % 2 == 0;
         gfx.Rect(sb, pr, hitBlink ? new Color(235, 60, 60) : Theme.Accent);
         gfx.Border(sb, pr, Color.Black, 2);
+
+        // #57: night is a blue tint over the world (under the HUD). Slime tags go on top so they stay readable.
+        if (_nightFade > 0) gfx.Rect(sb, new Rectangle(0, 0, w, h), NightTint * (NightMaxAlpha * _nightFade));
+        foreach (var (enemy, body) in slimeBars) Hud.DrawSlimeBar(sb, gfx, enemy, body);
 
         // Floating damage numbers rise from the player and fade.
         foreach (var ft in _floats)
@@ -579,6 +659,13 @@ public sealed class ForestScreen : Screen
         {
             _dialogueBox.Draw(sb, gfx, _dialogue);
         }
+        else if (_savePointTile is { } saveTile)
+        {
+            var prompt = Screen(saveTile.X * TileSize - 40, saveTile.Y * TileSize + TileSize + 6, 112, 30);
+            gfx.Rect(sb, prompt, Color.Black * 0.75f);
+            gfx.Border(sb, prompt, new Color(130, 210, 255), 2);
+            gfx.TextCentered(sb, "Save (E)", prompt, new Color(170, 225, 255), 18f);
+        }
         else if (_talkTarget != null && NpcPositions.TryGetValue(_talkTarget.Id, out var npcTile))
         {
             var prompt = Screen(npcTile.X * TileSize - 40, npcTile.Y * TileSize + TileSize + 6, 112, 30);
@@ -589,6 +676,9 @@ public sealed class ForestScreen : Screen
 
         // Fade to black while walking through a door.
         if (_leavingThrough != null) gfx.Rect(sb, new Rectangle(0, 0, w, h), Color.Black * (1 - _fadeOut / FadeOutSeconds));
+
+        // Resting or sleeping: black in the first half second, back out in the second.
+        if (_sleepT >= 0) gfx.Rect(sb, new Rectangle(0, 0, w, h), Color.Black * (1 - Math.Abs(_sleepT / (SleepFadeSeconds / 2) - 1)));
 
         // Fade in from black just after a respawn or a map change.
         if (_fadeIn > 0) gfx.Rect(sb, new Rectangle(0, 0, w, h), Color.Black * (_fadeIn / FadeInSeconds));

@@ -84,6 +84,8 @@ public static class Hud
 
         // #29: "In combat 12s" under the panel while the combat window is open (healing potions are refused during it).
         int below = panel.Bottom + 4;
+        DrawClock(sb, gfx, c, new Rectangle(panel.X, below, panel.Width, 26));   // #56: game time with a sun or moon (night comes from Core's IsNight)
+        below += 30;
         if (c.InCombat)
         {
             var cr = new Rectangle(panel.X, below, panel.Width, 24);
@@ -103,6 +105,41 @@ public static class Hud
             gfx.Border(sb, hr, XpColor * pulse, 1);
             gfx.TextCentered(sb, hint, hr, XpColor * pulse, 16f);
         }
+    }
+
+    /// <summary>
+    /// #56/#57: "Day 1, 8:00 am" with a small sun by day and a moon at night. Text and the night flag both come from Core's clock
+    /// (<see cref="WarInLocked.Core.World.GameClock.Text"/>, <see cref="WarInLocked.Core.World.GameClock.IsNight"/>); no hours are hard-coded here.
+    /// </summary>
+    public static void DrawClock(SpriteBatch sb, Gfx gfx, Character c, Rectangle box)
+    {
+        bool night = c.Clock.IsNight;
+        gfx.Rect(sb, box, Color.Black * 0.65f);
+        gfx.Border(sb, box, night ? new Color(110, 140, 220) : Theme.PanelBorder, 1);
+        var ic = new Rectangle(box.X + 9, box.Y + 5, 16, 16);
+        if (night)
+        {
+            // Crescent moon: a pale disc with a dark bite out of its upper right.
+            var moon = new Color(225, 230, 255);
+            gfx.Rect(sb, new Rectangle(ic.X + 2, ic.Y + 4, 12, 8), moon);
+            gfx.Rect(sb, new Rectangle(ic.X + 4, ic.Y + 2, 8, 12), moon);
+            gfx.Rect(sb, new Rectangle(ic.X + 7, ic.Y + 1, 9, 9), new Color(14, 16, 28));
+        }
+        else
+        {
+            // Sun: a golden square disc with eight short rays.
+            var sun = new Color(255, 205, 60);
+            gfx.Rect(sb, new Rectangle(ic.X + 4, ic.Y + 4, 8, 8), sun);
+            gfx.Rect(sb, new Rectangle(ic.X + 7, ic.Y, 2, 3), sun);
+            gfx.Rect(sb, new Rectangle(ic.X + 7, ic.Y + 13, 2, 3), sun);
+            gfx.Rect(sb, new Rectangle(ic.X, ic.Y + 7, 3, 2), sun);
+            gfx.Rect(sb, new Rectangle(ic.X + 13, ic.Y + 7, 3, 2), sun);
+            gfx.Rect(sb, new Rectangle(ic.X + 1, ic.Y + 1, 2, 2), sun);
+            gfx.Rect(sb, new Rectangle(ic.X + 13, ic.Y + 1, 2, 2), sun);
+            gfx.Rect(sb, new Rectangle(ic.X + 1, ic.Y + 13, 2, 2), sun);
+            gfx.Rect(sb, new Rectangle(ic.X + 13, ic.Y + 13, 2, 2), sun);
+        }
+        gfx.TextLeft(sb, c.Clock.Text, new Rectangle(box.X + 34, box.Y, box.Width - 40, box.Height), night ? new Color(190, 205, 255) : Theme.Text, 16f, 0);
     }
 
     /// <summary>The copper colour, shared by the coin dots.</summary>
@@ -271,10 +308,14 @@ public static class Hud
         return white ? Color.White : new Color(235, 60, 60);
     }
 
-    /// <summary>Slime level tag colour (#24): 1 green, 2 yellow, 3 orange.</summary>
+    /// <summary>
+    /// Slime level tag colour (#24): 1 green, 2 yellow, 3 orange, 4 red, 5 deep purple (Path slimes). Above 5 (night slimes, base + 10, #57)
+    /// it runs from hot crimson-pink to a dark violet-magenta as the level rises, so it never looks like levels 4 or 5.
+    /// </summary>
     public static Color SlimeLevelColor(int level) =>
         level <= 1 ? new Color(110, 220, 110) : level == 2 ? new Color(240, 220, 70) : level == 3 ? new Color(245, 150, 50)
-        : level == 4 ? new Color(235, 50, 50) : new Color(150, 70, 210);   // 4 red, 5 deep purple (Path slimes)
+        : level == 4 ? new Color(235, 50, 50) : level == 5 ? new Color(150, 70, 210)
+        : Color.Lerp(new Color(245, 55, 120), new Color(175, 50, 175), Math.Clamp((level - 6) / 9f, 0f, 1f));
 
     /// <summary>
     /// Above a slime's head: a "Lv N" tag, always visible and coloured by level (#24), and a small health bar while it is
@@ -285,10 +326,19 @@ public static class Hud
     {
         if (enemy == null) return;
         string tag = $"Lv {enemy.Level}";
+        // #57: a night slime (base level + 10) also shows a small "+10" so the player sees why it is so strong.
+        string bonus = enemy.IsNightEmpowered ? $" (+{enemy.Level - enemy.BaseLevel})" : "";
         var m = gfx.Measure(tag, 12f);
-        var pos = new Vector2(body.X + (body.Width - m.X) / 2f, body.Y - 8 - m.Y - 1);
+        var bm = bonus.Length > 0 ? gfx.Measure(bonus, 10f) : Vector2.Zero;
+        var pos = new Vector2(body.X + (body.Width - m.X - bm.X) / 2f, body.Y - 8 - m.Y - 1);
         gfx.Text(sb, tag, pos + new Vector2(1, 1), Color.Black * 0.9f, 12f);   // shadow so it reads on grass and paths
         gfx.Text(sb, tag, pos, SlimeLevelColor(enemy.Level), 12f);
+        if (bonus.Length > 0)
+        {
+            var bpos = new Vector2(pos.X + m.X, pos.Y + 2);
+            gfx.Text(sb, bonus, bpos + new Vector2(1, 1), Color.Black * 0.9f, 10f);
+            gfx.Text(sb, bonus, bpos, new Color(170, 190, 255), 10f);
+        }
         if (enemy.IsAggro)
         {
             var bang = gfx.Measure("!", 18f);

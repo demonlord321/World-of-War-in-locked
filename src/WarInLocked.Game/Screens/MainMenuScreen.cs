@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using WarInLocked.Core.Saving;
 using WarInLocked.Game.Ui;
 
 namespace WarInLocked.Game.Screens;
@@ -12,8 +13,9 @@ namespace WarInLocked.Game.Screens;
 public sealed class MainMenuScreen : Screen
 {
     private readonly Button _newGame = new(new Rectangle(500, 292, 280, 56), "New Game");
-    // Load Game is shown but disabled until Core has saving (#54); focus skips it and clicks ignore it.
-    private readonly Button _loadGame = new(new Rectangle(500, 360, 280, 56), "Load Game") { Enabled = false };
+    // #54: Load Game is enabled only while a save file exists; otherwise it is greyed out, focus skips it and clicks ignore it.
+    private readonly Button _loadGame = new(new Rectangle(500, 360, 280, 56), "Load Game") { Enabled = SaveGame.Exists() };
+    private string? _loadError;
     private readonly Button _exit = new(new Rectangle(500, 428, 280, 56), "Exit");
     private int _focus;
 
@@ -32,14 +34,25 @@ public sealed class MainMenuScreen : Screen
         if (input.MouseMoved)
         {
             if (_newGame.IsHovered(input)) _focus = 0;
+            else if (_loadGame.IsHovered(input)) _focus = 1;
             else if (_exit.IsHovered(input)) _focus = 2;
         }
 
         bool activate = input.Pressed(Keys.Enter) || input.Pressed(Keys.Space);
         if (_newGame.WasClicked(input) || (activate && _focus == 0))
             Screens.Replace(new CharacterCreatorScreen());
+        else if (_loadGame.WasClicked(input) || (activate && _focus == 1 && _loadGame.Enabled))
+            LoadSavedGame();
         else if (_exit.WasClicked(input) || (activate && _focus == 2))
             Screens.Exit();
+    }
+
+    /// <summary>Loads the save and opens the game on the saved map and tile (a map switch straight onto that tile).</summary>
+    private void LoadSavedGame()
+    {
+        if (!SaveGame.TryLoad(null, out var save, out var error)) { _loadError = error; return; }
+        var character = save.ToCharacter();
+        Screens.Replace(new ForestScreen(character, save.MapId, save.TileX, save.TileY));
     }
 
     public override void Draw(SpriteBatch sb, Gfx gfx, InputState input, GameTime time)
@@ -61,7 +74,8 @@ public sealed class MainMenuScreen : Screen
         gfx.Rect(sb, new Rectangle(w / 2 - 220, 268, 440, 2), Theme.Accent * 0.7f);
 
         _newGame.Draw(sb, gfx, input, _focus == 0);
-        _loadGame.Draw(sb, gfx, input, false);
+        _loadGame.Draw(sb, gfx, input, _focus == 1);
+        if (_loadError != null) gfx.TextCentered(sb, _loadError, new Rectangle(0, 494, w, 26), new Color(230, 110, 100), 18f);
         _exit.Draw(sb, gfx, input, _focus == 2);
 
         gfx.TextCentered(sb, "Up/Down to choose  -  Enter to select", new Rectangle(0, h - 60, w, 30), Theme.TextDim, 18f);
