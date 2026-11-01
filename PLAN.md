@@ -164,3 +164,4 @@ Needed before a 3 to 4 hour build is testable:
 - Inns or rest spots for bind points (#43), once there are towns.
 - The story from Whiplash to the pilgrimage: quests, maps, enemies and NPCs, logged by Dyllan as issues.
 - #56 Core (1 Nov): GameClock, Character.Clock, ticked from Combat.Update. HUD display is Mapmaker's.
+- #57 Core (1 Nov): night = +10 monster levels (Enemy.LevelFor / NewSlime(base, clock)), slime stats to level 15 (placeholder), MapIds.IsSafeZone. Gap hours 6-7 pm and 7-8 am count as day.

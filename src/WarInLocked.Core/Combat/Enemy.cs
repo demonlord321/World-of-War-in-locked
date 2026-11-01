@@ -1,5 +1,6 @@
 using System;
 using WarInLocked.Core.Quests;
+using WarInLocked.Core.World;
 
 namespace WarInLocked.Core.Combat
 {
@@ -16,8 +17,10 @@ namespace WarInLocked.Core.Combat
         public const int MinSlimeLevel = 1, MaxSlimeLevel = 3;
         /// <summary>Slimes of the filler Path map between the forest and the encampment are level 4 to 5 (PLACEHOLDER, Dyllan 1 Nov).</summary>
         public const int PathMinSlimeLevel = 4, PathMaxSlimeLevel = 5;
-        /// <summary>The slime levels that exist at all: 1 to 5.</summary>
-        public const int LowestSlimeLevel = 1, HighestSlimeLevel = 5;
+        /// <summary>The slime levels that exist at all: 1 to 15 (levels above 5 are PLACEHOLDERS so night slimes, base level + 10, have stats).</summary>
+        public const int LowestSlimeLevel = 1, HighestSlimeLevel = 15;
+        /// <summary>At night (7 pm to 7 am, #57) monsters are this many levels stronger than their base level (Dyllan: "ten levels stronger").</summary>
+        public const int NightLevelBonus = 10;
         /// <summary>PLACEHOLDER: slimes take 1.25x from both physical and magical damage ("vulnerable to both", #24).</summary>
         public const double SlimeVulnerability = 1.25;
         /// <summary>Aggro'd enemies attack the player this often (Dyllan: every 6 s, was 3).</summary>
@@ -38,6 +41,7 @@ namespace WarInLocked.Core.Combat
             if (physicalMultiplier < 0) throw new ArgumentOutOfRangeException(nameof(physicalMultiplier));
             if (magicalMultiplier < 0) throw new ArgumentOutOfRangeException(nameof(magicalMultiplier));
             Level = level;
+            BaseLevel = level;
             Attack = attack;
             PhysicalMultiplier = physicalMultiplier;
             MagicalMultiplier = magicalMultiplier;
@@ -48,18 +52,47 @@ namespace WarInLocked.Core.Combat
             Hp = maxHp;
         }
 
-        /// <summary>Max health of a slime of this level: 50, 75, 100 (#24, Dyllan) and, PLACEHOLDER for the Path map, 125 and 150.</summary>
-        public static int SlimeHealthFor(int level) => Pick(level, 50, 75, 100, 125, 150);
-        /// <summary>Attack of a slime of this level: 10, 12, 15 (#24, Dyllan) and, PLACEHOLDER for the Path map, 18 and 21.</summary>
-        public static int SlimeAttackFor(int level) => Pick(level, 10, 12, 15, 18, 21);
+        /// <summary>
+        /// Max health of a slime of this level: 50, 75, 100 (#24, Dyllan); PLACEHOLDER from level 4: 125, 150, ... the pattern continues
+        /// at +25 HP per level (level 15 = 400).
+        /// </summary>
+        public static int SlimeHealthFor(int level) { CheckLevel(level); return 25 + 25 * level; }
+        /// <summary>
+        /// Attack of a slime of this level: 10, 12, 15 (#24, Dyllan); PLACEHOLDER from level 4: 18, 21, ... +3 per level (level 15 = 51).
+        /// </summary>
+        public static int SlimeAttackFor(int level) { CheckLevel(level); return level == 1 ? 10 : level == 2 ? 12 : 15 + 3 * (level - 3); }
 
-        private static int Pick(int level, params int[] values)
+        private static void CheckLevel(int level)
         {
-            if (level < LowestSlimeLevel || level > HighestSlimeLevel) throw new ArgumentOutOfRangeException(nameof(level), "Slimes are level 1 to 5.");
-            return values[level - 1];
+            if (level < LowestSlimeLevel || level > HighestSlimeLevel) throw new ArgumentOutOfRangeException(nameof(level), "Slimes are level 1 to 15.");
         }
 
-        /// <summary>A slime of the given level (1-5, default 1) with its health, attack and the placeholder vulnerability to both damage types.</summary>
+        /// <summary>
+        /// The level a monster spawns at: its base level, plus <see cref="NightLevelBonus"/> at night (#57). Use the game clock of the character.
+        /// PLACEHOLDER rule: slimes already alive keep their level; only new spawns and respawns use the time of the spawn.
+        /// </summary>
+        public static int LevelFor(int baseLevel, GameClock clock)
+        {
+            if (clock == null) throw new ArgumentNullException(nameof(clock));
+            return baseLevel + (clock.IsNight ? NightLevelBonus : 0);
+        }
+
+        /// <summary>A slime of base level <paramref name="baseLevel"/> (1-5), with the night bonus if it is night on the clock. <see cref="BaseLevel"/> keeps the base.</summary>
+        public static Enemy NewSlime(int baseLevel, GameClock clock)
+        {
+            var e = NewSlime(LevelFor(baseLevel, clock));
+            e.BaseLevel = baseLevel;
+            return e;
+        }
+
+        /// <summary>
+        /// The level the monster has by day (equals <see cref="Level"/> unless it spawned at night). <see cref="IsNightEmpowered"/> is true for night spawns:
+        /// draw them with a night tint or similar if you like.
+        /// </summary>
+        public int BaseLevel { get; private set; }
+        public bool IsNightEmpowered => Level > BaseLevel;
+
+        /// <summary>A slime of the given level (1-15, default 1; pass a base level plus the clock to get the night bonus) with its health, attack and the placeholder vulnerability to both damage types.</summary>
         public static Enemy NewSlime(int level = 1) =>
             new Enemy(SlimeType, SlimeHealthFor(level), level, SlimeAttackFor(level), SlimeVulnerability, SlimeVulnerability);
 
@@ -74,8 +107,21 @@ namespace WarInLocked.Core.Combat
         {
             if (rng == null) throw new ArgumentNullException(nameof(rng));
             if (minLevel < LowestSlimeLevel || maxLevel > HighestSlimeLevel || minLevel > maxLevel)
-                throw new ArgumentOutOfRangeException(nameof(minLevel), "Slime levels are 1 to 5 and min must not exceed max.");
+                throw new ArgumentOutOfRangeException(nameof(minLevel), "Slime levels are 1 to 15 and min must not exceed max.");
             return NewSlime(rng.Next(minLevel, maxLevel + 1));
+        }
+
+        /// <summary>
+        /// Like <see cref="NewRandomSlime(Random,int,int)"/> but the random base level gets the night bonus when it is night on <paramref name="clock"/> (#57):
+        /// forest 1-3 becomes 11-13 and the Path 4-5 becomes 14-15 at night. Call it for every new spawn and respawn.
+        /// </summary>
+        public static Enemy NewRandomSlime(Random rng, int minLevel, int maxLevel, GameClock clock)
+        {
+            if (clock == null) throw new ArgumentNullException(nameof(clock));
+            if (rng == null) throw new ArgumentNullException(nameof(rng));
+            if (minLevel < LowestSlimeLevel || maxLevel > PathMaxSlimeLevel || minLevel > maxLevel)
+                throw new ArgumentOutOfRangeException(nameof(minLevel), "Base slime levels are 1 to 5 and min must not exceed max.");
+            return NewSlime(rng.Next(minLevel, maxLevel + 1), clock);
         }
 
         public int Level { get; }

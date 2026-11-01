@@ -32,7 +32,7 @@ public class SlimeTests
     {
         Assert.Equal(1, Enemy.NewSlime().Level);
         Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewSlime(0));
-        Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewSlime(6));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewSlime(16));
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public class SlimeTests
 
         Assert.Equal(5, Enemy.NewRandomSlime(rng, 5, 5).Level);        // a single level works
         Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewRandomSlime(rng, 0, 3));
-        Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewRandomSlime(rng, 3, 6));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewRandomSlime(rng, 3, 16));
         Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewRandomSlime(rng, 5, 4));
     }
 }
