@@ -182,4 +182,41 @@ public class AdventurersStartTests
         Assert.Equal(QuestState.Complete, fresh.Quests.Get(QuestLibrary.AdventurersStartId)!.State);
         Assert.True(fresh.CanLeaveForest);                    // completed still counts
     }
+
+    private static void DieAndRespawn(Character c)
+    {
+        c.TakeDamage(c.MaxHealth + 10);
+        Assert.True(c.IsDead);
+        c.UpdateRespawn(Character.RespawnDelaySeconds);
+        Assert.False(c.IsDead);
+    }
+
+    [Fact]
+    public void DyingAndRespawningKeepsTheForestExitOpenOnceAccepted()
+    {
+        var c = AtQuest5Offer();
+        DieAndRespawn(c);
+        Assert.False(c.CanLeaveForest);                       // offered only: still closed after a death
+
+        ColonelPowersQuest.Accept(c, out _);
+        Assert.True(c.CanLeaveForest);
+        DieAndRespawn(c);
+        Assert.True(c.CanLeaveForest);
+        Assert.Equal(QuestState.Active, c.Quests.Get(QuestLibrary.AdventurersStartId)!.State);   // progress kept
+        DieAndRespawn(c);
+        Assert.True(c.CanLeaveForest);
+    }
+
+    [Fact]
+    public void DyingAndRespawningKeepsTheForestExitOpenAfterCompletion()
+    {
+        var c = AtQuest5Offer();
+        ColonelPowersQuest.Accept(c, out _);
+        WhiplashQuest.AfterDialogue(c, out _);
+        Assert.Equal(QuestState.Complete, c.Quests.Get(QuestLibrary.AdventurersStartId)!.State);
+
+        DieAndRespawn(c);
+        Assert.True(c.CanLeaveForest);
+        Assert.Equal(QuestState.Complete, c.Quests.Get(QuestLibrary.AdventurersStartId)!.State);
+    }
 }

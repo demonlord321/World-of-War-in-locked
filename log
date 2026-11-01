@@ -1,6 +1,5 @@
   Determining projects to restore...
   All projects are up-to-date for restore.
-/workspace/World-of-War-in-locked/src/WarInLocked.Core/World/Wanderer.cs(39,76): warning CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. [/workspace/World-of-War-in-locked/src/WarInLocked.Core/WarInLocked.Core.csproj]
   WarInLocked.Core -> /workspace/World-of-War-in-locked/src/WarInLocked.Core/bin/Debug/netstandard2.1/WarInLocked.Core.dll
 /workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/AbilityTests.cs(100,29): warning CS8600: Converting null literal or possible null value to non-nullable type. [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
 /workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/AbilityTests.cs(106,21): warning CS8602: Dereference of a possibly null reference. [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
@@ -17,4 +16,4 @@ VSTest version 17.11.1 (x64)
 Starting test execution, please wait...
 A total of 1 test files matched the specified pattern.
 
-Passed!  - Failed:     0, Passed:   340, Skipped:     0, Total:   340, Duration: 132 ms - WarInLocked.Core.Tests.dll (net8.0)
+Passed!  - Failed:     0, Passed:   342, Skipped:     0, Total:   342, Duration: 80 ms - WarInLocked.Core.Tests.dll (net8.0)
