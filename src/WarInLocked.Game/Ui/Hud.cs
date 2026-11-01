@@ -214,6 +214,18 @@ public static class Hud
         gfx.TextCentered(sb, $"{value}/{max}", r, Color.White, 14f);
     }
 
+    /// <summary>
+    /// Compact controls reminder in the bottom-left corner (left of the hotbar). Lists only keys the ForestScreen really handles:
+    /// WASD/arrows move, Space basic attack, 1-5 hotbar, E (or Enter) talk and save, I character, K abilities, Esc menu, H hide this.
+    /// </summary>
+    public static void DrawControlsHint(SpriteBatch sb, Gfx gfx)
+    {
+        var box = new Rectangle(10, WarInLockedGame.ScreenHeight - 50, 460, 40);
+        gfx.Rect(sb, box, Color.Black * 0.45f);
+        gfx.TextLeft(sb, "WASD Move   Space Attack   1-5 Hotbar   E Talk/Save", new Rectangle(box.X, box.Y + 2, box.Width, 18), Theme.TextDim, 14f, 8);
+        gfx.TextLeft(sb, "I Character   K Abilities   Esc Menu   H Hide hints", new Rectangle(box.X, box.Y + 20, box.Width, 18), Theme.TextDim, 14f, 8);
+    }
+
     private static void DrawHotbar(SpriteBatch sb, Gfx gfx, Character character)
     {
         var hotbar = character.Combat.Hotbar;

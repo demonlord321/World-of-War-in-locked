@@ -46,6 +46,7 @@ public sealed class ForestScreen : Screen
     private Vector2 _camera;
     private readonly DialogueBox _dialogueBox = new();
     private DialogueRunner? _dialogue;
+    private static bool _showControls = true;   // H toggles the bottom-left controls hint; stays as chosen for the session
     private NpcSpot? _talkTarget;
     private Point? _savePointTile;   // the save point the player can use right now (#54)
     private string? _dialogueNpc;
@@ -363,6 +364,8 @@ public sealed class ForestScreen : Screen
         // K opens the abilities screen (#20); it also gets this same screen back on close.
         if (!_character.IsDead && input.Pressed(Keys.K)) { Screens.Replace(new AbilitiesScreen(this, _character)); return; }
 
+        if (input.Pressed(Keys.H)) _showControls = !_showControls;   // hide or show the controls hint
+
         if (input.Pressed(Keys.Escape)) { Detach(); Screens.Replace(new MainMenuScreen()); }
     }
 
@@ -595,7 +598,6 @@ public sealed class ForestScreen : Screen
 
         gfx.Rect(sb, new Rectangle(0, 0, w, 36), Color.Black * 0.55f);
         gfx.TextLeft(sb, $"{_mapTitle}  -  {_character.Name}", new Rectangle(0, 0, w, 36), Theme.Text, 18f);
-        gfx.TextLeft(sb, "WASD move  -  E talk  -  Space attack  -  I character  -  K abilities  -  Esc menu", new Rectangle(w - 760, 0, 760, 36), Theme.TextDim, 16f);
 
         // Red edge flash while the player was just hit: four bars along the screen edges, fading out.
         if (_hitFlash > 0)
@@ -610,6 +612,7 @@ public sealed class ForestScreen : Screen
         }
 
         Hud.Draw(sb, gfx, _character);   // player panel top-right, hotbar bottom-centre (#11, #12)
+        if (_showControls) Hud.DrawControlsHint(sb, gfx);   // bottom-left, H toggles
 
         // #29: while fallen, a dimmed overlay with Dyllan's text and a countdown to the automatic respawn at the bind point.
         if (_character.IsDead)
