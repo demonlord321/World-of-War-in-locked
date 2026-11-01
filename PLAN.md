@@ -106,3 +106,4 @@ Note (Dyllan, 1 Nov): Warrior, Mystic and Merchant are starting stat templates, 
 - #20: Slash (lvl 1) damage = (10 + n) x Strength modifier, where n starts at 5 and rises by 1 per ability level. Cooldown 5 s, cost 10 energy. Abilities level up by use: 5 uses to reach level 2, and the requirement doubles each level (10, 20, ...). Needs a player screen listing abilities. Replaces the 1.5x Slash placeholder.
 Open questions: Does Slash add the weapon bonus? Does its arc hit every enemy in front? Are the use counts per level (5, 10, 20) or running totals? What does Energy Ball do (Intelligence-based, cost, cooldown)? Which key opens the abilities screen?
 Decided 1 Nov (#20): Slash = (base attack + n) x Strength modifier, where base attack = 10 + weapon bonus (Practice Sword +5, so 15), and n = 5 at level 1. At 10 Strength, a sword hit is 30 and Slash is 40.
+Decided 1 Nov: Slash needs a weapon in the main hand and can't be used unarmed.
