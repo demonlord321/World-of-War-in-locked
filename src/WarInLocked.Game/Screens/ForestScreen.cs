@@ -46,6 +46,21 @@ public sealed class ForestScreen : Screen
     private string? _toast;
     private float _toastLeft;
 
+    // #29 combat feedback: a red screen-edge flash, a player flash and floating "-N" numbers when the player is hit.
+    private sealed class FloatText { public string Text = ""; public float X, Y, Age; }
+    private const float HitFlashSeconds = 0.4f, FloatSeconds = 1.0f;
+    private readonly List<FloatText> _floats = new();
+    private float _hitFlash;
+
+    private void OnDamaged(int amount)
+    {
+        _hitFlash = HitFlashSeconds;
+        _floats.Add(new FloatText { Text = "-" + amount, X = _player.X + PlayerSize / 2f, Y = _player.Y - 4 });
+    }
+
+    /// <summary>Unsubscribes from the character's events; called when this forest is left for good (back to the main menu).</summary>
+    private void Detach() => _character.Damaged -= OnDamaged;
+
     /// <summary>NPC tiles by id; "colonel-powers" is the first one on the map.</summary>
     public Dictionary<string, Point> NpcPositions { get; } = new();
 
@@ -55,6 +70,7 @@ public sealed class ForestScreen : Screen
     public ForestScreen(Character character)
     {
         _character = character;
+        _character.Damaged += OnDamaged;
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "forest-of-beginnings.txt");
         _map = TileMap.Parse(File.ReadAllText(path));
 
@@ -127,6 +143,7 @@ public sealed class ForestScreen : Screen
         if (k.IsKeyDown(Keys.Right) || k.IsKeyDown(Keys.D)) dir.X += 1;
         if (k.IsKeyDown(Keys.Up) || k.IsKeyDown(Keys.W)) dir.Y -= 1;
         if (k.IsKeyDown(Keys.Down) || k.IsKeyDown(Keys.S)) dir.Y += 1;
+        if (_character.IsDead) dir = Vector2.Zero;   // PLACEHOLDER: a fallen player just stands there
         if (dir != Vector2.Zero) dir.Normalize();
 
         // Move one axis at a time so the player slides along walls.
@@ -147,6 +164,12 @@ public sealed class ForestScreen : Screen
             enemy.Update(dt);
         }
         _character.Combat.Update(dt);   // cooldowns, energy regen, Slash onto the hotbar
+        // Provoked slimes hit the player when next to them (they do not chase); Damaged fires from inside this call.
+        _character.Combat.UpdateEnemies(_enemies.Values.ToList(), dt, playerTile.X, playerTile.Y);
+
+        if (_hitFlash > 0) _hitFlash = Math.Max(0, _hitFlash - dt);
+        foreach (var ft in _floats) ft.Age += dt;
+        _floats.RemoveAll(ft => ft.Age >= FloatSeconds);
 
         // Defeated slimes come back at their spawn tile once it is free.
         foreach (var due in _respawns.Update(dt))
@@ -172,8 +195,8 @@ public sealed class ForestScreen : Screen
             return;
         }
 
-        if (input.Pressed(Keys.Space)) Attack(playerTile, -1);
-        for (int slot = 0; slot < Hotbar.SlotCount; slot++)
+        if (!_character.IsDead && input.Pressed(Keys.Space)) Attack(playerTile, -1);
+        for (int slot = 0; slot < Hotbar.SlotCount && !_character.IsDead; slot++)
             if (input.Pressed(Keys.D1 + slot) || input.Pressed(Keys.NumPad1 + slot)) Attack(playerTile, slot);
 
         // I opens the character menu; it gets this same screen back on close, so the position is kept.
@@ -182,7 +205,7 @@ public sealed class ForestScreen : Screen
         // K opens the abilities screen (#20); it also gets this same screen back on close.
         if (input.Pressed(Keys.K)) { Screens.Replace(new AbilitiesScreen(this, _character)); return; }
 
-        if (input.Pressed(Keys.Escape)) Screens.Replace(new MainMenuScreen());
+        if (input.Pressed(Keys.Escape)) { Detach(); Screens.Replace(new MainMenuScreen()); }
     }
 
     private void Toast(string text, float seconds = 3f)
@@ -287,6 +310,7 @@ public sealed class ForestScreen : Screen
         {
             var r = Screen(s.X * TileSize + 6, s.Y * TileSize + 12, 20, 16);
             var enemy = EnemyOf(s);
+            if (enemy != null && enemy.AttackFlashFraction > 0) r.Inflate((int)(enemy.AttackFlashFraction * 4), (int)(enemy.AttackFlashFraction * 4));   // lunge
             gfx.Rect(sb, r, Hud.SlimeTint(enemy, SlimeColor, time));
             gfx.Rect(sb, new Rectangle(r.X + 4, r.Y + 4, 3, 3), Color.Black);
             gfx.Rect(sb, new Rectangle(r.X + 13, r.Y + 4, 3, 3), Color.Black);
@@ -302,14 +326,44 @@ public sealed class ForestScreen : Screen
         }
 
         var pr = Screen(_player.X, _player.Y, PlayerSize, PlayerSize);
-        gfx.Rect(sb, pr, Theme.Accent);
+        bool hitBlink = _hitFlash > 0 && (int)(_hitFlash * 20) % 2 == 0;
+        gfx.Rect(sb, pr, hitBlink ? new Color(235, 60, 60) : Theme.Accent);
         gfx.Border(sb, pr, Color.Black, 2);
+
+        // Floating damage numbers rise from the player and fade.
+        foreach (var ft in _floats)
+        {
+            float t = ft.Age / FloatSeconds;
+            var box = Screen(ft.X - 40, ft.Y - 22 - t * 28, 80, 24);
+            gfx.TextCentered(sb, ft.Text, new Rectangle(box.X + 1, box.Y + 1, box.Width, box.Height), Color.Black * (1 - t), 22f);
+            gfx.TextCentered(sb, ft.Text, box, new Color(255, 80, 80) * (1 - t), 22f);
+        }
 
         gfx.Rect(sb, new Rectangle(0, 0, w, 36), Color.Black * 0.55f);
         gfx.TextLeft(sb, $"The Forest of Beginnings  -  {_character.Name}", new Rectangle(0, 0, w, 36), Theme.Text, 18f);
         gfx.TextLeft(sb, "WASD move  -  E talk  -  Space attack  -  I character  -  K abilities  -  Esc menu", new Rectangle(w - 760, 0, 760, 36), Theme.TextDim, 16f);
 
+        // Red edge flash while the player was just hit: four bars along the screen edges, fading out.
+        if (_hitFlash > 0)
+        {
+            float a = 0.55f * _hitFlash / HitFlashSeconds;
+            var red = new Color(220, 30, 30) * a;
+            const int e = 36;
+            gfx.Rect(sb, new Rectangle(0, 0, w, e), red);
+            gfx.Rect(sb, new Rectangle(0, h - e, w, e), red);
+            gfx.Rect(sb, new Rectangle(0, e, e, h - 2 * e), red);
+            gfx.Rect(sb, new Rectangle(w - e, e, e, h - 2 * e), red);
+        }
+
         Hud.Draw(sb, gfx, _character);   // player panel top-right, hotbar bottom-centre (#11, #12)
+
+        // PLACEHOLDER death overlay (no respawn yet): the world just stops reacting.
+        if (_character.IsDead)
+        {
+            gfx.Rect(sb, new Rectangle(0, 0, w, h), Color.Black * 0.45f);
+            gfx.TextCentered(sb, "You have fallen", new Rectangle(0, h / 2 - 60, w, 70), new Color(220, 60, 60), 56f);
+            gfx.TextCentered(sb, "(placeholder - no respawn yet)  -  Esc: menu", new Rectangle(0, h / 2 + 8, w, 30), Theme.TextDim, 18f);
+        }
 
         // Quest tracker while a quest is active, e.g. "Slice and slime 0/5".
         var activeQuests = _character.Quests.Active;

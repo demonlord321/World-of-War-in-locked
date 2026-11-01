@@ -82,12 +82,23 @@ public static class Hud
         // Money as gold / silver / copper coins, right-aligned.
         DrawMoney(sb, gfx, c.Copper, panel.Right - 12, panel.Y + 113, 14f, Theme.TextDim);
 
+        // #29: "In combat 12s" under the panel while the combat window is open (healing potions are refused during it).
+        int below = panel.Bottom + 4;
+        if (c.InCombat)
+        {
+            var cr = new Rectangle(panel.X, below, panel.Width, 24);
+            gfx.Rect(sb, cr, Color.Black * 0.65f);
+            gfx.Border(sb, cr, new Color(220, 60, 60), 1);
+            gfx.TextCentered(sb, $"In combat {(int)Math.Ceiling(c.CombatCooldownRemaining)}s", cr, new Color(255, 110, 100), 16f);
+            below += 28;
+        }
+
         if (c.FreeStatPoints > 0)
         {
             // Gentle pulse so the hint is noticed without being loud.
             float pulse = 0.75f + 0.25f * (float)Math.Sin(Clock.Elapsed.TotalSeconds * 4);
             string hint = $"+{c.FreeStatPoints} pts  -  Press I to spend";
-            var hr = new Rectangle(panel.X, panel.Bottom + 4, panel.Width, 26);
+            var hr = new Rectangle(panel.X, below, panel.Width, 26);
             gfx.Rect(sb, hr, Color.Black * 0.65f);
             gfx.Border(sb, hr, XpColor * pulse, 1);
             gfx.TextCentered(sb, hint, hr, XpColor * pulse, 16f);
@@ -236,9 +247,25 @@ public static class Hud
     }
 
     /// <summary>The slime body colour: flickers white/red for a moment after a hit.</summary>
+    /// <summary>How long before an aggro'd slime's attack its wind-up pulse shows.</summary>
+    public const double WindUpSeconds = 0.5;
+
     public static Color SlimeTint(Enemy? enemy, Color normal, GameTime time)
     {
-        if (enemy == null || enemy.DamageFlashFraction <= 0) return normal;
+        if (enemy == null) return normal;
+        if (enemy.DamageFlashFraction <= 0)
+        {
+            // #29: an aggro'd slime is reddish; it pulses in the last half second before its attack and flashes bright when it strikes.
+            if (enemy.AttackFlashFraction > 0) return new Color(255, 235, 150);
+            if (!enemy.IsAggro) return normal;
+            var angry = Color.Lerp(normal, new Color(225, 55, 50), 0.6f);
+            if (enemy.AttackCooldownRemaining > 0 && enemy.AttackCooldownRemaining <= WindUpSeconds)
+            {
+                bool bright = (int)(time.TotalGameTime.TotalSeconds * 10) % 2 == 0;
+                return bright ? new Color(255, 120, 90) : angry;
+            }
+            return angry;
+        }
         // Alternate white and red about every 0.05s while the flash fraction counts 1 -> 0.
         bool white = (int)(enemy.DamageFlashFraction * 10) % 2 == 0;
         return white ? Color.White : new Color(235, 60, 60);
@@ -261,6 +288,13 @@ public static class Hud
         var pos = new Vector2(body.X + (body.Width - m.X) / 2f, body.Y - 8 - m.Y - 1);
         gfx.Text(sb, tag, pos + new Vector2(1, 1), Color.Black * 0.9f, 12f);   // shadow so it reads on grass and paths
         gfx.Text(sb, tag, pos, SlimeLevelColor(enemy.Level), 12f);
+        if (enemy.IsAggro)
+        {
+            var bang = gfx.Measure("!", 18f);
+            var bp = new Vector2(body.X + (body.Width - bang.X) / 2f, pos.Y - bang.Y - 1);
+            gfx.Text(sb, "!", bp + new Vector2(1, 1), Color.Black, 18f);
+            gfx.Text(sb, "!", bp, new Color(255, 70, 60), 18f);
+        }
         if (!enemy.IsDamaged) return;
         var bar = new Rectangle(body.X - 2, body.Y - 8, body.Width + 4, 5);
         gfx.Rect(sb, bar, HealthBack);
