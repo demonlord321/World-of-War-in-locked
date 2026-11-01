@@ -142,3 +142,8 @@ Decided 1 Nov (#29): respawn at full health and energy. Death costs 50 XP up to 
 Status 1 Nov, 12:25 (UTC+2): respawn XP penalty in Core: 50 XP (levels 1-5), 100 XP (6+; above 10 is a placeholder), never below the level start or 0. Character.RespawnXpPenalty, LastRespawnXpLost.
 Decided 1 Nov: the death penalty never removes a level; XP stops at 0 within the current level. Levels 1-5 lose 50, 6-10 lose 100; above 10 stays 100 (placeholder).
 Status 1 Nov, 11:54: death XP penalty in 722f05d, shown on the fallen screen in 0fcd3fc (328 tests). Open gaps and balance points are logged as issues #30, #31, #33 to #37, #39 to #46, #48 and #51 for Dyllan to review.
+
+### Added 1 Nov: Milestone "Adventurers start" (#52, #53)
+- #52 Main Quest 1 "Adventurers start": after quest 4, the Colonel sends you through the woods to the Adventurers' Encampment to speak with Whiplash (0/1). Reward: 50 XP, 50 copper.
+- #53 Adventurers' Encampment: second map. Green grass and tents, a cosmetic combat ring at the centre, three small tents around it, and a large tent to the north with Whiplash in front of it.
+Open: Where does the forest connect to the camp (an exit on a map edge)? What does Whiplash say? Is the camp a rest spot for the bind point (#43)? Any enemies in the camp (assume none)?
