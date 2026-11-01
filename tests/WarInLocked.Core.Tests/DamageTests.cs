@@ -241,9 +241,9 @@ public class DamageTests
 
     // Slash with the sword (Physical Attack 5): (10 + 5 + 5) x Str x 1.25. Energy Ball with the staff (Magical Attack 5): (10 + 5 + 5) x Int x 1.25.
     [Theory]
-    [InlineData(StatDistribution.Warrior, 58, 2, 3, 3, 18, 6, 7, 9)]    // Str 13 = 2.3: 57.5 -> 58;  Int 7 = 0.7: 17.5 -> 18
-    [InlineData(StatDistribution.Mystic, 18, 6, 7, 9, 58, 2, 3, 3)]     // Str 7 = 0.7: 17.5 -> 18;   Int 13 = 2.3: 57.5 -> 58
-    [InlineData(StatDistribution.Merchant, 20, 5, 7, 8, 23, 5, 6, 7)]   // Str 8 = 0.8: 20;           Int 9 = 0.9: 22.5 -> 23
+    [InlineData(StatDistribution.Warrior, 58, 1, 2, 2, 18, 3, 5, 6)]    // Str 13 = 2.3: 57.5 -> 58;  Int 7 = 0.7: 17.5 -> 18
+    [InlineData(StatDistribution.Mystic, 18, 3, 5, 6, 58, 1, 2, 2)]     // Str 7 = 0.7: 17.5 -> 18;   Int 13 = 2.3: 57.5 -> 58
+    [InlineData(StatDistribution.Merchant, 20, 3, 4, 5, 23, 3, 4, 5)]   // Str 8 = 0.8: 20;           Int 9 = 0.9: 22.5 -> 23
     public void HitsToKillSlimesWithSlashAndEnergyBall(StatDistribution d, int slash, int s1, int s2, int s3, int ball, int b1, int b2, int b3)
     {
         var sword = Armed(Make(d));
@@ -260,15 +260,15 @@ public class DamageTests
     }
 
     [Theory]
-    [InlineData(StatDistribution.Warrior, 2, 1)]   // unarmed 23 x 1.25 = 28.75 -> 29 vs L1 100 HP: 4; sword basic 15 x 2.3 x 1.25 = 43.125 -> 43: 3
+    [InlineData(StatDistribution.Warrior, 2, 1)]   // unarmed 23 x 1.25 = 28.75 -> 29 vs L1 50 HP: 2; sword basic 15 x 2.3 x 1.25 = 43.125 -> 43: 2
     public void BasicAttackHitsAgainstALevelOneSlime(StatDistribution d, int unusedA, int unusedB)
     {
         var c = Make(d);
         var slime = Enemy.NewSlime(1);
         Assert.Equal(29, DamageCalculator.PhysicalDamage(c, slime.PhysicalMultiplier));
-        Assert.Equal(4, HitsToKill(slime, 29));
+        Assert.Equal(2, HitsToKill(slime, 29));
         Assert.Equal(43, CombatController.BasicAttackDamage(Armed(Make(d)), slime));
-        Assert.Equal(3, HitsToKill(slime, 43));
+        Assert.Equal(2, HitsToKill(slime, 43));
     }
 
     private static int HitsToKill(Enemy slime, int damage) => (slime.MaxHealth + damage - 1) / damage;

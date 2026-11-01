@@ -10,9 +10,9 @@ namespace WarInLocked.Core.Tests;
 public class SlimeTests
 {
     [Theory]
-    [InlineData(1, 100, 10)]
-    [InlineData(2, 125, 12)]
-    [InlineData(3, 150, 15)]
+    [InlineData(1, 50, 10)]
+    [InlineData(2, 75, 12)]
+    [InlineData(3, 100, 15)]
     public void SlimeStatsPerLevel(int level, int hp, int attack)
     {
         var s = Enemy.NewSlime(level);
@@ -90,7 +90,7 @@ public class SlimeTests
     public void ADamagedSlimeKeepsItsLevelAndAttackAndDiesAtZero()
     {
         var s = Enemy.NewSlime(3);
-        Assert.Equal(150, s.TakeDamage(150));
+        Assert.Equal(100, s.TakeDamage(100));
         Assert.True(s.IsDead);
         Assert.Equal(3, s.Level);
         Assert.Equal(15, s.Attack);

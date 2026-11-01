@@ -40,8 +40,8 @@ namespace WarInLocked.Core.Combat
             Hp = maxHp;
         }
 
-        /// <summary>Max health of a slime of this level: 100, 125, 150 (#24, Dyllan).</summary>
-        public static int SlimeHealthFor(int level) => Clamp(level, 100, 125, 150);
+        /// <summary>Max health of a slime of this level: 50, 75, 100 (#24, Dyllan; first 100/125/150, changed 1 Nov).</summary>
+        public static int SlimeHealthFor(int level) => Clamp(level, 50, 75, 100);
         /// <summary>Attack of a slime of this level: 10, 12, 15 (#24, Dyllan). Stored only; slimes do not fight back yet.</summary>
         public static int SlimeAttackFor(int level) => Clamp(level, 10, 12, 15);
 

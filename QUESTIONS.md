@@ -98,7 +98,7 @@ Decided by Dyllan:
 - **Physical base attack = 10 + main-hand Physical Attack. Magic base = 10 + main-hand Magical Attack.** **Slash needs a weapon (any).**
 - **Energy Ball:** (magic base + n) x Intelligence modifier, n = 5 + (level - 1), **5 s cooldown, 5 energy** (was 15), description "Conjure an orb of pure energy."
 - **Quest 3 "Energy Ball practice"** (turn in at the Colonel): perform Energy Ball 5 times, progress "Energy ball 0/5", reward 50 XP + 50 copper, failure none, Accept Yes/No. The Colonel's speech after turning in quest 2 is Dyllan's text, and the player gets a Practice Staff.
-- **Slimes** are level 1-3 at random per spawn: L1 100 HP / 10 attack, L2 125 / 12, L3 150 / 15. Enemies have separate Physical and Magical multipliers; slimes are vulnerable to both.
+- **Slimes** are level 1-3 at random per spawn: L1 50 HP / 10 attack, L2 75 / 12, L3 100 / 15 (HP first said 100/125/150, changed by Dyllan on 1 Nov). Enemies have separate Physical and Magical multipliers; slimes are vulnerable to both.
 
 My interpretations and placeholders, please confirm:
 - **Slime vulnerability = 1.25x to both physical and magical is a placeholder** (the number is mine). It applies to basic attacks, Slash and Energy Ball.
@@ -113,12 +113,12 @@ My interpretations and placeholders, please confirm:
 - **Slash with a staff** works (any weapon counts) and is (10 + 0 + n) x Strength modifier: the staff adds nothing physical. A basic attack with a staff equals an unarmed attack.
 - **Copper** is the currency (starts at 0, never negative). Nothing spends it yet; it has no UI. Is "copper" the lowest coin, and are there silver and gold?
 
-Hits to kill (level 1 abilities, starting stats, 1.25x slime vulnerability; sword Slash = (10+5+5) x Str, staff Energy Ball = (10+5+5) x Int):
+Hits to kill (level 1 abilities, starting stats, 1.25x slime vulnerability, slime HP 50 / 75 / 100; sword Slash = (10+5+5) x Str, staff Energy Ball = (10+5+5) x Int):
 
 | Class | Slash with sword | vs L1 / L2 / L3 | Energy Ball with staff | vs L1 / L2 / L3 |
 |---|---|---|---|---|
-| Warrior (Str 13, Int 7) | 58 | 2 / 3 / 3 | 18 | 6 / 7 / 9 |
-| Mystic (Str 7, Int 13) | 18 | 6 / 7 / 9 | 58 | 2 / 3 / 3 |
-| Merchant (Str 8, Int 9) | 20 | 5 / 7 / 8 | 23 | 5 / 6 / 7 |
+| Warrior (Str 13, Int 7) | 58 | 1 / 2 / 2 | 18 | 3 / 5 / 6 |
+| Mystic (Str 7, Int 13) | 18 | 3 / 5 / 6 | 58 | 1 / 2 / 2 |
+| Merchant (Str 8, Int 9) | 20 | 3 / 4 / 5 | 23 | 3 / 4 / 5 |
 
-Slimes are much tougher than the old 30 HP: a Warrior with the sword needs 3 basic attacks (43 each) for a level 1 slime, so quest 1 takes longer than before.
+A Warrior with the sword needs 2 basic attacks (43 each) for a level 1 slime; unarmed 29 each, also 2.
