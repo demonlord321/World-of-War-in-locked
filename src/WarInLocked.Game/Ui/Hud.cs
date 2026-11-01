@@ -273,7 +273,8 @@ public static class Hud
 
     /// <summary>Slime level tag colour (#24): 1 green, 2 yellow, 3 orange.</summary>
     public static Color SlimeLevelColor(int level) =>
-        level <= 1 ? new Color(110, 220, 110) : level == 2 ? new Color(240, 220, 70) : new Color(245, 150, 50);
+        level <= 1 ? new Color(110, 220, 110) : level == 2 ? new Color(240, 220, 70) : level == 3 ? new Color(245, 150, 50)
+        : level == 4 ? new Color(235, 50, 50) : new Color(150, 70, 210);   // 4 red, 5 deep purple (Path slimes)
 
     /// <summary>
     /// Above a slime's head: a "Lv N" tag, always visible and coloured by level (#24), and a small health bar while it is

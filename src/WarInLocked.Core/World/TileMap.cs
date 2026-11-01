@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace WarInLocked.Core.World
 {
-    public enum Tile { Floor, Grass, Tree, Wall, Water, Path }
+    public enum Tile { Floor, Grass, Tree, Wall, Water, Path, Fence, Tent }
 
     /// <summary>A placed thing read from the map text: player start, NPC, or slime spawn.</summary>
     public readonly struct MapMarker
@@ -18,6 +18,8 @@ namespace WarInLocked.Core.World
     /// A grid map built from text, one character per tile:
     /// # wall, T tree, . floor, g grass, = path, ~ water,
     /// P player start, N NPC, s slime spawn (markers stand on grass).
+    /// Added for multi-map support (#53): F fence and X tent (both block walking; scenery only), and the door markers
+    /// < > ^ v, which stand on a walkable tile on the map edge and lead out through that edge (west, east, north, south).
     /// </summary>
     public sealed class TileMap
     {
@@ -28,8 +30,10 @@ namespace WarInLocked.Core.World
         public (int X, int Y) PlayerStart { get; }
         public IReadOnlyList<MapMarker> Npcs { get; }
         public IReadOnlyList<MapMarker> SlimeSpawns { get; }
+        /// <summary>Doors on the map edge: symbol '<' (west), '>' (east), '^' (north) or 'v' (south). Where they lead is the game's business.</summary>
+        public IReadOnlyList<MapMarker> Doors { get; }
 
-        private TileMap(Tile[,] tiles, (int, int) start, List<MapMarker> npcs, List<MapMarker> slimes)
+        private TileMap(Tile[,] tiles, (int, int) start, List<MapMarker> npcs, List<MapMarker> slimes, List<MapMarker> doors)
         {
             _tiles = tiles;
             Width = tiles.GetLength(0);
@@ -37,6 +41,7 @@ namespace WarInLocked.Core.World
             PlayerStart = start;
             Npcs = npcs;
             SlimeSpawns = slimes;
+            Doors = doors;
         }
 
         public Tile this[int x, int y] => InBounds(x, y) ? _tiles[x, y] : Tile.Wall;
@@ -62,6 +67,7 @@ namespace WarInLocked.Core.World
             (int, int)? start = null;
             var npcs = new List<MapMarker>();
             var slimes = new List<MapMarker>();
+            var doors = new List<MapMarker>();
 
             for (int y = 0; y < lines.Count; y++)
                 for (int x = 0; x < width; x++)
@@ -75,6 +81,9 @@ namespace WarInLocked.Core.World
                         case 'g': tiles[x, y] = Tile.Grass; break;
                         case '=': tiles[x, y] = Tile.Path; break;
                         case '~': tiles[x, y] = Tile.Water; break;
+                        case 'F': tiles[x, y] = Tile.Fence; break;
+                        case 'X': tiles[x, y] = Tile.Tent; break;
+                        case '<': case '>': case '^': case 'v': tiles[x, y] = Tile.Path; doors.Add(new MapMarker(c, x, y)); break;
                         case 'P': tiles[x, y] = Tile.Grass; start = (x, y); break;
                         case 'N': tiles[x, y] = Tile.Grass; npcs.Add(new MapMarker(c, x, y)); break;
                         case 's': tiles[x, y] = Tile.Grass; slimes.Add(new MapMarker(c, x, y)); break;
@@ -83,7 +92,14 @@ namespace WarInLocked.Core.World
                 }
 
             if (start == null) throw new FormatException("Map has no player start (P).");
-            return new TileMap(tiles, start.Value, npcs, slimes);
+            return new TileMap(tiles, start.Value, npcs, slimes, doors);
+        }
+
+        /// <summary>The door at this tile, or null.</summary>
+        public MapMarker? DoorAt(int x, int y)
+        {
+            foreach (var d in Doors) if (d.X == x && d.Y == y) return d;
+            return null;
         }
     }
 }

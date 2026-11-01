@@ -13,6 +13,9 @@ using WarInLocked.Game.Ui;
 namespace WarInLocked.Game.Screens;
 
 /// <summary>
+/// Issue #53: this screen now shows whichever map the player is on (<see cref="MapId"/>): the Forest of Beginnings or the
+/// Adventurers' Encampment. Edge doors (the &lt; &gt; ^ v map markers) switch maps; <see cref="MapDefs"/> says where they lead.
+/// The class keeps its old name so the menus and shop that hand this screen back are unchanged.
 /// Issue #5: the Forest of Beginnings. The player walks the map (arrows/WASD), placeholder
 /// slimes wander about, and Colonel Powers stands at the N marker. No combat yet.
 /// Issue #6/#7: next to an NPC a "Talk (E)" prompt appears; E or Enter starts the dialogue.
@@ -30,11 +33,13 @@ public sealed class ForestScreen : Screen
     private static readonly Color WallColor = new(28, 40, 28), SlimeColor = new(110, 210, 120);
 
     private readonly Character _character;
-    private readonly TileMap _map;
+    private TileMap _map = null!;
+    private string _mapId = "";
+    private string _mapTitle = "";
     private readonly List<Wanderer> _slimes = new();
     private readonly Dictionary<Wanderer, Enemy> _enemies = new();   // combat state (Hp, flicker) of each slime
     private readonly Dictionary<Wanderer, Point> _spawnOf = new();   // where each slime came from (it respawns there)
-    private readonly RespawnQueue _respawns = new();                 // defeated slimes come back (#19)
+    private RespawnQueue _respawns = new();                 // defeated slimes come back (#19)
     private readonly Random _rng = new();
     private Vector2 _player;     // top-left, in pixels
     private Vector2 _camera;
@@ -54,7 +59,9 @@ public sealed class ForestScreen : Screen
     private int _xpLost;          // XP lost at the last respawn, shown as a floating "-N XP"
     private float _xpLostAge = XpFloatSeconds;
     private float _hitFlash;
-    private const float FadeInSeconds = 0.5f;
+    private const float FadeInSeconds = 0.5f, FadeOutSeconds = 0.25f;
+    private MapMarker? _leavingThrough;   // door being walked through: the screen fades to black, then the map switches
+    private float _fadeOut;
     private float _fadeIn;   // seconds of black fade-in left after a respawn
 
     private void OnDamaged(int amount)
@@ -73,9 +80,12 @@ public sealed class ForestScreen : Screen
     /// <summary>#29: the goddess grants another chance. Moves the player to the bind point, calms the slimes and clears the combat feedback.</summary>
     private void OnRespawned(WarInLocked.Core.World.BindPoint bp)
     {
-        if (bp.MapId == WarInLocked.Core.World.BindPoint.ForestOfBeginningsMapId)
-            _player = new Vector2(bp.TileX * TileSize + (TileSize - PlayerSize) / 2f, bp.TileY * TileSize + (TileSize - PlayerSize) / 2f);
-        // (A bind point on another map would need a map switch; there is only this map today.) The camera follows _player every frame.
+        // Died on another map than the bind point's: switch to the bind map first (it also gives fresh, calm slimes).
+        if (bp.MapId != _mapId && MapDefs.Exists(bp.MapId)) LoadMap(bp.MapId);
+        if (bp.MapId == _mapId) PlaceAtTile(bp.TileX, bp.TileY);
+        // The camera follows _player every frame.
+        _leavingThrough = null;
+        _fadeOut = 0;
         CombatController.CalmEnemies(_enemies.Values);
         _floats.Clear();
         _hitFlash = 0;
@@ -86,6 +96,40 @@ public sealed class ForestScreen : Screen
 
     /// <summary>NPC tiles by id; "colonel-powers" is the first one on the map.</summary>
     public Dictionary<string, Point> NpcPositions { get; } = new();
+    /// <summary>Id of the map being shown, e.g. "forest-of-beginnings" or "adventurers-encampment".</summary>
+    public string MapId => _mapId;
+
+    private void PlaceAtTile(int tx, int ty) =>
+        _player = new Vector2(tx * TileSize + (TileSize - PlayerSize) / 2f, ty * TileSize + (TileSize - PlayerSize) / 2f);
+
+    /// <summary>Loads a map by id: its tiles, NPCs and slimes (none in the camp). Slimes start fresh each time a map is entered.</summary>
+    private void LoadMap(string mapId)
+    {
+        var def = MapDefs.Get(mapId);
+        _map = TileMap.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", def.File)));
+        _mapId = mapId;
+        _mapTitle = def.Title;
+        _slimes.Clear(); _enemies.Clear(); _spawnOf.Clear();
+        _respawns = new RespawnQueue();
+        NpcPositions.Clear();
+        for (int i = 0; i < _map.Npcs.Count && i < def.NpcIds.Length; i++)
+            NpcPositions[def.NpcIds[i]] = new Point(_map.Npcs[i].X, _map.Npcs[i].Y);
+        foreach (var s in _map.SlimeSpawns) AddSlime(s.X, s.Y);
+        var (sx, sy) = _map.PlayerStart;
+        PlaceAtTile(sx, sy);
+    }
+
+    /// <summary>Walks through a door: loads the map it leads to and stands the player just inside the matching opposite door.</summary>
+    private void SwitchThroughDoor(MapMarker door)
+    {
+        var dest = MapDefs.Destination(_mapId, door.Symbol);
+        if (dest == null) return;
+        LoadMap(dest);
+        var (tx, ty) = MapDefs.ArrivalTile(_map, MapDefs.Opposite(door.Symbol)) ?? _map.PlayerStart;
+        PlaceAtTile(tx, ty);
+        _fadeIn = FadeInSeconds;
+        Toast(MapDefs.Get(dest).Title, 2.5f);
+    }
 
     /// <summary>Combat state of a slime (Hp/MaxHp for a health bar, DamageFlash for the hit flicker); null once it is gone.</summary>
     public Enemy? EnemyOf(Wanderer slime) => _enemies.TryGetValue(slime, out var e) ? e : null;
@@ -95,21 +139,21 @@ public sealed class ForestScreen : Screen
         _character = character;
         _character.Damaged += OnDamaged;
         _character.Respawned += OnRespawned;
-        string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "forest-of-beginnings.txt");
-        _map = TileMap.Parse(File.ReadAllText(path));
+        LoadMap(WarInLocked.Core.World.BindPoint.ForestOfBeginningsMapId);
+    }
 
-        foreach (var s in _map.SlimeSpawns) AddSlime(s.X, s.Y);
-        if (_map.Npcs.Count > 0) NpcPositions["colonel-powers"] = new Point(_map.Npcs[0].X, _map.Npcs[0].Y);
-
-        var (sx, sy) = _map.PlayerStart;
-        _player = new Vector2(sx * TileSize + (TileSize - PlayerSize) / 2f, sy * TileSize + (TileSize - PlayerSize) / 2f);
+    /// <summary>A slime of this map's level range: level 1-3 in the forest (#24), 4-5 on the Path (levels come from <see cref="MapDefs"/>).</summary>
+    private Enemy NewSlimeForMap()
+    {
+        var (min, max) = MapDefs.Get(_mapId).SlimeLevels;
+        return Enemy.NewRandomSlime(_rng, min, max);
     }
 
     private void AddSlime(int x, int y)
     {
         var slime = new Wanderer(x, y, _rng);
         _slimes.Add(slime);
-        _enemies[slime] = Enemy.NewRandomSlime(_rng);   // level 1-3, uniform (#24)
+        _enemies[slime] = NewSlimeForMap();
         _spawnOf[slime] = new Point(x, y);
     }
 
@@ -150,6 +194,8 @@ public sealed class ForestScreen : Screen
                     Screens.Replace(new ShopScreen(this, _character, shop));
                     return;
                 }
+                if (_dialogueNpc == "whiplash" && WhiplashQuest.AfterDialogue(_character, out var whiplashNotice))
+                    Toast(whiplashNotice, 6f);   // "Quest complete: Adventurers start! ..."
                 if (_dialogueNpc == "colonel-powers")
                 {
                     var offer = ColonelPowersQuest.QuestToOfferAfterDialogue(_character, out var turnedIn); // turn-in gives the reward
@@ -167,7 +213,7 @@ public sealed class ForestScreen : Screen
         if (k.IsKeyDown(Keys.Right) || k.IsKeyDown(Keys.D)) dir.X += 1;
         if (k.IsKeyDown(Keys.Up) || k.IsKeyDown(Keys.W)) dir.Y -= 1;
         if (k.IsKeyDown(Keys.Down) || k.IsKeyDown(Keys.S)) dir.Y += 1;
-        if (_character.IsDead) dir = Vector2.Zero;   // a fallen player cannot move; the respawn countdown runs in Combat.Update
+        if (_character.IsDead || _leavingThrough != null) dir = Vector2.Zero;   // a fallen player cannot move; the respawn countdown runs in Combat.Update
         if (dir != Vector2.Zero) dir.Normalize();
 
         // Move one axis at a time so the player slides along walls.
@@ -175,9 +221,27 @@ public sealed class ForestScreen : Screen
         TryMove(new Vector2(0, dir.Y * PlayerSpeed * dt));
 
         var playerTile = new Point((int)((_player.X + PlayerSize / 2f) / TileSize), (int)((_player.Y + PlayerSize / 2f) / TileSize));
+
+        // Stepping onto a door tile starts a short fade to black, then the map switches.
+        if (_leavingThrough == null && !_character.IsDead && _map.DoorAt(playerTile.X, playerTile.Y) is { } door && MapDefs.Destination(_mapId, door.Symbol) != null)
+        {
+            _leavingThrough = door;
+            _fadeOut = FadeOutSeconds;
+        }
+        if (_leavingThrough is { } leaving)
+        {
+            _fadeOut = Math.Max(0, _fadeOut - dt);
+            if (_fadeOut <= 0)
+            {
+                _leavingThrough = null;
+                SwitchThroughDoor(leaving);
+                return;
+            }
+        }
+
         foreach (var slime in _slimes)
             slime.Update(dt, _map, (x, y) =>
-                (x == playerTile.X && y == playerTile.Y) || IsNpc(x, y) ||
+                (x == playerTile.X && y == playerTile.Y) || IsNpc(x, y) || _map.DoorAt(x, y) != null ||
                 _slimes.Exists(o => o != slime && o.TileX == x && o.TileY == y));
 
         foreach (var slime in _slimes)
@@ -217,7 +281,9 @@ public sealed class ForestScreen : Screen
             _dialogueNpc = _talkTarget.Id;
             _dialogue = _talkTarget.Id == "colonel-powers"
                 ? ColonelPowersQuest.CreateDialogue(_character)   // intro first, then the quest offer / progress lines
-                : new DialogueRunner(DialogueLibrary.Get(_talkTarget.DialogueId), _character);
+                : _talkTarget.Id == "whiplash"
+                    ? WhiplashQuest.CreateDialogue(_character)
+                    : new DialogueRunner(DialogueLibrary.Get(_talkTarget.DialogueId), _character);
             return;
         }
 
@@ -293,6 +359,9 @@ public sealed class ForestScreen : Screen
         return false;
     }
 
+    /// <summary>True for a door that is shut for now: the forest's exit before the Colonel has sent the player off.</summary>
+    private bool IsLockedDoor(int x, int y) => _mapId == MapDefs.ForestId && _map.DoorAt(x, y) != null && !_character.CanLeaveForest;
+
     private void TryMove(Vector2 delta)
     {
         if (delta == Vector2.Zero) return;
@@ -301,8 +370,57 @@ public sealed class ForestScreen : Screen
         int top = (int)(next.Y / TileSize), bottom = (int)((next.Y + PlayerSize - 1) / TileSize);
         for (int y = top; y <= bottom; y++)
             for (int x = left; x <= right; x++)
+            {
+                if (IsLockedDoor(x, y)) { if (_toastLeft <= 0) Toast(Character.LeaveForestRefusal, 2.5f); return; }
                 if (!_map.IsWalkable(x, y) || IsNpc(x, y)) return;
+            }
         _player = next;
+    }
+
+    private static readonly Color SandA = new(206, 182, 130), SandB = new(200, 176, 124);
+    private static readonly Color FenceWood = new(122, 88, 52), FencePost = new(88, 62, 36);
+    private static readonly Color Canvas = new(214, 200, 160), CanvasShade = new(190, 174, 132), CanvasDark = new(120, 100, 70);
+
+    /// <summary>A door is a brighter path tile with a bar along the edge it leads out through.</summary>
+    private static void DrawDoorMark(SpriteBatch sb, Gfx gfx, Rectangle r, char symbol)
+    {
+        gfx.Rect(sb, new Rectangle(r.X, r.Y, r.Width, r.Height), new Color(184, 154, 104));
+        var bar = symbol switch
+        {
+            '<' => new Rectangle(r.X, r.Y, 5, r.Height),
+            '>' => new Rectangle(r.Right - 5, r.Y, 5, r.Height),
+            '^' => new Rectangle(r.X, r.Y, r.Width, 5),
+            _ => new Rectangle(r.X, r.Bottom - 5, r.Width, 5),
+        };
+        gfx.Rect(sb, bar, Theme.Accent);
+    }
+
+    private void DrawFence(SpriteBatch sb, Gfx gfx, Rectangle r, int x, int y, Color ground)
+    {
+        bool l = _map[x - 1, y] == Tile.Fence, rt = _map[x + 1, y] == Tile.Fence, u = _map[x, y - 1] == Tile.Fence, d = _map[x, y + 1] == Tile.Fence;
+        gfx.Rect(sb, r, ((x + y) & 1) == 0 ? SandA : SandB);
+        if (l || rt) gfx.Rect(sb, new Rectangle(l ? r.X : r.X + 13, r.Y + 12, (l ? r.Width : 19) - (rt ? 0 : 13), 7), FenceWood);
+        if (u || d) gfx.Rect(sb, new Rectangle(r.X + 12, u ? r.Y : r.Y + 13, 7, (u ? r.Height : 19) - (d ? 0 : 13)), FenceWood);
+        gfx.Rect(sb, new Rectangle(r.X + 10, r.Y + 10, 12, 12), FencePost);
+    }
+
+    /// <summary>Canvas tent: a roof band on its top row, a dark doorway at the centre of its bottom row.</summary>
+    private void DrawTent(SpriteBatch sb, Gfx gfx, Rectangle r, int x, int y, Color ground)
+    {
+        gfx.Rect(sb, r, ground);
+        bool top = _map[x, y - 1] != Tile.Tent, bottom = _map[x, y + 1] != Tile.Tent;
+        gfx.Rect(sb, r, (x & 1) == 0 ? Canvas : CanvasShade);
+        if (top) gfx.Rect(sb, new Rectangle(r.X, r.Y, r.Width, 5), CanvasDark);
+        if (bottom) gfx.Rect(sb, new Rectangle(r.X, r.Bottom - 3, r.Width, 3), CanvasDark);
+        if (_map[x - 1, y] != Tile.Tent) gfx.Rect(sb, new Rectangle(r.X, r.Y, 3, r.Height), CanvasDark);
+        if (_map[x + 1, y] != Tile.Tent) gfx.Rect(sb, new Rectangle(r.Right - 3, r.Y, 3, r.Height), CanvasDark);
+        if (bottom)
+        {
+            int left = 0, right = 0;
+            while (_map[x - 1 - left, y] == Tile.Tent) left++;
+            while (_map[x + 1 + right, y] == Tile.Tent) right++;
+            if (left == right) gfx.Rect(sb, new Rectangle(r.X + 6, r.Y + 8, 20, r.Height - 8), new Color(46, 34, 24));
+        }
     }
 
     private Rectangle Screen(float x, float y, int w, int h) => new((int)(x - _camera.X), (int)(y - _camera.Y), w, h);
@@ -320,7 +438,13 @@ public sealed class ForestScreen : Screen
                 var ground = ((x + y) & 1) == 0 ? GrassA : GrassB;
                 switch (_map[x, y])
                 {
-                    case Tile.Path: gfx.Rect(sb, r, PathColor); break;
+                    case Tile.Path:
+                        gfx.Rect(sb, r, PathColor);
+                        if (_map.DoorAt(x, y) is { } dm) DrawDoorMark(sb, gfx, r, dm.Symbol);
+                        break;
+                    case Tile.Floor: gfx.Rect(sb, r, ((x + y) & 1) == 0 ? SandA : SandB); break;
+                    case Tile.Fence: DrawFence(sb, gfx, r, x, y, ground); break;
+                    case Tile.Tent: DrawTent(sb, gfx, r, x, y, ground); break;
                     case Tile.Water: gfx.Rect(sb, r, WaterColor); break;
                     case Tile.Wall: gfx.Rect(sb, r, WallColor); break;
                     case Tile.Tree:
@@ -346,9 +470,9 @@ public sealed class ForestScreen : Screen
         foreach (var (id, p) in NpcPositions)
         {
             var r = Screen(p.X * TileSize + 5, p.Y * TileSize + 2, 22, 28);
-            gfx.Rect(sb, r, new Color(90, 100, 60));
+            gfx.Rect(sb, r, id == "whiplash" ? new Color(130, 60, 60) : new Color(90, 100, 60));
             gfx.Border(sb, r, Color.Black, 2);
-            gfx.TextCentered(sb, "Colonel Powers", Screen(p.X * TileSize - 60, p.Y * TileSize - 22, 152, 20), Theme.Text, 14f);
+            gfx.TextCentered(sb, MapDefs.NpcName(id), Screen(p.X * TileSize - 60, p.Y * TileSize - 22, 152, 20), Theme.Text, 14f);
         }
 
         var pr = Screen(_player.X, _player.Y, PlayerSize, PlayerSize);
@@ -366,7 +490,7 @@ public sealed class ForestScreen : Screen
         }
 
         gfx.Rect(sb, new Rectangle(0, 0, w, 36), Color.Black * 0.55f);
-        gfx.TextLeft(sb, $"The Forest of Beginnings  -  {_character.Name}", new Rectangle(0, 0, w, 36), Theme.Text, 18f);
+        gfx.TextLeft(sb, $"{_mapTitle}  -  {_character.Name}", new Rectangle(0, 0, w, 36), Theme.Text, 18f);
         gfx.TextLeft(sb, "WASD move  -  E talk  -  Space attack  -  I character  -  K abilities  -  Esc menu", new Rectangle(w - 760, 0, 760, 36), Theme.TextDim, 16f);
 
         // Red edge flash while the player was just hit: four bars along the screen edges, fading out.
@@ -439,7 +563,10 @@ public sealed class ForestScreen : Screen
             gfx.TextCentered(sb, "Talk (E)", prompt, Theme.Accent, 18f);
         }
 
-        // Fade in from black just after a respawn.
+        // Fade to black while walking through a door.
+        if (_leavingThrough != null) gfx.Rect(sb, new Rectangle(0, 0, w, h), Color.Black * (1 - _fadeOut / FadeOutSeconds));
+
+        // Fade in from black just after a respawn or a map change.
         if (_fadeIn > 0) gfx.Rect(sb, new Rectangle(0, 0, w, h), Color.Black * (_fadeIn / FadeInSeconds));
 
         // "-N XP" floats up from the player and fades over ~2 s after a respawn that cost XP.

@@ -11,7 +11,7 @@
 #TTgggggggggg=================gggggggggggggggggTT#
 #TTTggggggggg=gggggggggggggggg=gggggggggggTTggggT#
 #TggggTTggggg=ggggggggNgggggggg=ggggggggggTTTgggT#
-#TgggTTTTgggg=gggggggggggggggggg=ggggsggggggggggT#
+#TgggTTTTgggg=gggggggggggggggggg=ggggsggggggggggg>
 #TgggggTTgggg=ggggggPgggggggggggg=gggggggggggggTT#
 #TTggggggggggg=gggggggggggggggggg=gggggggggggggTT#
 #TTTgggsggggggg=================gggggTTggggggggTT#
