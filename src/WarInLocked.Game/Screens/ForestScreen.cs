@@ -113,8 +113,29 @@ public sealed class ForestScreen : Screen
     /// <summary>Id of the map being shown, e.g. "forest-of-beginnings" or "adventurers-encampment".</summary>
     public string MapId => _mapId;
 
-    private void PlaceAtTile(int tx, int ty) =>
+    private void PlaceAtTile(int tx, int ty)
+    {
+        (tx, ty) = NearestFreeTile(tx, ty);
         _player = new Vector2(tx * TileSize + (TileSize - PlayerSize) / 2f, ty * TileSize + (TileSize - PlayerSize) / 2f);
+    }
+
+    private bool IsFreeTile(int x, int y) =>
+        _map.IsWalkable(x, y) && !IsNpc(x, y) && _map.DoorAt(x, y) == null && !TileOccupancy.IsBlocked(x, y, _enemies.Values);
+
+    /// <summary>The tile itself if free, else the closest free tile around it (respawn/load/arrival onto a slime).</summary>
+    private (int, int) NearestFreeTile(int tx, int ty)
+    {
+        if (IsFreeTile(tx, ty) || !TileOccupancy.IsBlocked(tx, ty, _enemies.Values)) return (tx, ty);
+        for (int r = 1; r < 6; r++)
+            for (int dy = -r; dy <= r; dy++)
+                for (int dx = -r; dx <= r; dx++)
+                    if (Math.Max(Math.Abs(dx), Math.Abs(dy)) == r && IsFreeTile(tx + dx, ty + dy)) return (tx + dx, ty + dy);
+        return (tx, ty);
+    }
+
+    private static bool OverlapsTile(Vector2 pos, int x, int y) =>
+        (int)(pos.X / TileSize) <= x && x <= (int)((pos.X + PlayerSize - 1) / TileSize) &&
+        (int)(pos.Y / TileSize) <= y && y <= (int)((pos.Y + PlayerSize - 1) / TileSize);
 
     /// <summary>Loads a map by id: its tiles, NPCs and slimes (none in the camp). Slimes start fresh each time a map is entered.</summary>
     private void LoadMap(string mapId)
@@ -292,7 +313,7 @@ public sealed class ForestScreen : Screen
 
         foreach (var slime in _slimes)
             slime.Update(dt, _map, (x, y) =>
-                (x == playerTile.X && y == playerTile.Y) || IsNpc(x, y) || _map.DoorAt(x, y) != null ||
+                OverlapsTile(_player, x, y) || IsNpc(x, y) || _map.DoorAt(x, y) != null ||
                 _slimes.Exists(o => o != slime && o.TileX == x && o.TileY == y));
 
         foreach (var slime in _slimes)
@@ -452,6 +473,9 @@ public sealed class ForestScreen : Screen
             {
                 if (IsLockedDoor(x, y)) { if (_toastLeft <= 0) Toast(Character.LeaveForestRefusal, 2.5f); return; }
                 if (!_map.IsWalkable(x, y) || IsNpc(x, y)) return;
+                // Living slimes block their tile (Core TileOccupancy). A tile the player already overlaps stays
+                // passable, so a slime wandering half under the player can never trap them.
+                if (TileOccupancy.IsBlocked(x, y, _enemies.Values) && !OverlapsTile(_player, x, y)) return;
             }
         _player = next;
     }
