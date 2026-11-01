@@ -22,6 +22,9 @@ namespace WarInLocked.Core.Quests
         /// <summary>Quests being done or waiting to be turned in (what the HUD tracker shows).</summary>
         public IReadOnlyList<Quest> Active => _quests.Where(q => q.State == QuestState.Active || q.State == QuestState.ReadyToTurnIn).ToArray();
 
+        /// <summary>The marker to draw over an NPC right now. Same as <see cref="QuestMarkers.MarkerFor"/> for this log's character.</summary>
+        public QuestMarker MarkerFor(string npcId) => QuestMarkers.MarkerFor(npcId, _owner);
+
         public Quest Get(string id) => _quests.FirstOrDefault(q => q.Id == id);
 
         /// <summary>Puts a quest in the log in the Offered state. Offering one that is already there returns the existing one.</summary>

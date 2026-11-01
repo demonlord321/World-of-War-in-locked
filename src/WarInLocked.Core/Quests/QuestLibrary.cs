@@ -82,6 +82,26 @@ namespace WarInLocked.Core.Quests
             }
         }
 
+        /// <summary>The NPC id of Colonel Powers (map data and dialogue), who gives all the tutorial quests.</summary>
+        public const string ColonelPowersNpcId = "colonel-powers";
+
+        /// <summary>The story quests in the order they are given. Each needs the one before it to be Complete (#8, #19, #21, #25, #52).</summary>
+        public static readonly string[] StoryOrder = { SliceAndSlimeId, SlashingPracticeId, EnergyBallPracticeId, ShoppingBeforeAdventureId, AdventurersStartId };
+
+        /// <summary>The id of the NPC who offers the quest (Colonel Powers for every quest today), or null for an unknown quest.</summary>
+        public static string GiverNpcId(string questId) => System.Array.IndexOf(StoryOrder, questId) >= 0 ? ColonelPowersNpcId : null;
+
+        /// <summary>The id of the NPC the quest is handed in to once done: Whiplash for "Adventurers start" (talking to him completes it), the Colonel otherwise.</summary>
+        public static string TurnInNpcId(string questId) =>
+            questId == AdventurersStartId ? WhiplashNpcId : System.Array.IndexOf(StoryOrder, questId) >= 0 ? ColonelPowersNpcId : null;
+
+        /// <summary>The quest that must be Complete before this one is offered, or null for the first quest (and unknown ids).</summary>
+        public static string PrerequisiteId(string questId)
+        {
+            int i = System.Array.IndexOf(StoryOrder, questId);
+            return i > 0 ? StoryOrder[i - 1] : null;
+        }
+
         /// <summary>Short name for the HUD tracker: "Slice and slime".</summary>
         public const string SliceAndSlimeShortTitle = "Slice and slime";
         public const string SlashingPracticeShortTitle = "Slashing Practice";

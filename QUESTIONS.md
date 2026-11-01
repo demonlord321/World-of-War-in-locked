@@ -207,3 +207,12 @@ Dyllan (1 Nov): the player cannot move onto a tile held by a living enemy, and e
 - **Walking onto a tile with a living enemy is simply refused** (no bump attack, no push). The player can still hit it from the neighbouring tile.
 - If the player respawns or loads onto a tile that already holds an enemy, Core does not move anyone; the screen should place the player on a free tile (the attack reach still counts the own tile).
 - Slimes stand still for now; chasing is #31.
+
+## Quest markers (Dyllan, 1 Nov)
+Yellow **!** = a quest can be taken from the NPC; grey/black **?** = the player has an unfinished quest from, or to hand in to, the NPC; yellow **?** = a quest can be handed in to the NPC. Core: `QuestMarker { None, Available, InProgress, ReadyToTurnIn }` and `QuestMarkers.MarkerFor(npcId, character)` (also `character.Quests.MarkerFor(npcId)`). Mapmaker draws the symbols. Guesses to confirm:
+- **Priority when several apply: ReadyToTurnIn > Available > InProgress** (Dyllan did not say).
+- **Available** also covers a quest that was shown but declined (Offered), and the very first meeting with the Colonel (nothing in the log yet). The next quest only counts once the one before it is Complete (the tutorial quests are a chain).
+- **"Adventurers start" shows yellow ? on Whiplash while it is Active** (talking to him completes it). **The Colonel shows a grey ? meanwhile** (he gave it and it is unfinished); it vanishes when Whiplash completes it.
+- Whiplash has no marker at any other time. NPCs without quests (Barracks Master) never show one. Quest giver / turn-in NPC ids live in `QuestLibrary` (`GiverNpcId`, `TurnInNpcId`, `PrerequisiteId`); a new quest giver means adding to them.
+- A ready quest keeps its yellow ? even if the reward items do not fit in the inventory (turning in then just reports "Your inventory is full").
+
