@@ -68,7 +68,7 @@ public sealed class ForestScreen : Screen
     {
         var slime = new Wanderer(x, y, _rng);
         _slimes.Add(slime);
-        _enemies[slime] = Enemy.NewSlime();
+        _enemies[slime] = Enemy.NewRandomSlime(_rng);   // level 1-3, uniform (#24)
         _spawnOf[slime] = new Point(x, y);
     }
 

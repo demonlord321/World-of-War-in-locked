@@ -230,7 +230,7 @@ public class AbilityTests
     // ---- Energy Ball
 
     [Fact]
-    public void EnergyBallIsMagicDamageCostsFifteenAndHasAFiveSecondCooldown()
+    public void EnergyBallIsMagicDamageCostsFiveAndHasAFiveSecondCooldown()
     {
         var c = Make(true);
         var d = Dummy();
@@ -241,7 +241,7 @@ public class AbilityTests
 
         Assert.True(r.Succeeded);
         Assert.Equal(35, r.Damage);                         // (10 + 5) x Int 13 modifier 2.3 = 34.5 -> 35, weapon ignored
-        Assert.Equal(before - 15, c.Energy);
+        Assert.Equal(before - 5, c.Energy);
         Assert.Equal(5.0, c.Combat.Hotbar[1].CooldownRemaining, 2);
         Assert.Equal(1, c.GetAbility("energy-ball").Uses);
         Assert.Equal(0, c.GetAbility("slash").Uses);
@@ -261,7 +261,7 @@ public class AbilityTests
         var c = Make(false);
         var q = c.Quests.Offer(QuestLibrary.SliceAndSlime());
         c.Quests.Accept(q.Id);
-        var slime = Enemy.NewSlime();
+        var slime = new Enemy(Enemy.SlimeType, 30);
         slime.TileX = 6; slime.TileY = 5;
         var r = c.Combat.UseHotbar(1, 5, 5, new List<Enemy> { slime });
         Assert.Equal(CombatOutcome.Killed, r.Outcome);           // 35 damage vs 30 HP

@@ -49,22 +49,26 @@ namespace WarInLocked.Core.Quests
 
     public sealed class QuestReward
     {
-        public QuestReward(int xp, IEnumerable<string> abilityIds)
+        public QuestReward(int xp, IEnumerable<string> abilityIds, int copper = 0)
         {
             Xp = xp;
+            Copper = copper;
             AbilityIds = (abilityIds ?? Enumerable.Empty<string>()).ToArray();
         }
 
         public int Xp { get; }
+        /// <summary>Copper coins (#21), 0 if none.</summary>
+        public int Copper { get; }
         public IReadOnlyList<string> AbilityIds { get; }
 
-        /// <summary>For example "50 XP, Ability Slash".</summary>
+        /// <summary>For example "50 XP, Ability Slash" or "50 XP, 50 Copper".</summary>
         public string Text
         {
             get
             {
                 var parts = new List<string>();
                 if (Xp > 0) parts.Add(Xp + " XP");
+                if (Copper > 0) parts.Add(Copper + " Copper");
                 foreach (var id in AbilityIds) parts.Add("Ability " + AbilityLibrary.NameOf(id));
                 return string.Join(", ", parts);
             }

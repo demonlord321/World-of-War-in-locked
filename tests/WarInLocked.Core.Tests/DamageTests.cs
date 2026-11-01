@@ -95,9 +95,9 @@ public class DamageTests
     [Fact]
     public void WeaponBonusIsAddedToTheBaseBeforeMultiplying()
     {
-        Assert.Equal(5, ItemLibrary.PracticeSwordBaseDamage);
+        Assert.Equal(5, ItemLibrary.PracticeSwordPhysicalAttack);
         var c = Armed(WithStats(10, 8));
-        Assert.Equal(5, DamageCalculator.WeaponBonus(c));
+        Assert.Equal(5, DamageCalculator.PhysicalAttackBonus(c));
         Assert.Equal(30, DamageCalculator.PhysicalDamage(c));                      // (10 + 5) x 2.0
         Assert.Equal(20, DamageCalculator.UnarmedDamage(c));                       // unarmed ignores the sword
         Assert.Equal(40, DamageCalculator.PhysicalDamage(c, 10));                  // (10 + 10) x 2.0
@@ -107,7 +107,7 @@ public class DamageTests
     public void NoWeaponMeansNoBonus()
     {
         var c = WithStats(10, 8);
-        Assert.Equal(0, DamageCalculator.WeaponBonus(c));
+        Assert.Equal(0, DamageCalculator.PhysicalAttackBonus(c));
         Assert.Equal(DamageCalculator.UnarmedDamage(c), DamageCalculator.PhysicalDamage(c));
     }
 
@@ -138,16 +138,40 @@ public class DamageTests
     }
 
     [Fact]
-    public void EnergyBallIsTenPlusPowerTimesIntelligenceAndIgnoresTheWeapon()
+    public void EnergyBallIsMagicBasePlusPowerTimesIntelligenceAndTheStaffAddsToTheBase()
     {
-        var c = Armed(WithStats(8, 13));   // (10 + 5) x 2.3 = 34.5 -> 35, the sword adds nothing
-        Assert.Equal(35, CombatController.AbilityDamage(c, AbilityLibrary.EnergyBallDefinition));
-        Assert.Equal(35, CombatController.AbilityDamage(WithStats(8, 13), AbilityLibrary.EnergyBallDefinition));
-        Assert.Equal(37, CombatController.AbilityDamage(c, AbilityLibrary.EnergyBallDefinition, 2));   // 16 x 2.3 = 36.8
+        // magic base = 10 + main-hand Magical Attack; damage = (base + n) x Int modifier
+        var sword = Armed(WithStats(8, 13));   // a sword has no Magical Attack: (10 + 5) x 2.3 = 34.5 -> 35
+        Assert.Equal(35, CombatController.AbilityDamage(sword, AbilityLibrary.EnergyBallDefinition));
+        Assert.Equal(35, CombatController.AbilityDamage(WithStats(8, 13), AbilityLibrary.EnergyBallDefinition));   // unarmed is allowed (placeholder)
+        var staff = WithStats(8, 13);
+        staff.Equipment.AddAndEquip(ItemLibrary.PracticeStaff);   // (10 + 5 + 5) x 2.3 = 46
+        Assert.Equal(46, CombatController.AbilityDamage(staff, AbilityLibrary.EnergyBallDefinition));
+        Assert.Equal(48, CombatController.AbilityDamage(staff, AbilityLibrary.EnergyBallDefinition, 2));   // n 6: 21 x 2.3 = 48.3
         Assert.Equal(12, CombatController.AbilityDamage(WithStats(13, 8), AbilityLibrary.EnergyBallDefinition));   // Int 8: 15 x 0.8
-        Assert.Equal(15, AbilityLibrary.EnergyBallDefinition.EnergyCost);
+        Assert.Equal(5, AbilityLibrary.EnergyBallDefinition.EnergyCost);
         Assert.Equal(5.0, AbilityLibrary.EnergyBallDefinition.CooldownSeconds);
         Assert.Equal(AbilityKind.Magic, AbilityLibrary.EnergyBallDefinition.Kind);
+        Assert.False(AbilityLibrary.EnergyBallDefinition.RequiresWeapon);
+        Assert.Equal("Conjure an orb of pure energy.", AbilityLibrary.EnergyBallDefinition.Description);
+    }
+
+    [Fact]
+    public void BaseAttacksAreTenPlusTheMatchingWeaponBonus()
+    {
+        var none = WithStats(8, 8);
+        Assert.Equal(10, DamageCalculator.PhysicalBaseAttack(none));
+        Assert.Equal(10, DamageCalculator.MagicalBaseAttack(none));
+        var sword = Armed(WithStats(8, 8));
+        Assert.Equal(15, DamageCalculator.PhysicalBaseAttack(sword));
+        Assert.Equal(10, DamageCalculator.MagicalBaseAttack(sword));
+        Assert.Equal(0, DamageCalculator.MagicalAttackBonus(sword));
+        var staff = WithStats(8, 8);
+        staff.Equipment.AddAndEquip(ItemLibrary.PracticeStaff);
+        Assert.Equal(10, DamageCalculator.PhysicalBaseAttack(staff));   // a staff does not help physical attacks
+        Assert.Equal(15, DamageCalculator.MagicalBaseAttack(staff));
+        Assert.True(DamageCalculator.HasWeapon(staff));                // any weapon counts for Slash
+        Assert.Equal(CombatController.BasicAttackDamage(WithStats(8, 8)), CombatController.BasicAttackDamage(staff));   // basic attack = unarmed with a staff
     }
 
     [Fact]
@@ -155,7 +179,7 @@ public class DamageTests
     {
         var c = Armed(Make(StatDistribution.Mystic));   // Str 7 -> 0.7: 15 x 0.7 = 10.5 -> 11
         Assert.Equal(11, CombatController.BasicAttackDamage(c));
-        var s = Enemy.NewSlime();
+        var s = new Enemy(Enemy.SlimeType, 30);   // plain target without resistances
         s.TileX = 6; s.TileY = 5;
         Assert.Equal(11, c.Combat.BasicAttack(5, 5, new[] { s }).Damage);
         Assert.Equal(19, s.Hp);
@@ -213,20 +237,39 @@ public class DamageTests
         Assert.Throws<ArgumentOutOfRangeException>(() => DamageCalculator.PhysicalDamage(c, -1));
     }
 
-    // ---- is a 30 HP slime still sensible at the start stats?
+    // ---- how many hits does a level 1-3 slime take at the starting stats? (#24, with the 1.25x placeholder vulnerability)
 
+    // Slash with the sword (Physical Attack 5): (10 + 5 + 5) x Str x 1.25. Energy Ball with the staff (Magical Attack 5): (10 + 5 + 5) x Int x 1.25.
     [Theory]
-    [InlineData(StatDistribution.Warrior, 2, 1, 1)]    // unarmed 23, sword 35, Slash 46
-    [InlineData(StatDistribution.Mystic, 5, 3, 3)]     // unarmed 7,  sword 11, Slash 14 (20 x 0.7)
-    [InlineData(StatDistribution.Merchant, 4, 3, 2)]   // unarmed 8,  sword 12, Slash 16
-    public void HitsToKillASlimeAtTheStartStats(StatDistribution d, int unarmed, int sword, int slash)
+    [InlineData(StatDistribution.Warrior, 58, 2, 3, 3, 18, 6, 7, 9)]    // Str 13 = 2.3: 57.5 -> 58;  Int 7 = 0.7: 17.5 -> 18
+    [InlineData(StatDistribution.Mystic, 18, 6, 7, 9, 58, 2, 3, 3)]     // Str 7 = 0.7: 17.5 -> 18;   Int 13 = 2.3: 57.5 -> 58
+    [InlineData(StatDistribution.Merchant, 20, 5, 7, 8, 23, 5, 6, 7)]   // Str 8 = 0.8: 20;           Int 9 = 0.9: 22.5 -> 23
+    public void HitsToKillSlimesWithSlashAndEnergyBall(StatDistribution d, int slash, int s1, int s2, int s3, int ball, int b1, int b2, int b3)
     {
-        var c = Make(d);
-        Assert.Equal(unarmed, HitsToKill(DamageCalculator.UnarmedDamage(c)));
-        var armed = Armed(Make(d));
-        Assert.Equal(sword, HitsToKill(CombatController.BasicAttackDamage(armed)));
-        Assert.Equal(slash, HitsToKill(CombatController.AbilityDamage(armed, AbilityLibrary.SlashDefinition)));
+        var sword = Armed(Make(d));
+        var staff = Make(d);
+        staff.Equipment.AddAndEquip(ItemLibrary.PracticeStaff);
+        for (int level = 1; level <= 3; level++)
+        {
+            var slime = Enemy.NewSlime(level);
+            Assert.Equal(slash, CombatController.AbilityDamage(sword, AbilityLibrary.SlashDefinition, 1, slime));
+            Assert.Equal(ball, CombatController.AbilityDamage(staff, AbilityLibrary.EnergyBallDefinition, 1, slime));
+            Assert.Equal(new[] { s1, s2, s3 }[level - 1], HitsToKill(slime, slash));
+            Assert.Equal(new[] { b1, b2, b3 }[level - 1], HitsToKill(slime, ball));
+        }
     }
 
-    private static int HitsToKill(int damage) => (Enemy.SlimeMaxHp + damage - 1) / damage;
+    [Theory]
+    [InlineData(StatDistribution.Warrior, 2, 1)]   // unarmed 23 x 1.25 = 28.75 -> 29 vs L1 100 HP: 4; sword basic 15 x 2.3 x 1.25 = 43.125 -> 43: 3
+    public void BasicAttackHitsAgainstALevelOneSlime(StatDistribution d, int unusedA, int unusedB)
+    {
+        var c = Make(d);
+        var slime = Enemy.NewSlime(1);
+        Assert.Equal(29, DamageCalculator.PhysicalDamage(c, slime.PhysicalMultiplier));
+        Assert.Equal(4, HitsToKill(slime, 29));
+        Assert.Equal(43, CombatController.BasicAttackDamage(Armed(Make(d)), slime));
+        Assert.Equal(3, HitsToKill(slime, 43));
+    }
+
+    private static int HitsToKill(Enemy slime, int damage) => (slime.MaxHealth + damage - 1) / damage;
 }

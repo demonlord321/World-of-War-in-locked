@@ -78,19 +78,23 @@ namespace WarInLocked.Core.Combat
         public double AttackCooldownRemaining { get; private set; }
         public bool AttackReady => AttackCooldownRemaining <= 0;
 
-        /// <summary>Basic attack damage: (10 + weapon bonus) x Strength modifier, rounded half up; unarmed is 10 x the modifier. See <see cref="DamageCalculator"/>.</summary>
-        public static int BasicAttackDamage(Character character) => DamageCalculator.PhysicalDamage(character);
+        /// <summary>Basic attack damage: (10 + main-hand Physical Attack) x Strength modifier, rounded half up; unarmed is 10 x the modifier.
+        /// Pass a target to include its physical resistance multiplier (#24). See <see cref="DamageCalculator"/>.</summary>
+        public static int BasicAttackDamage(Character character, Enemy target = null) =>
+            DamageCalculator.PhysicalDamage(character, target?.PhysicalMultiplier ?? 1.0);
 
         /// <summary>
         /// Damage of an ability at a level, n = 5 + (level - 1), rounded half up once.
-        /// Physical (Slash): (10 + weapon bonus + n) x Strength modifier, so the sword (+5) counts. Magic (Energy Ball, placeholder): (10 + n) x Intelligence modifier, no weapon.
+        /// Physical (Slash): (10 + main-hand Physical Attack + n) x Strength modifier. Magic (Energy Ball): (10 + main-hand Magical Attack + n) x Intelligence modifier (#22, #23).
+        /// Pass a target to include its resistance multiplier for that damage type (#24); rounded half up once at the end.
         /// </summary>
-        public static int AbilityDamage(Character character, AbilityDefinition ability, int level = 1)
+        public static int AbilityDamage(Character character, AbilityDefinition ability, int level = 1, Enemy target = null)
         {
             int n = ability.PowerAt(level);
+            double m = target?.MultiplierFor(ability.Kind) ?? 1.0;
             return ability.Kind == AbilityKind.Magic
-                ? DamageCalculator.MagicDamage(character, n)
-                : DamageCalculator.PhysicalDamage(character, DamageCalculator.WeaponBonus(character) + n);
+                ? DamageCalculator.MagicDamage(character, DamageCalculator.MagicalAttackBonus(character) + n, m)
+                : DamageCalculator.PhysicalDamage(character, DamageCalculator.PhysicalAttackBonus(character) + n, m);
         }
 
         /// <summary>Why the character cannot cast the ability right now for a reason the UI can show ("Needs a weapon"), or null if nothing blocks it.
@@ -99,7 +103,7 @@ namespace WarInLocked.Core.Combat
             ability.RequiresWeapon && !DamageCalculator.HasWeapon(character) ? AbilityDefinition.NeedsWeaponText : null;
 
         /// <summary>Damage of a learned ability at its current level.</summary>
-        public static int AbilityDamage(Character character, Ability ability) => AbilityDamage(character, ability.Definition, ability.Level);
+        public static int AbilityDamage(Character character, Ability ability, Enemy target = null) => AbilityDamage(character, ability.Definition, ability.Level, target);
 
         /// <summary>Advances cooldowns, regenerates energy and puts newly learned abilities on the hotbar.</summary>
         public void Update(double seconds)
@@ -126,7 +130,7 @@ namespace WarInLocked.Core.Combat
             if (target == null) return new CombatResult(CombatOutcome.NoTarget);
 
             AttackCooldownRemaining = AttackCooldownSeconds;
-            return Strike(target, BasicAttackDamage(_owner));
+            return Strike(target, BasicAttackDamage(_owner, target));
         }
 
         /// <summary>Keys 1-5 (index 0-4): uses the ability in that hotbar slot.</summary>
@@ -146,7 +150,7 @@ namespace WarInLocked.Core.Combat
             _owner.SpendEnergy(ability.EnergyCost);
             Hotbar.StartCooldown(slotIndex, ability.CooldownSeconds);
             AttackCooldownRemaining = AttackCooldownSeconds;
-            var result = Strike(target, AbilityDamage(_owner, state));
+            var result = Strike(target, AbilityDamage(_owner, state, target));
 
             // The cast fired: it is a use (levels the ability) and counts for "use X N times" quests.
             bool leveled = state.RecordUse();

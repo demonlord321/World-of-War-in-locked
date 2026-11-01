@@ -80,7 +80,7 @@ namespace WarInLocked.Core.Quests
         }
 
         /// <summary>
-        /// ReadyToTurnIn to Complete: gives the reward (XP, abilities) to the character, once. Returns false if the quest is
+        /// ReadyToTurnIn to Complete: gives the reward (XP, copper, abilities) to the character, once. Returns false if the quest is
         /// unknown or not ready.
         /// </summary>
         public bool TurnIn(string id)
@@ -89,6 +89,7 @@ namespace WarInLocked.Core.Quests
             if (q == null || q.State != QuestState.ReadyToTurnIn) return false;
             q.State = QuestState.Complete;
             _owner.GainXp(q.Reward.Xp);
+            _owner.GainCopper(q.Reward.Copper);
             foreach (var a in q.Reward.AbilityIds) _owner.LearnAbility(a);
             Changed?.Invoke(this, EventArgs.Empty);
             return true;

@@ -5,13 +5,14 @@ using WarInLocked.Core.Items;
 namespace WarInLocked.Core.Combat
 {
     /// <summary>
-    /// Damage rules for physical (#14) and magical (#16) attacks.
+    /// Damage rules for physical (#14) and magical (#16) attacks, with separate weapon bonuses (#22).
     /// <code>
-    /// physical = (BaseAttack + weapon bonus) x StatModifier(Strength)     unarmed: BaseAttack x StatModifier(Strength)
-    /// magical  = (BaseAttack + spell power)  x StatModifier(Intelligence)
+    /// physical base = 10 + main-hand Physical Attack        damage = base x StatModifier(Strength)
+    /// magical  base = 10 + main-hand Magical Attack         damage = base x StatModifier(Intelligence)
     /// </code>
-    /// BaseAttack is 10 for everyone. Equipment bonuses are added to the base before multiplying (PLACEHOLDER, see QUESTIONS.md).
-    /// The result is <b>rounded half up to a whole number</b> (x.5 goes up; 10.5 -> 11). Computed in exact decimals, so 0.5 never drifts.
+    /// An ability adds its power n on top of the base (Slash: physical base + n; Energy Ball: magical base + n).
+    /// The result is multiplied by the target's resistance multiplier (#24, 1.0 if none) and <b>rounded half up to a whole number</b>
+    /// once at the very end (x.5 goes up; 10.5 -> 11). Computed in exact decimals, so 0.5 never drifts.
     /// Defence (#15) is not part of this yet.
     /// </summary>
     public static class DamageCalculator
@@ -23,38 +24,52 @@ namespace WarInLocked.Core.Combat
         /// <summary>Intelligence modifier for the character.</summary>
         public static double IntelligenceModifier(Character c) => StatModifier.Value(c.Stats.Intelligence);
 
-        /// <summary>True if the main hand holds a weapon.</summary>
+        /// <summary>True if the main hand holds a weapon (any weapon: sword or staff).</summary>
         public static bool HasWeapon(Character c)
         {
             var weapon = c.Equipment.Get(EquipmentSlot.MainHand);
             return weapon != null && weapon.Type == ItemType.Weapon;
         }
 
-        /// <summary>The attack bonus of the weapon in the main hand (0 when unarmed or holding a non-weapon).</summary>
-        public static int WeaponBonus(Character c)
+        /// <summary>The Physical Attack bonus of the weapon in the main hand (0 when unarmed or holding a non-weapon).</summary>
+        public static int PhysicalAttackBonus(Character c)
         {
             var weapon = c.Equipment.Get(EquipmentSlot.MainHand);
-            return weapon != null && weapon.Type == ItemType.Weapon ? weapon.BaseDamage : 0;
+            return weapon != null && weapon.Type == ItemType.Weapon ? weapon.PhysicalAttack : 0;
         }
 
-        /// <summary>Physical damage of one basic attack with whatever is in the main hand.</summary>
-        public static int PhysicalDamage(Character c) => PhysicalDamage(c, WeaponBonus(c), 1.0);
+        /// <summary>The Magical Attack bonus of the weapon in the main hand (0 when unarmed or holding a non-weapon).</summary>
+        public static int MagicalAttackBonus(Character c)
+        {
+            var weapon = c.Equipment.Get(EquipmentSlot.MainHand);
+            return weapon != null && weapon.Type == ItemType.Weapon ? weapon.MagicalAttack : 0;
+        }
 
-        /// <summary>Physical damage with an explicit weapon bonus and a multiplier (an ability's, 1.0 for a basic attack).</summary>
-        public static int PhysicalDamage(Character c, int weaponBonus, double multiplier = 1.0) =>
-            Compute(weaponBonus, StatModifier.Tenths(c.Stats.Strength), multiplier);
+        /// <summary>Physical base attack: 10 + main-hand Physical Attack (15 with the Practice Sword).</summary>
+        public static int PhysicalBaseAttack(Character c) => BaseAttack + PhysicalAttackBonus(c);
+
+        /// <summary>Magical base attack: 10 + main-hand Magical Attack (15 with the Practice Staff).</summary>
+        public static int MagicalBaseAttack(Character c) => BaseAttack + MagicalAttackBonus(c);
+
+        /// <summary>Physical damage of one basic attack with whatever is in the main hand.</summary>
+        public static int PhysicalDamage(Character c, double targetMultiplier = 1.0) => PhysicalDamage(c, PhysicalAttackBonus(c), targetMultiplier);
+
+        /// <summary>Physical damage with an explicit bonus on top of the base 10 (weapon bonus + ability power) and the target's multiplier.</summary>
+        public static int PhysicalDamage(Character c, int bonus, double targetMultiplier = 1.0) =>
+            Compute(bonus, StatModifier.Tenths(c.Stats.Strength), targetMultiplier);
 
         /// <summary>Unarmed damage: base attack x Strength modifier (ignores anything held).</summary>
         public static int UnarmedDamage(Character c) => PhysicalDamage(c, 0, 1.0);
 
-        /// <summary>Magic damage of a spell: (base attack + spell power) x Intelligence modifier. No spells exist yet.</summary>
-        public static int MagicDamage(Character c, int spellPower = 0, double multiplier = 1.0) =>
-            Compute(spellPower, StatModifier.Tenths(c.Stats.Intelligence), multiplier);
+        /// <summary>Magic damage with an explicit bonus on top of the base 10 (staff bonus + spell power) and the target's multiplier.</summary>
+        public static int MagicDamage(Character c, int bonus = 0, double targetMultiplier = 1.0) =>
+            Compute(bonus, StatModifier.Tenths(c.Stats.Intelligence), targetMultiplier);
 
-        private static int Compute(int bonus, int modifierTenths, double multiplier)
+        private static int Compute(int bonus, int modifierTenths, double targetMultiplier)
         {
             if (bonus < 0) throw new ArgumentOutOfRangeException(nameof(bonus));
-            decimal raw = (BaseAttack + bonus) * (modifierTenths / 10m) * (decimal)multiplier;
+            if (targetMultiplier < 0) throw new ArgumentOutOfRangeException(nameof(targetMultiplier));
+            decimal raw = (BaseAttack + bonus) * (modifierTenths / 10m) * (decimal)targetMultiplier;
             return (int)Math.Round(raw, MidpointRounding.AwayFromZero);
         }
     }

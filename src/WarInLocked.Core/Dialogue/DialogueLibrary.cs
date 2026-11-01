@@ -21,8 +21,19 @@ namespace WarInLocked.Core.Dialogue
         public const string ColonelPowersPracticeOfferId = "colonel-powers-practice-offer";
         /// <summary>Shown while "Slashing Practice" is active.</summary>
         public const string ColonelPowersPracticeActiveId = "colonel-powers-practice-active";
-        /// <summary>Turn-in of "Slashing Practice". PLACEHOLDER text (Dyllan gave none).</summary>
+        /// <summary>Turn-in of "Slashing Practice" (#21): Dyllan's three-part speech, after which "Energy Ball practice" is offered.</summary>
         public const string ColonelPowersPracticeTurnInId = "colonel-powers-practice-turnin";
+        /// <summary>Said when "Energy Ball practice" was offered but not accepted yet (repeats the speech).</summary>
+        public const string ColonelPowersEnergyOfferId = "colonel-powers-energy-offer";
+        /// <summary>Shown while "Energy Ball practice" is active.</summary>
+        public const string ColonelPowersEnergyActiveId = "colonel-powers-energy-active";
+        /// <summary>Turn-in of "Energy Ball practice". PLACEHOLDER text (Dyllan gave none).</summary>
+        public const string ColonelPowersEnergyTurnInId = "colonel-powers-energy-turnin";
+
+        /// <summary>Dyllan's quest 3 speech (#21), split into three boxes at his "..." pauses; joined with spaces it is his text verbatim.</summary>
+        public const string EnergySpeech1 = "You are starting to learn, you might just survive this war torn world... Congrats on getting your first spell.";
+        public const string EnergySpeech2 = "Now take this and show me you can use the wonderful art that is magic...";
+        public const string EnergySpeech3 = "The energy is with in you, you have used it for your slash... Now manifest it as an attack.";
 
         public const string TurnInLine1 = "Not bad scrub, but you have much to learn. But do not worry, I shall train you, till you are ready...";
         public const string TurnInLine2 = "You now have your first ability, why not test it out...";
@@ -47,14 +58,26 @@ namespace WarInLocked.Core.Dialogue
                     });
                 case ColonelPowersPracticeOfferId: return Single("practice-offer", TurnInLine2);
                 case ColonelPowersPracticeActiveId: return Single("practice-active", "Keep at it, {name}... Slash used {used}/{required}.");
-                case ColonelPowersPracticeTurnInId: return Single("practice-turnin", "Good, {name}. Practice is how you get strong... Take this, and use it well.");
+                case ColonelPowersPracticeTurnInId:
+                case ColonelPowersEnergyOfferId: return EnergySpeech(id == ColonelPowersPracticeTurnInId ? "practice-turnin" : "energy-offer");
+                case ColonelPowersEnergyActiveId: return Single("energy-active", "Keep at it, {name}... Energy ball {used}/{required}.");
+                case ColonelPowersEnergyTurnInId: return Single("energy-turnin", "Good, {name}. You have a feel for magic now... Take this for your trouble.");
             }
             throw new KeyNotFoundException("No dialogue with id '" + id + "'.");
         }
 
         public static bool Exists(string id) =>
             id == ColonelPowersId || id == ColonelPowersReofferId || id == ColonelPowersActiveId || id == ColonelPowersDoneId ||
-            id == ColonelPowersTurnInId || id == ColonelPowersPracticeOfferId || id == ColonelPowersPracticeActiveId || id == ColonelPowersPracticeTurnInId;
+            id == ColonelPowersTurnInId || id == ColonelPowersPracticeOfferId || id == ColonelPowersPracticeActiveId || id == ColonelPowersPracticeTurnInId ||
+            id == ColonelPowersEnergyOfferId || id == ColonelPowersEnergyActiveId || id == ColonelPowersEnergyTurnInId;
+
+        private static DialogueGraph EnergySpeech(string first) =>
+            new DialogueGraph(first, new[]
+            {
+                new DialogueNode(first, "Colonel Powers", EnergySpeech1, nextId: "speech2"),
+                new DialogueNode("speech2", "Colonel Powers", EnergySpeech2, nextId: "speech3"),
+                new DialogueNode("speech3", "Colonel Powers", EnergySpeech3),
+            });
 
         private static DialogueGraph Single(string nodeId, string text) =>
             new DialogueGraph(nodeId, new[] { new DialogueNode(nodeId, "Colonel Powers", text) });

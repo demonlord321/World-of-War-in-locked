@@ -25,7 +25,7 @@ namespace WarInLocked.Core.Quests
         public AbilityKind Kind { get; }
         /// <summary>One line for the abilities screen, e.g. "Cut an arch with your blade.".</summary>
         public string Description { get; }
-        /// <summary>The power n at level 1. Physical damage is (10 + weapon bonus + n) x Strength modifier; magic is (10 + n) x Intelligence modifier.</summary>
+        /// <summary>The power n at level 1. Physical damage is (10 + Physical Attack + n) x Strength modifier; magic is (10 + Magical Attack + n) x Intelligence modifier.</summary>
         public int BasePower { get; }
         public int EnergyCost { get; }
         public double CooldownSeconds { get; }
@@ -48,9 +48,10 @@ namespace WarInLocked.Core.Quests
         public static readonly AbilityDefinition SlashDefinition = new AbilityDefinition(
             Slash, "Slash", AbilityKind.Physical, "Cut an arch with your blade.", 5, 10, 5.0, requiresWeapon: true);
 
-        /// <summary>Energy Ball (PLACEHOLDER): magic, (10 + n) x Intelligence modifier with the same n rule, 15 energy, 5 s cooldown.</summary>
+        /// <summary>Energy Ball (#23): magic, (magic base + n) x Intelligence modifier with n = 5 + (level - 1), 5 energy, 5 s cooldown.
+        /// Magic base = 10 + main-hand Magical Attack (a staff adds to it). It does NOT require a staff (placeholder, see QUESTIONS.md).</summary>
         public static readonly AbilityDefinition EnergyBallDefinition = new AbilityDefinition(
-            EnergyBall, "Energy Ball", AbilityKind.Magic, "Hurl a ball of raw energy.", 5, 15, 5.0);
+            EnergyBall, "Energy Ball", AbilityKind.Magic, "Conjure an orb of pure energy.", 5, 5, 5.0);
 
         public static IReadOnlyList<AbilityDefinition> All { get; } = new[] { SlashDefinition, EnergyBallDefinition };
 

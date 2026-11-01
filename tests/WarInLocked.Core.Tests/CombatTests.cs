@@ -32,9 +32,10 @@ public class CombatTests
         return c;
     }
 
+    /// <summary>A plain 30 HP slime-typed target with no resistances, so these combat tests keep simple numbers (the real level 1-3 slimes are in SlimeTests).</summary>
     private static Enemy SlimeAt(int x, int y)
     {
-        var e = Enemy.NewSlime();
+        var e = new Enemy(Enemy.SlimeType, 30);
         e.TileX = x;
         e.TileY = y;
         return e;
@@ -233,15 +234,6 @@ public class CombatTests
     }
 
     // ---- basic attack
-
-    [Fact]
-    public void SlimesHaveThirtyHp()
-    {
-        var s = Enemy.NewSlime();
-        Assert.Equal(30, s.MaxHp);
-        Assert.Equal(30, s.Hp);
-        Assert.False(s.IsDamaged);
-    }
 
     [Fact]
     public void BasicAttackNeedsAnAdjacentLivingTarget()

@@ -51,7 +51,7 @@ namespace WarInLocked.Core.Characters
 
         /// <summary>Raised once for every level gained, with the new level. Handy for a "Level up!" notice.</summary>
         public event Action<int> LeveledUp;
-        /// <summary>Bumps on every level-up and every stat point change; poll it to refresh a UI.</summary>
+        /// <summary>Bumps on every level-up, stat point change and copper change; poll it to refresh a UI.</summary>
         public int Version { get; private set; }
 
         /// <summary>
@@ -156,6 +156,36 @@ namespace WarInLocked.Core.Characters
         }
 
         public int Xp { get; private set; }
+
+        /// <summary>Copper coins (#21), the lowest currency. Never negative. Starts at 0.</summary>
+        public int Copper { get; private set; }
+        /// <summary>Raised when <see cref="Copper"/> changes, with the new total. <see cref="Version"/> also bumps.</summary>
+        public event Action<int> CopperChanged;
+
+        /// <summary>Adds copper (0 or more). Returns the new total.</summary>
+        public int GainCopper(int amount)
+        {
+            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (amount == 0) return Copper;
+            Copper += amount;
+            Version++;
+            CopperChanged?.Invoke(Copper);
+            return Copper;
+        }
+
+        public bool CanAfford(int amount) => amount >= 0 && Copper >= amount;
+
+        /// <summary>Spends copper if there is enough. Returns false (and spends nothing) otherwise.</summary>
+        public bool SpendCopper(int amount)
+        {
+            if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            if (Copper < amount) return false;
+            if (amount == 0) return true;
+            Copper -= amount;
+            Version++;
+            CopperChanged?.Invoke(Copper);
+            return true;
+        }
         private readonly List<string> _abilities = new List<string>();
         /// <summary>Ability ids learned so far, e.g. "slash".</summary>
         public IReadOnlyList<string> Abilities => _abilities;

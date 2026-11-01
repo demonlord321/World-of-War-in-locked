@@ -311,14 +311,13 @@ public class QuestTests
         Assert.DoesNotContain("energy-ball", c.Abilities);
 
         Assert.Equal("colonel-powers-practice-turnin", ColonelPowersQuest.DialogueIdFor(c));
-        Assert.Null(ColonelPowersQuest.QuestToOfferAfterDialogue(c, out var notice));
+        var q3 = ColonelPowersQuest.QuestToOfferAfterDialogue(c, out var notice);
+        Assert.Equal(QuestLibrary.EnergyBallPracticeId, q3.Id);                                      // quest 3 comes next (#21)
         Assert.Equal("Quest complete: Slashing Practice!  +50 XP, learned Energy Ball", notice);
         Assert.Equal(QuestState.Complete, q2.State);
         Assert.Equal(xp + 50, c.Xp);
         Assert.Contains("energy-ball", c.Abilities);
-        Assert.Equal("colonel-powers-done", ColonelPowersQuest.DialogueIdFor(c));
-        Assert.Null(ColonelPowersQuest.QuestToOfferAfterDialogue(c, out var again));
-        Assert.Null(again);
+        Assert.Equal("colonel-powers-energy-offer", ColonelPowersQuest.DialogueIdFor(c));
     }
 
     [Fact]

@@ -4,6 +4,7 @@ namespace WarInLocked.Core.Quests
     {
         public const string SliceAndSlimeId = "slice-and-slime";
         public const string SlashingPracticeId = "slashing-practice";
+        public const string EnergyBallPracticeId = "energy-ball-practice";
 
         /// <summary>The tutorial quest (issue #8), Dyllan's text. A fresh object each call. Reward is given when turned in to the Colonel (#19).</summary>
         public static Quest SliceAndSlime() => new Quest(
@@ -25,8 +26,19 @@ namespace WarInLocked.Core.Quests
             "None",
             SlashingPracticeShortTitle);
 
+        /// <summary>Tutorial quest 3 (#21): cast Energy Ball 5 times on enemies (casts that fire count). Reward 50 XP and 50 copper.</summary>
+        public static Quest EnergyBallPractice() => new Quest(
+            EnergyBallPracticeId,
+            "Quest: Energy Ball practice.",
+            "You have been asked to perform Energy Ball five times. Equip your staff and get to casting.",
+            new[] { QuestObjective.UseAbility(AbilityLibrary.EnergyBall, 5, "Energy ball") },
+            new QuestReward(50, null, 50),
+            "None",
+            EnergyBallPracticeShortTitle);
+
         /// <summary>Short name for the HUD tracker: "Slice and slime".</summary>
         public const string SliceAndSlimeShortTitle = "Slice and slime";
         public const string SlashingPracticeShortTitle = "Slashing Practice";
+        public const string EnergyBallPracticeShortTitle = "Energy Ball practice";
     }
 }
