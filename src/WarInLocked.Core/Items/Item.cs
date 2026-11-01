@@ -13,15 +13,16 @@ namespace WarInLocked.Core.Items
         /// <param name="healAmount">Consumables: health restored when used (#26), capped at the character's max health. 0 = no heal.</param>
         /// <param name="useCooldownSeconds">Consumables: the shared use cooldown that starts after using one (#26).</param>
         /// <param name="sellPriceCopper">What a shop pays for one (#36), 0 if it cannot be sold.</param>
-        /// <param name="maxStack">How many fit in one inventory slot. Equippable items must be 1.</param>
-        public Item(string id, string name, ItemType type, EquipSlot? equipSlot = null, int maxStack = 1, int physicalAttack = 0, int magicalAttack = 0, string description = "", int healAmount = 0, double useCooldownSeconds = 0, bool recoversVitals = false, int sellPriceCopper = 0)
+        /// <param name="maxStack">How many fit in one inventory slot. 0 (the default) means the rule from Dyllan: equipment (anything equippable) never stacks (1), every other item stacks up to <see cref="DefaultStackSize"/>. An explicit value is only for special cases and tests; equippable items must be 1.</param>
+        public Item(string id, string name, ItemType type, EquipSlot? equipSlot = null, int maxStack = 0, int physicalAttack = 0, int magicalAttack = 0, string description = "", int healAmount = 0, double useCooldownSeconds = 0, bool recoversVitals = false, int sellPriceCopper = 0)
         {
             if (sellPriceCopper < 0) throw new ArgumentOutOfRangeException(nameof(sellPriceCopper));
             SellPriceCopper = sellPriceCopper;
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("An item needs an id.", nameof(id));
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("An item needs a name.", nameof(name));
-            if (maxStack < 1) throw new ArgumentOutOfRangeException(nameof(maxStack));
-            if (equipSlot.HasValue && maxStack != 1) throw new ArgumentException("Equippable items cannot stack.", nameof(maxStack));
+            if (maxStack < 0) throw new ArgumentOutOfRangeException(nameof(maxStack));
+            if (equipSlot.HasValue && maxStack > 1) throw new ArgumentException("Equippable items cannot stack.", nameof(maxStack));
+            if (maxStack == 0) maxStack = equipSlot.HasValue ? 1 : DefaultStackSize;
             Id = id;
             Name = name;
             Type = type;
@@ -46,7 +47,12 @@ namespace WarInLocked.Core.Items
         public string Name { get; }
         public ItemType Type { get; }
         public EquipSlot? EquipSlot { get; }
+        /// <summary>How many of a non-equipment item fit in one inventory slot: 99 (set by Dyllan, confirmed).</summary>
+        public const int DefaultStackSize = 99;
+        /// <summary>How many fit in one slot: 1 for equipment, <see cref="DefaultStackSize"/> for everything else (unless set explicitly).</summary>
         public int MaxStack { get; }
+        /// <summary>True when more than one fits in a slot (every non-equipment item). The slot shows its count (<c>ItemStack.Count</c>) when this is true and the count is above 1.</summary>
+        public bool IsStackable => MaxStack > 1;
         /// <summary>Physical Attack bonus (0 if none); see DamageCalculator.</summary>
         public int PhysicalAttack { get; }
         /// <summary>Magical Attack bonus (0 if none); see DamageCalculator.</summary>

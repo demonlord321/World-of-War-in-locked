@@ -11,7 +11,7 @@ public class EquipmentTests
     private static readonly Item Boots = new("boots", "Boots", ItemType.Armour, EquipSlot.Feet);
     private static readonly Item Ring = new("ring", "Ring", ItemType.Accessory, EquipSlot.Accessory);
     private static readonly Item Ring2 = new("ring2", "Ring 2", ItemType.Accessory, EquipSlot.Accessory);
-    private static readonly Item Rock = new("rock", "Rock", ItemType.Misc);
+    private static readonly Item Rock = new("rock", "Rock", ItemType.Misc, maxStack: 1);   // one per slot so tests can fill the bag
 
     private static Equipment NewEquipment(out Inventory inv)
     {

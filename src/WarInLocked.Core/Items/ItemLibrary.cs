@@ -12,8 +12,8 @@ namespace WarInLocked.Core.Items
         public const string SlimeJellyId = "slime-jelly";
         /// <summary>Base sell price of one Slime Jelly in copper (#36, Dyllan: "usually 2 coppers"); a shop may pay a different amount later.</summary>
         public const int SlimeJellySellPrice = 2;
-        /// <summary>PLACEHOLDER stack size of Slime Jelly (#36).</summary>
-        public const int SlimeJellyStackSize = 20;
+        /// <summary>Stack size of Slime Jelly (#36): the general stack cap of 99.</summary>
+        public const int SlimeJellyStackSize = Item.DefaultStackSize;
         /// <summary>PLACEHOLDER flavour line for Slime Jelly (#36): Dyllan only said it has no use but selling.</summary>
         public const string SlimeJellyDescription = "A wobbling blob of jelly. Good for nothing but selling."; 
 
@@ -21,8 +21,8 @@ namespace WarInLocked.Core.Items
         public const int LesserHealingPotionHeal = 50;
         /// <summary>Shared cooldown (seconds) after using any consumable (#26).</summary>
         public const double ConsumableCooldownSeconds = 5.0;
-        /// <summary>PLACEHOLDER stack size for consumables (#26).</summary>
-        public const int ConsumableStackSize = 10;
+        /// <summary>Stack size for consumables: the general stack cap of 99 (Dyllan: items of the same thing stack, except equipment).</summary>
+        public const int ConsumableStackSize = Item.DefaultStackSize;
 
         /// <summary>Dyllan's text from issue #26, verbatim.</summary>
         public const string LesserHealingPotionDescription = "A dull red colour. Tastes oddly like strawberries.";
@@ -49,7 +49,7 @@ namespace WarInLocked.Core.Items
         public static readonly Item PracticeStaff = new Item(PracticeStaffId, "Practice Staff", ItemType.Weapon, EquipSlot.MainHand,
             magicalAttack: PracticeStaffMagicalAttack, description: PracticeStaffDescription);
 
-        /// <summary>Potion of lesser healing (#26): heals 50 HP, shared 5 s cooldown, stacks to 10.</summary>
+        /// <summary>Potion of lesser healing (#26): heals 50 HP, shared 5 s cooldown, stacks to 99 (general stack cap).</summary>
         public static readonly Item LesserHealingPotion = new Item(LesserHealingPotionId, "Potion of lesser healing", ItemType.Consumable,
             maxStack: ConsumableStackSize, description: LesserHealingPotionDescription,
             healAmount: LesserHealingPotionHeal, useCooldownSeconds: ConsumableCooldownSeconds);

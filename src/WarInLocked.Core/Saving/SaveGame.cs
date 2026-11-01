@@ -193,7 +193,9 @@ namespace WarInLocked.Core.Saving
                 {
                     var item = ItemLibrary.Get(st.ItemId);
                     if (item == null || st.Slot < 0 || st.Slot >= c.Inventory.Capacity || st.Count < 1) continue;
-                    c.Inventory.Replace(st.Slot, new ItemStack(item, Math.Min(st.Count, item.MaxStack)));
+                    int kept = Math.Min(st.Count, item.MaxStack);
+                    c.Inventory.Replace(st.Slot, new ItemStack(item, kept));
+                    if (st.Count > kept) c.Inventory.Add(item, st.Count - kept);   // a stack bigger than today's cap spills into other slots instead of vanishing
                 }
             if (Equipment != null)
                 foreach (var e in Equipment)

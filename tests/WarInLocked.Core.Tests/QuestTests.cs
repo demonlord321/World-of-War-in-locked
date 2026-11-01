@@ -185,7 +185,7 @@ public class QuestTests
     public void AcceptFailsWithoutRoomForTheSwordAndKeepsTheQuestOffered()
     {
         var c = Hero();
-        for (int i = 0; i < 10; i++) c.Inventory.Add(new Item("rock", "Rock", ItemType.Misc));
+        for (int i = 0; i < 10; i++) c.Inventory.Add(new Item("rock", "Rock", ItemType.Misc, maxStack: 1));
         c.Equipment.AddAndEquip(new Item("old", "Old Sword", ItemType.Weapon, EquipSlot.MainHand));
         ColonelPowersQuest.QuestToOfferAfterDialogue(c);
 

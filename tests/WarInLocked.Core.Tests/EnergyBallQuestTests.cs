@@ -161,7 +161,7 @@ public class EnergyBallQuestTests
     public void AFullInventoryRefusesQuestThreeAndKeepsItOffered()
     {
         var c = AtQuest3Offer();
-        while (!c.Inventory.IsFull) c.Inventory.Add(new Item("rock" + c.Inventory.Capacity, "Rock", ItemType.Misc));
+        while (!c.Inventory.IsFull) c.Inventory.Add(new Item("rock" + c.Inventory.Capacity, "Rock", ItemType.Misc, maxStack: 1));
 
         Assert.False(ColonelPowersQuest.Accept(c, out var notice));
         Assert.Equal("Your inventory is full", notice);

@@ -132,11 +132,11 @@ Decided by Dyllan (his text is verbatim, typos included):
 - **Shop**: after accepting quest 4 the Colonel offers **Talk / Shop**. Talk says "Stop waiting time and let's get moveing.". Shop has **Buy and Sell tabs (Sell disabled)**, stock is the Potion at **25 copper**, and selecting an item offers **Buy / Haggle (Haggle disabled)**. Buying refuses with "Not enough copper" or "Inventory full" and changes nothing.
 
 My interpretations and placeholders, please confirm:
-- **Potion stack size is 10** (placeholder).
+- **Potion stack size is 99** (the general stack cap, confirmed; was a placeholder 10).
 - **Using a potion at full health is refused** ("Already at full health") and nothing is spent, so the cooldown does not start either. Other refusals: "On cooldown", "None left", "Cannot be used". Should it be allowed at full health instead?
 - **The 5 s cooldown is shared by all consumables** and is independent of the ability cooldowns. It ticks while the game updates. Every hotbar slot holding an item shows it.
 - **Hotbar:** a slot holds an ability OR an item. Nothing puts a potion on the bar by itself; the inventory/hotbar screen must call `Combat.AssignItemToHotbar`. Keys 1-5 then use it with no enemy target needed. The slot keeps the item even when the stack runs out ("None left").
-- **Adventurer's rations (#26):** "When outside of combat, recover completely. Up till level 10. After that the rations are only half as effective." A usable consumable (stack 10, shares the 5 s item cooldown). Level 10 or lower: restores health AND energy to max. Above level 10: restores 50% of the max health and 50% of the max energy (capped at max, rounded half up for health, down for whole energy). One is used each time.
+- **Adventurer's rations (#26):** "When outside of combat, recover completely. Up till level 10. After that the rations are only half as effective." A usable consumable (stack 99, shares the 5 s item cooldown). Level 10 or lower: restores health AND energy to max. Above level 10: restores 50% of the max health and 50% of the max energy (capped at max, rounded half up for health, down for whole energy). One is used each time.
 - **In combat** = dealt or took damage within the last **15 s** (Dyllan, 1 Nov; `CombatController.CombatDurationSeconds`; the window restarts on every hit and counts down while the game updates). Rations are refused with "Can't use in combat" while it runs. Rations restore both health and energy.
 - **Rations refusals** in this order: "Can't use in combat", "On cooldown", "Already fully recovered" (health AND energy both full; if only one is missing they work). Nothing is spent when refused.
 - **Rations text:** Dyllan's sentence is the item description (there is no flavour line); the effect lines show only "Cooldown after use 5s" so the sentence is not printed twice. Name written with the apostrophe ("Adventurer's rations"), the issue says "Adventurers rations": which spelling do you want?
@@ -229,7 +229,7 @@ Dyllan (1 Nov): the title's +2 stops short of the milestone. Per stat: bonus = m
 ## Slime kills: XP and Slime Jelly (#36)
 Dyllan (1 Nov): level 1 slimes give 5 XP, level 2 give 10, level 3 give 15, and each kill drops one Slime Jelly regardless of level, which can only be sold; no currency drops from monsters. Core: `CombatResult.XpGained`, `LevelsGained`, `DroppedItem`, `DropLost` on a kill; XP is added to the character at once and the jelly goes into the inventory (it stacks). Questions and placeholders:
 - **XP for levels 4 and 5 confirmed (Dyllan: "Level 4 and 5 Slimes follow the same pattern for now. Increasing by 5 over the last level.")**: 20 and 25. Night slimes: Dyllan, "We will discuss night time in another task." (#60). Until then night slimes give 5 x their raised level (a night level 1 slime gives 55), a placeholder.
-- **Slime Jelly base sell price is 2 copper** (`ItemLibrary.SlimeJellySellPrice`; Dyllan: "For now slime jellies sell usually for 2 coppers. No shops exist to sell to yet though and the price can vary depending on the shop."). It stacks to 20 (placeholder) and is a Misc item with the text "A wobbling blob of jelly. Good for nothing but selling." (my placeholder text). The shop's Sell tab is still disabled (#28) and no shop buys it yet; when shops get a sell side they may pay more or less than the base 2.
+- **Slime Jelly base sell price is 2 copper** (`ItemLibrary.SlimeJellySellPrice`; Dyllan: "For now slime jellies sell usually for 2 coppers. No shops exist to sell to yet though and the price can vary depending on the shop."). It stacks to 99 (the general stack cap) and is a Misc item with the text "A wobbling blob of jelly. Good for nothing but selling." (my placeholder text). The shop's Sell tab is still disabled (#28) and no shop buys it yet; when shops get a sell side they may pay more or less than the base 2.
 - **Full inventory (placeholder rule): the jelly is lost** and a notice is shown ("Inventory full: the drop was lost"); the XP is still given and the kill still counts for quests. It still stacks onto an existing jelly stack. Say if the jelly should instead wait on the ground or block the kill.
 - Kills now give XP, so quest 2's turn-in XP (50) comes on top of the kill XP (5 per level 1 slime): the tutorial now reaches level 2 after the turn-in with 75 XP.
 
@@ -244,3 +244,12 @@ Built (`DeathDebuff`, `Character.DeathDebuffLevel / DeathDebuffRemaining / Death
 - **Saved:** level and remaining seconds are in the save file (`DeathDebuffLevel`, `DeathDebuffRemaining`; older saves load with none).
 - Not specified, so guessed: **resting at the barracks and Adventurer's rations do not remove the debuff**; the max-energy cut also lowers the energy ceiling for regeneration; the cut is on the character's maximums, so ration/heal amounts are capped at the reduced maximum.
 - Unanswered: should the debuff be removable (rest, item, shrine), and should it show on the respawn screen? (Core exposes the text; the screen decides.)
+
+## Item stacking (1 Nov)
+
+Dyllan, verbatim: "Oh item stacking, add it in, items of the same thing stack, except equipment. They do not stack in inventory." He then set the cap: **99 for all stackable items** (confirmed, not a placeholder).
+
+- Every item that is not equippable stacks (same id, one inventory slot) up to **99** (`Item.DefaultStackSize`, `Item.MaxStack`): potions, rations, Slime Jelly, quest or misc items. A 100th goes into the next free slot.
+- Equipment (anything equippable) never stacks: one per slot, and an equippable item cannot be given a stack size. Unequipping puts one item back in a slot.
+- Adding tops up existing partial stacks first, then uses free slots; using an item takes one from the stack (the slot empties at zero); `RemoveItem` takes from the last stacks first. Save/load keeps every slot's count; a saved stack above today's cap spills into other slots instead of vanishing.
+- Guess: all non-equipment items share the one cap (no per-item caps). A full inventory still accepts an item that stacks onto a partial stack.

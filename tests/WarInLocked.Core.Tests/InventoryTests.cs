@@ -6,7 +6,7 @@ public class InventoryTests
 {
     private static readonly Item Sword = new("sword", "Sword", ItemType.Weapon, EquipSlot.MainHand);
     private static readonly Item Potion = new("potion", "Potion", ItemType.Misc, maxStack: 5);
-    private static readonly Item Rock = new("rock", "Rock", ItemType.Misc);
+    private static readonly Item Rock = new("rock", "Rock", ItemType.Misc, maxStack: 1);   // one per slot so tests can fill the bag
 
     [Fact]
     public void HasTenEmptySlotsByDefault()

@@ -48,7 +48,7 @@ public class ShopTitleItemTests
         Assert.Equal("A dull red colour. Tastes oddly like strawberries.", p.Description);
         Assert.Equal(50, p.HealAmount);
         Assert.Equal(5, p.UseCooldownSeconds);
-        Assert.Equal(10, p.MaxStack);
+        Assert.Equal(99, p.MaxStack);   // the general stack cap
         Assert.Equal(new[] { "Heals 50 HP.", "Cooldown after use 5s" }, p.EffectLines);
         Assert.Equal(p.EffectLines, p.DetailLines);
         Assert.True(p.IsUsable);
