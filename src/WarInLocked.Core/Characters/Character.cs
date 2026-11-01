@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using WarInLocked.Core.Combat;
 using WarInLocked.Core.Items;
 using WarInLocked.Core.Quests;
+using WarInLocked.Core.World;
 
 namespace WarInLocked.Core.Characters
 {
@@ -152,8 +153,62 @@ namespace WarInLocked.Core.Characters
             Health -= lost;
             if (amount > 0) Combat.MarkInCombat();
             if (lost > 0) Damaged?.Invoke(lost);
-            if (!wasDead && IsDead) Died?.Invoke();
+            if (!wasDead && IsDead)
+            {
+                RespawnRemaining = RespawnDelaySeconds;
+                Died?.Invoke();
+            }
             return lost;
+        }
+
+        // ---- Respawn (#29) ----
+        /// <summary>The headline shown when the character falls (Dyllan, #29, verbatim).</summary>
+        public const string FallenTitle = "You have fallen...";
+        /// <summary>The line under the headline (Dyllan, #29, verbatim).</summary>
+        public const string FallenSubtitle = "The goddess has seen fit to grant you another chance.";
+        /// <summary>The whole message as one string.</summary>
+        public const string FallenMessage = FallenTitle + " " + FallenSubtitle;
+        /// <summary>The character respawns automatically this long after falling (Dyllan: 5 s).</summary>
+        public const double RespawnDelaySeconds = 5.0;
+
+        /// <summary>Seconds until the respawn while fallen (counts down in <see cref="UpdateRespawn"/>, which <c>Combat.Update</c> calls); 0 when alive.</summary>
+        public double RespawnRemaining { get; private set; }
+        /// <summary>0 just after falling up to 1 at the respawn; 0 when alive. For a countdown bar.</summary>
+        public double RespawnProgress => IsDead ? 1.0 - RespawnRemaining / RespawnDelaySeconds : 0.0;
+
+        /// <summary>
+        /// Where the character respawns. Starts as the tutorial bind point, next to Colonel Powers. Only one is kept: entering a new town
+        /// does not move it, only <see cref="SetBindPoint"/> does.
+        /// </summary>
+        public BindPoint BindPoint { get; private set; } = BindPoint.Tutorial;
+
+        /// <summary>Sets the bind point at an inn or rest location, replacing the old one.</summary>
+        public void SetBindPoint(BindPoint point)
+        {
+            if (point == null) throw new ArgumentNullException(nameof(point));
+            BindPoint = point;
+            Version++;
+        }
+
+        /// <summary>
+        /// Raised when the respawn happens, with the bind point to move the player to (map and tile). The character is alive again,
+        /// at full health and energy. The screen should move the player, call <see cref="CombatController.CalmEnemies"/> and clear its death overlay.
+        /// </summary>
+        public event Action<BindPoint> Respawned;
+
+        /// <summary>Counts the respawn down while fallen and respawns at 0. Does nothing while alive. <c>Combat.Update</c> calls this, so the screen needs no extra call.</summary>
+        public void UpdateRespawn(double seconds)
+        {
+            if (seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
+            if (!IsDead) return;
+            RespawnRemaining = Math.Max(0, RespawnRemaining - seconds);
+            if (RespawnRemaining > 0) return;
+            // PLACEHOLDERS (QUESTIONS.md): full health and energy, no penalty, combat window cleared. Quests, XP, copper and items are untouched.
+            Health = MaxHealth;
+            _energy = MaxEnergy;
+            Combat.ClearCombat();
+            Version++;
+            Respawned?.Invoke(BindPoint);
         }
 
         public void Heal(int amount)
@@ -236,6 +291,7 @@ namespace WarInLocked.Core.Characters
             var item = Inventory.Contains(itemId) ? ItemLibrary.Get(itemId) : null;
             if (item == null) return Inventory.Contains(itemId) ? ItemUseResult.CannotUseText : ItemUseResult.NoneLeftText;
             if (!item.IsUsable) return ItemUseResult.CannotUseText;
+            if (IsDead) return ItemUseResult.FallenText;
             if (item.RecoversVitals && InCombat) return ItemUseResult.InCombatText;
             if (!ItemReady) return ItemUseResult.OnCooldownText;
             if (item.RecoversVitals && Health >= MaxHealth && _energy >= MaxEnergy) return ItemUseResult.FullyRecoveredText;

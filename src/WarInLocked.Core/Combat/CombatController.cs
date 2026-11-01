@@ -118,6 +118,7 @@ namespace WarInLocked.Core.Combat
             if (seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
             if (AttackCooldownRemaining > 0) AttackCooldownRemaining = Math.Max(0, AttackCooldownRemaining - seconds);
             if (CombatCooldownRemaining > 0) CombatCooldownRemaining = Math.Max(0, CombatCooldownRemaining - seconds);
+            _owner.UpdateRespawn(seconds);   // #29: counts down while fallen, then respawns
             Hotbar.Update(seconds);
             _owner.TickItemCooldown(seconds);
             _owner.RegenEnergy(EnergyRegenPerSecond * seconds);
@@ -130,6 +131,16 @@ namespace WarInLocked.Core.Combat
         public double CombatCooldownRemaining { get; private set; }
         public bool InCombat => CombatCooldownRemaining > 0;
         /// <summary>Starts (or restarts) the in-combat window. Called when the player deals or takes damage.</summary>
+        /// <summary>Ends the in-combat window at once (a respawn does this).</summary>
+        public void ClearCombat() => CombatCooldownRemaining = 0;
+
+        /// <summary>Makes every enemy passive again (aggro and attack timers reset). Call it from the <c>Character.Respawned</c> handler (#29).</summary>
+        public static void CalmEnemies(IEnumerable<Enemy> enemies)
+        {
+            if (enemies == null) throw new ArgumentNullException(nameof(enemies));
+            foreach (var e in enemies) e.Calm();
+        }
+
         public void MarkInCombat() => CombatCooldownRemaining = CombatDurationSeconds;
 
         /// <summary>Puts a consumable (by item id) on a hotbar slot, replacing what was there (#26). Keys 1-5 then use it.</summary>

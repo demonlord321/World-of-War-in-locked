@@ -7,6 +7,7 @@ namespace WarInLocked.Core.Items
         public const string CannotUseText = "Cannot be used";
         public const string OnCooldownText = "On cooldown";
         public const string FullHealthText = "Already at full health";
+        public const string FallenText = "Can't use while fallen";
         public const string InCombatText = "Can't use in combat";
         public const string FullyRecoveredText = "Already fully recovered";
 

@@ -122,6 +122,13 @@ namespace WarInLocked.Core.Combat
             AttackCooldownRemaining = AttackIntervalSeconds;
         }
 
+        /// <summary>Back to passive (used when the player respawns, #29): no aggro, no attack timer.</summary>
+        public void Calm()
+        {
+            IsAggro = false;
+            AttackCooldownRemaining = 0;
+        }
+
         /// <summary>Counts down the attack timer; returns true when an attack lands now. The timer waits (at 0) while the target is out of reach.</summary>
         internal bool TickAttack(double seconds, bool targetInReach)
         {
