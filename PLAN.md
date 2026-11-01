@@ -109,3 +109,10 @@ Decided 1 Nov (#20): Slash = (base attack + n) x Strength modifier, where base a
 Decided 1 Nov: Slash needs a weapon in the main hand and can't be used unarmed.
 Status 1 Nov, 08:53: #19 and #20 rules in b919b0d (225 tests), not run in game yet. Slimes respawn after 10 s. Placeholders: Energy Ball (10 + n) x Int modifier, 15 energy, 5 s cooldown; Colonel's quest 2 hand-in lines are filler. Ability screen: Mapmaker.
 Status 1 Nov, 08:57: abilities screen on K in 3ab52ec. #8 to #20 (except #15 defense beyond health) are all on main and await Dyllan's test. Known nit: the Energy Ball label spills past its hotbar slot.
+
+### Added 1 Nov: #21 to #24
+- #21 Tutorial Quest 3 "Energy Ball practice": hand in quest 2 to the Colonel, his lines, receive a Practice Staff, cast Energy Ball 5 times (0/5). Reward: 50 XP and 50 copper (first currency). No failure condition.
+- #22 Weapons: Practice Sword (Physical Attack +5) and Practice Staff (Magical Attack +5), with flavour text, plus an equipment detail screen.
+- #23 Spells: Energy Ball = (base magic damage + n) x Intelligence modifier, n = 5 at level 1. Cooldown 5 s, cost 5 energy (was the 15 placeholder).
+- #24 Slimes: levels 1 to 3 in the forest. Lv 1 100 HP / 10 attack, Lv 2 125 / 12, Lv 3 150 / 15. Vulnerable to both physical and magic damage (other monsters may resist).
+Open questions: Do slimes now attack the player, and how often? How much more damage does "vulnerable" mean? Does Energy Ball need the staff equipped? Do slimes give XP or drop copper? How is the level 1 to 3 mix spread?
