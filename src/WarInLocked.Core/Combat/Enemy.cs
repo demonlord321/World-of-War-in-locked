@@ -16,11 +16,15 @@ namespace WarInLocked.Core.Combat
         public const int MinSlimeLevel = 1, MaxSlimeLevel = 3;
         /// <summary>PLACEHOLDER: slimes take 1.25x from both physical and magical damage ("vulnerable to both", #24).</summary>
         public const double SlimeVulnerability = 1.25;
+        /// <summary>Aggro'd enemies attack the player this often (Dyllan: every 3 s).</summary>
+        public const double AttackIntervalSeconds = 3.0;
+        /// <summary>How long <see cref="AttackFlash"/> lasts after an attack, in seconds.</summary>
+        public const double AttackFlashDuration = 0.25;
         /// <summary>How long the hit flicker lasts, in seconds.</summary>
         public const double FlashDuration = 0.25;
 
         /// <param name="level">Shown level (slimes 1-3).</param>
-        /// <param name="attack">Attack value (stored only: enemies do not fight back yet).</param>
+        /// <param name="attack">Attack value (slimes: damage dealt to the player every 3 s once aggro'd).</param>
         /// <param name="physicalMultiplier">Multiplier on physical damage taken: 1 normal, below 1 resistant, above 1 vulnerable.</param>
         /// <param name="magicalMultiplier">Multiplier on magical damage taken.</param>
         public Enemy(string type, int maxHp, int level = 1, int attack = 0, double physicalMultiplier = 1.0, double magicalMultiplier = 1.0)
@@ -99,6 +103,37 @@ namespace WarInLocked.Core.Combat
         public double LastHitTime { get; private set; } = -1;
         public int LastDamage { get; private set; }
 
+        /// <summary>
+        /// False until the player damages this enemy (enemies are passive); true from then until it dies. A respawn is a new Enemy,
+        /// so aggro starts over. Draw an "angry" state while true.
+        /// </summary>
+        public bool IsAggro { get; private set; }
+        /// <summary>Seconds until the next attack while aggro'd (counts down from <see cref="AttackIntervalSeconds"/> at aggro).</summary>
+        public double AttackCooldownRemaining { get; private set; }
+        /// <summary>Seconds of attack flash left (1 = just struck): <see cref="AttackFlashFraction"/> for a lunge/flicker.</summary>
+        public double AttackFlash { get; private set; }
+        public double AttackFlashFraction => AttackFlash / AttackFlashDuration;
+
+        /// <summary>Makes the enemy hostile; the first attack comes <see cref="AttackIntervalSeconds"/> later. No effect if already aggro'd or dead.</summary>
+        public void Provoke()
+        {
+            if (IsAggro || IsDead) return;
+            IsAggro = true;
+            AttackCooldownRemaining = AttackIntervalSeconds;
+        }
+
+        /// <summary>Counts down the attack timer; returns true when an attack lands now. The timer waits (at 0) while the target is out of reach.</summary>
+        internal bool TickAttack(double seconds, bool targetInReach)
+        {
+            if (AttackFlash > 0) AttackFlash = Math.Max(0, AttackFlash - seconds);
+            if (!IsAggro || IsDead) return false;
+            AttackCooldownRemaining = Math.Max(0, AttackCooldownRemaining - seconds);
+            if (AttackCooldownRemaining > 0 || !targetInReach) return false;
+            AttackCooldownRemaining = AttackIntervalSeconds;
+            AttackFlash = AttackFlashDuration;
+            return true;
+        }
+
         public int TileX { get; set; }
         public int TileY { get; set; }
 
@@ -112,6 +147,8 @@ namespace WarInLocked.Core.Combat
             LastDamage = dealt;
             LastHitTime = Age;
             DamageFlash = FlashDuration;
+            if (dealt > 0 && !IsDead) Provoke();
+            if (IsDead) IsAggro = false;
             return dealt;
         }
 

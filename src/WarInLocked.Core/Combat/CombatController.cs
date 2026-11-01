@@ -124,8 +124,8 @@ namespace WarInLocked.Core.Combat
             SyncHotbar();
         }
 
-        /// <summary>PLACEHOLDER (#26): you are in combat for this many seconds after dealing or taking damage.</summary>
-        public const double CombatDurationSeconds = 5.0;
+        /// <summary>You are in combat for this many seconds after dealing or taking damage (Dyllan: 15 s).</summary>
+        public const double CombatDurationSeconds = 15.0;
         /// <summary>Seconds left of the in-combat window; 0 when out of combat.</summary>
         public double CombatCooldownRemaining { get; private set; }
         public bool InCombat => CombatCooldownRemaining > 0;
@@ -190,6 +190,25 @@ namespace WarInLocked.Core.Combat
             foreach (var q in _owner.Quests.RecordAbilityUse(ability.Id))
                 if (!ready.Contains(q)) ready.Add(q);
             return new CombatResult(result.Outcome, result.Target, result.Damage, ready, state, leveled);
+        }
+
+        /// <summary>
+        /// Drives aggro'd enemies (call once per frame with the same seconds as <see cref="Update"/>). Each aggro'd, living enemy
+        /// on a tile next to the player (or on it) hits the player for its <see cref="Enemy.Attack"/> every
+        /// <see cref="Enemy.AttackIntervalSeconds"/>; the damage counts as damage received (starts the combat window).
+        /// Passive enemies never attack. A dead player is not attacked. Returns the damage the player lost this call.
+        /// </summary>
+        public int UpdateEnemies(IReadOnlyList<Enemy> enemies, double seconds, int playerX, int playerY)
+        {
+            if (enemies == null) throw new ArgumentNullException(nameof(enemies));
+            if (seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
+            int total = 0;
+            foreach (var e in enemies)
+            {
+                bool inReach = Math.Abs(playerX - e.TileX) <= 1 && Math.Abs(playerY - e.TileY) <= 1;
+                if (e.TickAttack(seconds, inReach && !_owner.IsDead)) total += _owner.TakeDamage(e.Attack);
+            }
+            return total;
         }
 
         private CombatResult Strike(Enemy target, int damage)

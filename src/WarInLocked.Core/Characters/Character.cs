@@ -137,13 +137,22 @@ namespace WarInLocked.Core.Characters
         /// <summary>Energy including the fraction, for a smooth bar.</summary>
         public double EnergyExact => _energy;
 
+        /// <summary>PLACEHOLDER death handling: health is simply clamped at 0 (<see cref="IsDead"/>) and <see cref="Died"/> fires once; nothing else happens.</summary>
+        /// <summary>Raised after the character loses health (not below 0), with the amount lost. Draw a hit flash / damage number.</summary>
+        public event Action<int> Damaged;
+        /// <summary>Raised once when health reaches 0.</summary>
+        public event Action Died;
+
         /// <summary>Removes health (not below 0). Returns the amount actually lost.</summary>
         public int TakeDamage(int amount)
         {
             if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
+            bool wasDead = IsDead;
             int lost = Math.Min(amount, Health);
             Health -= lost;
             if (amount > 0) Combat.MarkInCombat();
+            if (lost > 0) Damaged?.Invoke(lost);
+            if (!wasDead && IsDead) Died?.Invoke();
             return lost;
         }
 

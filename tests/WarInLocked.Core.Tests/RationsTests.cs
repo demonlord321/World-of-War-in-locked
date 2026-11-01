@@ -56,7 +56,7 @@ public class RationsTests
     {
         var c = Hero(11);
         c.TakeDamage(c.MaxHealth - 1);
-        c.Combat.Update(6);
+        c.Combat.Update(CombatController.CombatDurationSeconds + 1);
         c.SpendEnergy(c.MaxEnergy);
         int hp = c.Health;
         var r = c.UseItem(ItemLibrary.AdventurersRationsId);
@@ -67,7 +67,7 @@ public class RationsTests
         // Only slightly hurt: the half is capped at the max.
         var d = Hero(11);
         d.TakeDamage(3);
-        d.Combat.Update(6);
+        d.Combat.Update(CombatController.CombatDurationSeconds + 1);
         d.UseItem(ItemLibrary.AdventurersRationsId);
         Assert.Equal(d.MaxHealth, d.Health);
         Assert.Equal(d.MaxEnergy, d.Energy);
@@ -85,7 +85,7 @@ public class RationsTests
         Assert.Equal("Can't use in combat", r.Reason);
         Assert.Equal(3, c.Inventory.CountOf(ItemLibrary.AdventurersRationsId));
         Assert.Equal(0, c.ItemCooldownRemaining);
-        c.Combat.Update(4.9);
+        c.Combat.Update(CombatController.CombatDurationSeconds - 0.1);
         Assert.Equal("Can't use in combat", c.CanUse(ItemLibrary.AdventurersRationsId));
         c.Combat.Update(0.2);
         Assert.False(c.InCombat);
@@ -101,9 +101,9 @@ public class RationsTests
         var slime = new Enemy(Enemy.SlimeType, 1000) { TileX = 6, TileY = 5 };
         c.Combat.BasicAttack(5, 5, new List<Enemy> { slime });
         Assert.True(c.InCombat);
-        Assert.Equal(5, c.CombatCooldownRemaining, 3);
+        Assert.Equal(CombatController.CombatDurationSeconds, c.CombatCooldownRemaining, 3);
         c.Combat.Update(2);
-        Assert.Equal(3, c.CombatCooldownRemaining, 3);
+        Assert.Equal(CombatController.CombatDurationSeconds - 2, c.CombatCooldownRemaining, 3);
     }
 
     [Fact]
