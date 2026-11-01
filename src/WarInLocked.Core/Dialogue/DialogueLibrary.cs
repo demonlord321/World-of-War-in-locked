@@ -119,6 +119,7 @@ namespace WarInLocked.Core.Dialogue
                 case WhiplashIdleId:
                     return new DialogueGraph("idle", new[] { new DialogueNode("idle", WhiplashSpeaker, WhiplashIdleLine) });
                 case ColonelPowersMenuId: return Menu();
+                case BarracksMasterId: return BarracksMasterDialogue(false);
             }
             throw new KeyNotFoundException("No dialogue with id '" + id + "'.");
         }
@@ -128,7 +129,40 @@ namespace WarInLocked.Core.Dialogue
             id == ColonelPowersTurnInId || id == ColonelPowersPracticeOfferId || id == ColonelPowersPracticeActiveId || id == ColonelPowersPracticeTurnInId ||
             id == ColonelPowersEnergyOfferId || id == ColonelPowersEnergyActiveId || id == ColonelPowersEnergyTurnInId ||
             id == ColonelPowersShopOfferId || id == ColonelPowersShopTurnInId || id == ColonelPowersMenuId ||
-            id == ColonelPowersAdventurersOfferId || id == WhiplashId || id == WhiplashIdleId;
+            id == ColonelPowersAdventurersOfferId || id == WhiplashId || id == WhiplashIdleId || id == BarracksMasterId;
+
+        /// <summary>The Barracks Master in the Adventurers encampment (#55); the id is also his NPC id in the map data.</summary>
+        public const string BarracksMasterId = "barracks-master";
+        public const string BarracksMasterSpeaker = "Barracks Master";
+        /// <summary>Dyllan's welcome (#55), verbatim.</summary>
+        public const string BarracksWelcomeLine = "Welcome adventurer to the Adventurers encampment. Until you are prepared for the pilgrimage you may rest up here and train.";
+        /// <summary>Dyllan's option labels (#55).</summary>
+        public const string RestOptionText = "Rest";
+        public const string SetAsHomeOptionText = "Set as home";
+        /// <summary>PLACEHOLDER label of the night-only option ("Awakening at 8 am").</summary>
+        public const string SleepOptionText = "Sleep until morning";
+        /// <summary>PLACEHOLDER label that leaves the menu without doing anything (Dyllan listed only Rest and Set as home).</summary>
+        public const string BarracksLeaveOptionText = "Leave";
+
+        /// <summary>
+        /// The Barracks Master: Dyllan's welcome line, with the menu under it: Rest, Set as home, and at night also "Sleep until morning"
+        /// (<paramref name="night"/>), plus a placeholder Leave. Picking one ends the dialogue with an action from <see cref="BarracksActions"/>
+        /// (Leave has none); the game passes it to <c>BarracksMaster.Apply</c>. Use <c>BarracksMaster.CreateDialogue(character)</c> to get the right variant.
+        /// </summary>
+        public static DialogueGraph BarracksMasterDialogue(bool night)
+        {
+            var options = new List<DialogueOption>
+            {
+                new DialogueOption(RestOptionText, null, BarracksActions.Rest),
+            };
+            if (night) options.Add(new DialogueOption(SleepOptionText, null, BarracksActions.Sleep));
+            options.Add(new DialogueOption(SetAsHomeOptionText, null, BarracksActions.SetAsHome));
+            options.Add(new DialogueOption(BarracksLeaveOptionText, null));
+            return new DialogueGraph("welcome", new[]
+            {
+                new DialogueNode("welcome", BarracksMasterSpeaker, BarracksWelcomeLine, options: options),
+            });
+        }
 
         private static DialogueGraph AdventurersSpeech(string first) =>
             new DialogueGraph(first, new[]

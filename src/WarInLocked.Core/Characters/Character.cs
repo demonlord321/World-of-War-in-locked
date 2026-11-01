@@ -227,6 +227,15 @@ namespace WarInLocked.Core.Characters
             Respawned?.Invoke(BindPoint);
         }
 
+        /// <summary>Health and energy back to the maximum at once (resting, #55). Does nothing while fallen.</summary>
+        public void RecoverFully()
+        {
+            if (IsDead) return;
+            Health = MaxHealth;
+            _energy = MaxEnergy;
+            Version++;
+        }
+
         public void Heal(int amount)
         {
             if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));

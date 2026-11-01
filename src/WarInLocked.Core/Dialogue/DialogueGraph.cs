@@ -24,6 +24,14 @@ namespace WarInLocked.Core.Dialogue
         public string NextId { get; }
     }
 
+    /// <summary>The actions of the Barracks Master's menu (#55); see <c>BarracksMaster.Apply</c>.</summary>
+    public static class BarracksActions
+    {
+        public const string Rest = "barracks:rest";
+        public const string Sleep = "barracks:sleep";
+        public const string SetAsHome = "barracks:home";
+    }
+
     /// <summary>Signals a dialogue option can give to the game (#28).</summary>
     public static class DialogueActions
     {

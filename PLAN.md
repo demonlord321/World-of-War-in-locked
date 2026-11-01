@@ -165,3 +165,4 @@ Needed before a 3 to 4 hour build is testable:
 - The story from Whiplash to the pilgrimage: quests, maps, enemies and NPCs, logged by Dyllan as issues.
 - #56 Core (1 Nov): GameClock, Character.Clock, ticked from Combat.Update. HUD display is Mapmaker's.
 - #57 Core (1 Nov): night = +10 monster levels (Enemy.LevelFor / NewSlime(base, clock)), slime stats to level 15 (placeholder), MapIds.IsSafeZone. Gap hours 6-7 pm and 7-8 am count as day.
+- #55 Core (1 Nov): Barracks Master dialogue + BarracksMaster.Apply (Rest +3 h, Sleep until morning at night, Set as home). Mapmaker wires the NPC menu and the notices.
