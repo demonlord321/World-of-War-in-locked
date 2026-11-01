@@ -100,3 +100,8 @@ Decided 1 Nov (#15): max health = 100 x Constitution modifier (Mystic 50, Mercha
 Decided 1 Nov (#17): energy base 50 (Warrior 35, Merchant 45, Mystic 115). Note: Mystic energy 115 is above Mystic health 50.
 Decided 1 Nov: Mystics having more energy than health is intended (casters don't tank). Energy built in 0dc13a7 (201 tests).
 Note (Dyllan, 1 Nov): Warrior, Mystic and Merchant are starting stat templates, not classes. Real classes come later, and builds will diverge as players assign level-up points. #18 modifiers in 7b12af7.
+
+### Added 1 Nov: #19 Tutorial Quest 2, #20 Abilities
+- #19: quest 1 now ends by returning to Colonel Powers for the rewards (a change from the current auto-reward). Then his two lines, and the quest "Slashing Practice": use Slash 5 times on enemies (0/5). Reward: Energy Ball ability and 50 XP. No failure condition.
+- #20: Slash (lvl 1) damage = (10 + n) x Strength modifier, where n starts at 5 and rises by 1 per ability level. Cooldown 5 s, cost 10 energy. Abilities level up by use: 5 uses to reach level 2, and the requirement doubles each level (10, 20, ...). Needs a player screen listing abilities. Replaces the 1.5x Slash placeholder.
+Open questions: Does Slash add the weapon bonus? Does its arc hit every enemy in front? Are the use counts per level (5, 10, 20) or running totals? What does Energy Ball do (Intelligence-based, cost, cooldown)? Which key opens the abilities screen?
