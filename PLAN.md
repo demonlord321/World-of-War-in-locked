@@ -132,3 +132,7 @@ Decided 1 Nov: out of combat = no damage dealt or taken for 15 s. Rations restor
 Status 1 Nov, 11:45 (UTC+2): #26 rations built: usable, full recovery to level 10, half after, refused in combat (15 s window) or when fully recovered. Not run in game.
 Status 1 Nov, 11:55 (UTC+2): combat window is 15 s. Slimes are passive until hit, then hit the player every 3 s for their level attack (UpdateEnemies in Core; screen must call it). Death is a placeholder (flag + event). Not run in game.
 Status 1 Nov, 11:39: slime attacks every 6 s in 35062b8; combat visuals, In combat HUD and placeholder 'You have fallen' screen in ab2df59 (312 tests). Waiting on Dyllan: death/respawn rules and whether slimes chase.
+
+### Added 1 Nov: #29 Respawn
+At 0 health: 'You have fallen... The goddess has seen fit to grant you another chance.' Automatic respawn after 5 s at the bind point. One bind point at a time, set at an inn or rest spot (none exist yet). In the tutorial you respawn next to Colonel Powers. Replaces the placeholder 'You have fallen' screen.
+Open: respawn with full health and energy? Any penalty (XP, copper)? Do angry slimes calm down? Does quest progress stay?
