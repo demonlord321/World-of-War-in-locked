@@ -188,3 +188,4 @@ Needed before a 3 to 4 hour build is testable:
 - Idea (#61): carry weight; over the limit cuts movement 75% (intended punishment for hoarding, even though slimes then outrun you).
 - #36/#62 (1 Nov): slime drops stay on the ground (GroundItems per map), manual pickup with "Inventory currently at capacity." when full, and Drop for inventory items. Mapmaker wires drawing, the pickup key and a Drop button.
 - #36/#62 (1 Nov): Dyllan confirmed pickup by key, ground items vanish when the map refreshes (EnterMap on a different map clears them), only bag items can be dropped, a slider drops a chosen amount from a stack, quest items cannot be dropped.
+- Decided: kills leave drops on the ground; pick up by key press; full bag shows "Inventory currently at capacity."; drops vanish when you leave the map. Bag items can be dropped (a slider picks the amount for stacks); equipped gear must be unequipped first; quest items can't be dropped.
