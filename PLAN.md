@@ -84,3 +84,10 @@ XP bar under the energy bar. XP cost to the next level grows by a step: +50 per 
 
 Open questions: Is that reading of the curve right (5 to 6 costs 300, 9 to 10 costs 700, 10 to 11 costs 900)? Does a 5th level give 5 points instead of 3, or 3 + 5 = 8? Do health and energy update when points go into Constitution and Wisdom (yes, presumably)? Where are points assigned (the I menu?) Is there a level cap?
 Decided 1 Nov: every 5th level gives 5 points instead of 3 (Dyllan). Curve as read above (confirmed by the team, built in 5c7611f, 149 tests). No level cap for now. Points can be taken back only while the I menu is open (Mapmaker drawing the XP bar, level-up banner and +/− buttons).
+
+### Added 1 Nov: #14 Physical Damage, #15 Physical Defense, #16 Magical Damage
+Order (Dyllan): #14 and #16 first; #15 is to be discussed.
+- #14: unarmed damage = 10 x Strength modifier. The modifier is +0.1 per Strength point and +1 at each milestone (10, 25, 50), so 9 Strength gives 0.9. Equipment adds on top. Replaces the 10 + half Strength placeholder.
+- #16: magic damage works the same way but uses Intelligence.
+- #15: defense works the same way but uses Constitution. Its design is still to be discussed with Dyllan.
+Open question: at 10 Strength the issue says 1.9 (0.9 + 1, so the 10th point itself adds nothing?) rather than 2.0. Which is right, and what is 11 Strength: 2.0 or 2.1?
