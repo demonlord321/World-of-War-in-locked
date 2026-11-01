@@ -176,3 +176,7 @@ Needed before a 3 to 4 hour build is testable:
 - Decided: enemies take standard damage (no 1.25× slime weakness); weaknesses may return later as a real mechanic.
 - #32 (1 Nov): slimes take standard damage (multipliers 1.0), SlimeVulnerability retired; the Enemy multiplier mechanism stays for later weaknesses.
 - #31 (1 Nov): the combat timer running out calms all aggro'd slimes (Dyllan); #33: Adventurer +2 stops one short of the next milestone; #36: slimes give 5 x level XP and drop one Slime Jelly (sell price, XP above level 3 and night XP open); #30 confirmed as built.
+- Decided (#30): death XP penalty brackets 1-5: 50, 6-10: 100, 11-20: 200, 21-30: 400, doubling every ten levels (closed).
+- Decided (#31): angry slimes chase; they calm down (full HP) when the 15 s combat timer runs out (closed).
+- Decided (#33): titles add up to +2 per stat but never onto or past the next milestone (8→9, 9→9, 10→12) (closed).
+- Decided (#36): slimes give 5 × level XP (levels 1-3) and one Slime Jelly (sell-only), no copper. Open: XP above level 3 and at night, jelly price and seller, full-inventory drops.
