@@ -11,7 +11,7 @@ namespace WarInLocked.Core.Quests
     public enum QuestState { Offered, Active, ReadyToTurnIn, Complete }
 
     /// <summary>What an objective counts: enemies of a type being defeated, or casts of an ability.</summary>
-    public enum ObjectiveKind { Kill, UseAbility, Buy }
+    public enum ObjectiveKind { Kill, UseAbility, Buy, Talk }
 
     /// <summary>"Kill N enemies of one type" (the enemy type is a plain string such as "slime") or "Use ability X N times".</summary>
     public sealed class QuestObjective
@@ -36,7 +36,13 @@ namespace WarInLocked.Core.Quests
         public static QuestObjective Buy(string itemId, int required, string label) =>
             new QuestObjective(ObjectiveKind.Buy, null, null, required, label) { ItemId = itemId };
 
+        /// <summary>An objective completed by talking to an NPC (#52), e.g. "Whiplash spoken with 0/1". The npc id is the one used in the map and dialogue data.</summary>
+        public static QuestObjective TalkTo(string npcId, string label) =>
+            new QuestObjective(ObjectiveKind.Talk, null, null, 1, label) { NpcId = npcId };
+
         public ObjectiveKind Kind { get; }
+        /// <summary>The NPC id for a Talk objective (e.g. "whiplash"), otherwise null.</summary>
+        public string NpcId { get; private set; }
         /// <summary>The item id for a Buy objective, otherwise null.</summary>
         public string ItemId { get; private set; }
         /// <summary>The enemy type for a Kill objective, otherwise null.</summary>
@@ -92,7 +98,7 @@ namespace WarInLocked.Core.Quests
     /// <summary>A quest and its progress. Owned by a <see cref="QuestLog"/>; state changes go through the log.</summary>
     public sealed class Quest
     {
-        public Quest(string id, string title, string description, IEnumerable<QuestObjective> objectives, QuestReward reward, string failureCondition = "None", string shortTitle = null, string turnInNpcName = "Colonel Powers")
+        public Quest(string id, string title, string description, IEnumerable<QuestObjective> objectives, QuestReward reward, string failureCondition = "None", string shortTitle = null, string turnInNpcName = "Colonel Powers", bool completesOnObjectives = false)
         {
             Id = id;
             Title = title;
@@ -102,6 +108,7 @@ namespace WarInLocked.Core.Quests
             FailureCondition = failureCondition;
             ShortTitle = shortTitle ?? title;
             TurnInNpcName = turnInNpcName;
+            CompletesOnObjectives = completesOnObjectives;
             State = QuestState.Offered;
         }
 
@@ -116,6 +123,11 @@ namespace WarInLocked.Core.Quests
         public string ShortTitle { get; }
         /// <summary>Who the quest is turned in to once every objective is done, e.g. "Colonel Powers".</summary>
         public string TurnInNpcName { get; }
+        /// <summary>
+        /// True when finishing the last objective completes the quest at once, with the reward given on the spot (no trip back to the quest giver).
+        /// Used by "Adventurers start" (#52): talking to Whiplash pays out.
+        /// </summary>
+        public bool CompletesOnObjectives { get; }
         public bool IsReadyToTurnIn => State == QuestState.ReadyToTurnIn;
 
         public bool AllObjectivesDone => Objectives.All(o => o.IsDone);

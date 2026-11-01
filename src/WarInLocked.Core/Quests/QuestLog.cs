@@ -78,6 +78,14 @@ namespace WarInLocked.Core.Quests
         public IReadOnlyList<Quest> RecordPurchase(string itemId) =>
             Record(o => o.Kind == ObjectiveKind.Buy && o.ItemId == itemId);
 
+        /// <summary>
+        /// Counts one conversation with an NPC (#52, by the NPC id from the map data, e.g. "whiplash"). Same rules as <see cref="RecordKill"/>.
+        /// A quest that completes on its objectives ("Adventurers start") is turned in right here and its reward is given: check <c>State == Complete</c>
+        /// on the returned quests and show <see cref="QuestNotices.Complete"/>.
+        /// </summary>
+        public IReadOnlyList<Quest> NotifyTalkedTo(string npcId) =>
+            Record(o => o.Kind == ObjectiveKind.Talk && o.NpcId == npcId);
+
         private IReadOnlyList<Quest> Record(Func<QuestObjective, bool> matches)
         {
             var ready = new List<Quest>();
@@ -97,6 +105,8 @@ namespace WarInLocked.Core.Quests
                     ready.Add(q);
                 }
             }
+            foreach (var q in ready)
+                if (q.CompletesOnObjectives) TurnIn(q.Id);   // no items in such rewards today; if they did not fit it stays ready
             if (changed) Changed?.Invoke(this, EventArgs.Empty);
             return ready;
         }

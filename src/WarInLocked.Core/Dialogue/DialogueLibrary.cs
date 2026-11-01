@@ -34,6 +34,8 @@ namespace WarInLocked.Core.Dialogue
         public const string ColonelPowersShopOfferId = "colonel-powers-shop-offer";
         /// <summary>Turn-in of "Shopping before adventure". PLACEHOLDER text (Dyllan gave none).</summary>
         public const string ColonelPowersShopTurnInId = "colonel-powers-shop-turnin";
+        /// <summary>Quest 5 offer (#52): Dyllan's speech, said as the end of turning in quest 4 and repeated when "Adventurers start" was offered but not accepted.</summary>
+        public const string ColonelPowersAdventurersOfferId = "colonel-powers-adventurers-offer";
         /// <summary>
         /// The Colonel's Talk / Shop choice (#28): said from accepting quest 4 on (and after it is done). Talk gives <see cref="TalkLine"/>;
         /// Shop ends the dialogue with the action <c>DialogueActions.OpenShop(ShopLibrary.ColonelPowersShopId)</c>.
@@ -49,6 +51,22 @@ namespace WarInLocked.Core.Dialogue
         /// <summary>Dyllan's quest 4 speech (#25), verbatim, split into two boxes after the first sentence.</summary>
         public const string ShopSpeech1 = "you might just be a believable spell slinger.";
         public const string ShopSpeech2 = "Now one cannot survive with out economic power, to prepare for adventure you must use your skills, or buy supplies that shall aid you. I just so happen to have a potion of healing on me. I shall sell it to you.";
+
+        /// <summary>
+        /// Dyllan's quest 5 speech (#52), verbatim including his typos ("Your" for "You're", "moveing"), split into two boxes after the first sentence;
+        /// joined with a space it is his text.
+        /// </summary>
+        public const string AdventurersSpeech1 = "Your barely passable but there will be plenty of time to train you up before the pilgrimage.";
+        public const string AdventurersSpeech2 = "Journey through the woods and enter the Adventurers encampment in the nearby clearing, speak with my colleague Whiplash. He will advise you moveing forward.";
+
+        /// <summary>Whiplash, NPC id "whiplash" (Adventurers encampment, #52/#53). Said while "Adventurers start" is active (the talk completes it). PLACEHOLDER text.</summary>
+        public const string WhiplashId = "whiplash";
+        /// <summary>Whiplash at any other time. PLACEHOLDER text.</summary>
+        public const string WhiplashIdleId = "whiplash-idle";
+        public const string WhiplashSpeaker = "Whiplash";
+        public const string WhiplashAdviceLine1 = "So the Colonel sent you. I am Whiplash.";
+        public const string WhiplashAdviceLine2 = "Keep your head down and your blade sharp, {name}, and I will advise you as we move forward.";
+        public const string WhiplashIdleLine = "Stay sharp out there, {name}.";
 
         /// <summary>Dyllan's quest 3 speech (#21), split into three boxes at his "..." pauses; joined with spaces it is his text verbatim.</summary>
         public const string EnergySpeech1 = "You are starting to learn, you might just survive this war torn world... Congrats on getting your first spell.";
@@ -83,7 +101,23 @@ namespace WarInLocked.Core.Dialogue
                 case ColonelPowersEnergyActiveId: return Single("energy-active", "Keep at it, {name}... Energy ball {used}/{required}.");
                 case ColonelPowersEnergyTurnInId: return ShopSpeech("energy-turnin");
                 case ColonelPowersShopOfferId: return ShopSpeech("shop-offer");
-                case ColonelPowersShopTurnInId: return Single("shop-turnin", "Good, {name}. You have shopped like a true adventurer... Take this for your trouble.");
+                case ColonelPowersShopTurnInId:
+                    // Placeholder thanks, then Dyllan's quest 5 speech: handing in quest 4 leads straight into the offer of "Adventurers start".
+                    return new DialogueGraph("shop-turnin", new[]
+                    {
+                        new DialogueNode("shop-turnin", "Colonel Powers", "Good, {name}. You have shopped like a true adventurer... Take this for your trouble.", nextId: "adv-speech1"),
+                        new DialogueNode("adv-speech1", "Colonel Powers", AdventurersSpeech1, nextId: "adv-speech2"),
+                        new DialogueNode("adv-speech2", "Colonel Powers", AdventurersSpeech2),
+                    });
+                case ColonelPowersAdventurersOfferId: return AdventurersSpeech("adv-speech1");
+                case WhiplashId:
+                    return new DialogueGraph("advice1", new[]
+                    {
+                        new DialogueNode("advice1", WhiplashSpeaker, WhiplashAdviceLine1, nextId: "advice2"),
+                        new DialogueNode("advice2", WhiplashSpeaker, WhiplashAdviceLine2),
+                    });
+                case WhiplashIdleId:
+                    return new DialogueGraph("idle", new[] { new DialogueNode("idle", WhiplashSpeaker, WhiplashIdleLine) });
                 case ColonelPowersMenuId: return Menu();
             }
             throw new KeyNotFoundException("No dialogue with id '" + id + "'.");
@@ -93,7 +127,15 @@ namespace WarInLocked.Core.Dialogue
             id == ColonelPowersId || id == ColonelPowersReofferId || id == ColonelPowersActiveId || id == ColonelPowersDoneId ||
             id == ColonelPowersTurnInId || id == ColonelPowersPracticeOfferId || id == ColonelPowersPracticeActiveId || id == ColonelPowersPracticeTurnInId ||
             id == ColonelPowersEnergyOfferId || id == ColonelPowersEnergyActiveId || id == ColonelPowersEnergyTurnInId ||
-            id == ColonelPowersShopOfferId || id == ColonelPowersShopTurnInId || id == ColonelPowersMenuId;
+            id == ColonelPowersShopOfferId || id == ColonelPowersShopTurnInId || id == ColonelPowersMenuId ||
+            id == ColonelPowersAdventurersOfferId || id == WhiplashId || id == WhiplashIdleId;
+
+        private static DialogueGraph AdventurersSpeech(string first) =>
+            new DialogueGraph(first, new[]
+            {
+                new DialogueNode(first, "Colonel Powers", AdventurersSpeech1, nextId: "adv-speech2"),
+                new DialogueNode("adv-speech2", "Colonel Powers", AdventurersSpeech2),
+            });
 
         private static DialogueGraph ShopSpeech(string first) =>
             new DialogueGraph(first, new[]

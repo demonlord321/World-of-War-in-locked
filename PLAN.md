@@ -147,3 +147,4 @@ Status 1 Nov, 11:54: death XP penalty in 722f05d, shown on the fallen screen in 
 - #52 Main Quest 1 "Adventurers start": after quest 4, the Colonel sends you through the woods to the Adventurers' Encampment to speak with Whiplash (0/1). Reward: 50 XP, 50 copper.
 - #53 Adventurers' Encampment: second map. Green grass and tents, a cosmetic combat ring at the centre, three small tents around it, and a large tent to the north with Whiplash in front of it.
 Open: Where does the forest connect to the camp (an exit on a map edge)? What does Whiplash say? Is the camp a rest spot for the bind point (#43)? Any enemies in the camp (assume none)?
+- #52 Core done (1 Nov): quest 5 "Adventurers start" (id adventurers-start) offered by the Colonel after quest 4; generic Talk objective (QuestObjective.TalkTo, QuestLog.NotifyTalkedTo); Whiplash NPC id whiplash with placeholder dialogue (WhiplashQuest); completes on the talk, 50 XP + 50 copper. Map and screen are Mapmaker's (#53).

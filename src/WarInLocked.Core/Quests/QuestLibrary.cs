@@ -6,6 +6,9 @@ namespace WarInLocked.Core.Quests
         public const string SlashingPracticeId = "slashing-practice";
         public const string EnergyBallPracticeId = "energy-ball-practice";
         public const string ShoppingBeforeAdventureId = "shopping-before-adventure";
+        public const string AdventurersStartId = "adventurers-start";
+        /// <summary>The NPC id of Whiplash (map data and dialogue), who finishes "Adventurers start". Mapmaker places him in the Adventurers encampment (#53).</summary>
+        public const string WhiplashNpcId = "whiplash";
 
         /// <summary>The tutorial quest (issue #8), Dyllan's text. A fresh object each call. Reward is given when turned in to the Colonel (#19).</summary>
         public static Quest SliceAndSlime() => new Quest(
@@ -50,10 +53,26 @@ namespace WarInLocked.Core.Quests
             "None",
             ShoppingBeforeAdventureShortTitle);
 
+        /// <summary>
+        /// Tutorial quest 5 (#52), Dyllan's text: speak with Whiplash in the Adventurers encampment. Reward 50 XP and 50 copper, no failure.
+        /// Talking to Whiplash completes it and pays out on the spot (placeholder, see QUESTIONS.md); the Colonel does not take it in.
+        /// </summary>
+        public static Quest AdventurersStart() => new Quest(
+            AdventurersStartId,
+            "Quest: Adventurers start.",
+            "Enter the Adventurers camp and speak with Whiplash",
+            new[] { QuestObjective.TalkTo(WhiplashNpcId, "Whiplash spoken with") },
+            new QuestReward(50, null, 50),
+            "None",
+            AdventurersStartShortTitle,
+            "Whiplash",
+            completesOnObjectives: true);
+
         /// <summary>Short name for the HUD tracker: "Slice and slime".</summary>
         public const string SliceAndSlimeShortTitle = "Slice and slime";
         public const string SlashingPracticeShortTitle = "Slashing Practice";
         public const string EnergyBallPracticeShortTitle = "Energy Ball practice";
         public const string ShoppingBeforeAdventureShortTitle = "Shopping before adventure";
+        public const string AdventurersStartShortTitle = "Adventurers start";
     }
 }

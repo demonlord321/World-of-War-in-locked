@@ -1,0 +1,11 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  WarInLocked.Core -> /workspace/World-of-War-in-locked/src/WarInLocked.Core/bin/Debug/netstandard2.1/WarInLocked.Core.dll
+  WarInLocked.Core.Tests -> /workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/bin/Debug/net8.0/WarInLocked.Core.Tests.dll
+Test run for /workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/bin/Debug/net8.0/WarInLocked.Core.Tests.dll (.NETCoreApp,Version=v8.0)
+VSTest version 17.11.1 (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+
+Passed!  - Failed:     0, Passed:   335, Skipped:     0, Total:   335, Duration: 123 ms - WarInLocked.Core.Tests.dll (net8.0)

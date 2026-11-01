@@ -301,14 +301,15 @@ public class ShopTitleItemTests
         Assert.Single(buy.ReadyQuests);
         Assert.Equal("colonel-powers-shop-turnin", ColonelPowersQuest.DialogueIdFor(c));   // handed in first
 
-        Assert.Null(ColonelPowersQuest.QuestToOfferAfterDialogue(c, out var notice));
+        var next = ColonelPowersQuest.QuestToOfferAfterDialogue(c, out var notice);   // #52: handing in quest 4 offers "Adventurers start"
+        Assert.Equal(QuestLibrary.AdventurersStartId, next!.Id);
         Assert.Equal("Quest complete: Shopping before adventure!  title Adventurer, +50 XP, Adventurer's rations", notice);
         Assert.Equal(xp + 50, c.Xp);
         Assert.True(c.HasTitle(TitleLibrary.AdventurerId));
         Assert.Null(c.EquippedTitle);                                                   // earned, not worn
         Assert.Equal(1, c.Inventory.CountOf(ItemLibrary.AdventurersRationsId));
         Assert.Equal(QuestState.Complete, q4.State);
-        Assert.Equal("colonel-powers-menu", ColonelPowersQuest.DialogueIdFor(c));
+        Assert.Equal("colonel-powers-adventurers-offer", ColonelPowersQuest.DialogueIdFor(c));
         Assert.Null(ColonelPowersQuest.TurnInReadyQuest(c));
     }
 
