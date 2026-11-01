@@ -117,3 +117,4 @@ Status 1 Nov, 08:57: abilities screen on K in 3ab52ec. #8 to #20 (except #15 def
 - #24 Slimes: levels 1 to 3 in the forest. Lv 1 100 HP / 10 attack, Lv 2 125 / 12, Lv 3 150 / 15. Vulnerable to both physical and magic damage (other monsters may resist).
 Open questions: Do slimes now attack the player, and how often? How much more damage does "vulnerable" mean? Does Energy Ball need the staff equipped? Do slimes give XP or drop copper? How is the level 1 to 3 mix spread?
 Decided 1 Nov (#24): slime HP is 50 / 75 / 100 for levels 1 / 2 / 3 (attack still 10 / 12 / 15). Placeholders: vulnerable = +25% damage taken; Energy Ball can cast without the staff. Still open: do slimes attack now?
+Status 1 Nov, 09:22: #21 to #24 on main (9f4439a, 06e6467, screens in 758d031; 247 tests). Await Dyllan's test. Still open: 25% vulnerability, slimes fighting back, slime XP/copper drops, Colonel's quest 3 hand-in lines.
