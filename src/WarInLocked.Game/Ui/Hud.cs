@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using WarInLocked.Core.Characters;
@@ -16,14 +17,49 @@ public static class Hud
     private static readonly Color HealthColor = new(200, 56, 56), HealthBack = new(60, 22, 24);
     private static readonly Color EnergyColor = new(48, 170, 190), EnergyBack = new(18, 46, 54);
 
-    private const int PanelWidth = 280, PanelHeight = 92;
+    private static readonly Color XpColor = new(240, 200, 50), XpBack = new(58, 48, 14);
+
+    private const int PanelWidth = 280, PanelHeight = 118;
+    private const double LevelUpSeconds = 2.0;
+
+    // Level-up banner state (#13). Hud is static, so it remembers the last level it saw per character
+    // and starts a 2 second banner whenever the level goes up (the first time it sees a character it only records the level).
+    private static readonly Stopwatch Clock = Stopwatch.StartNew();
+    private static Character? _seen;
+    private static int _seenLevel;
+    private static double _flashStart = double.NegativeInfinity;
+    private static int _flashLevel;
     private const int SlotSize = 54, SlotGap = 8;
 
     /// <summary>Draws the player panel and the hotbar in screen space.</summary>
     public static void Draw(SpriteBatch sb, Gfx gfx, Character character)
     {
+        TrackLevel(character);
         DrawPlayerPanel(sb, gfx, character);
         DrawHotbar(sb, gfx, character.Combat.Hotbar);
+        DrawLevelUpBanner(sb, gfx);
+    }
+
+    private static void TrackLevel(Character c)
+    {
+        if (!ReferenceEquals(_seen, c)) { _seen = c; _seenLevel = c.Level; _flashStart = double.NegativeInfinity; return; }
+        if (c.Level > _seenLevel) { _flashStart = Clock.Elapsed.TotalSeconds; _flashLevel = c.Level; }
+        _seenLevel = c.Level;
+    }
+
+    /// <summary>"LEVEL UP!" banner for about 2 seconds: fades out over the last half second and pulses a little.</summary>
+    private static void DrawLevelUpBanner(SpriteBatch sb, Gfx gfx)
+    {
+        double t = Clock.Elapsed.TotalSeconds - _flashStart;
+        if (t < 0 || t >= LevelUpSeconds) return;
+        float alpha = (float)Math.Min(1.0, (LevelUpSeconds - t) / 0.5);
+        float size = 44f + (float)Math.Sin(t * 10) * 2f;
+        int w = WarInLockedGame.ScreenWidth;
+        var box = new Rectangle((w - 420) / 2, 150, 420, 96);
+        gfx.Rect(sb, box, Color.Black * (0.78f * alpha));
+        gfx.Border(sb, box, XpColor * alpha, 3);
+        gfx.TextCentered(sb, "LEVEL UP!", new Rectangle(box.X, box.Y + 4, box.Width, 56), XpColor * alpha, size);
+        gfx.TextCentered(sb, $"You reached level {_flashLevel}", new Rectangle(box.X, box.Y + 58, box.Width, 30), Theme.Text * alpha, 20f);
     }
 
     private static void DrawPlayerPanel(SpriteBatch sb, Gfx gfx, Character c)
@@ -39,6 +75,27 @@ public static class Hud
 
         Bar(sb, gfx, new Rectangle(panel.X + 12, panel.Y + 34, panel.Width - 24, 20), c.Health, c.MaxHealth, HealthColor, HealthBack, "HP");
         Bar(sb, gfx, new Rectangle(panel.X + 12, panel.Y + 62, panel.Width - 24, 20), c.Energy, c.MaxEnergy, EnergyColor, EnergyBack, "EN");
+        XpBar(sb, gfx, new Rectangle(panel.X + 12, panel.Y + 90, panel.Width - 24, 18), c);
+
+        if (c.FreeStatPoints > 0)
+        {
+            // Gentle pulse so the hint is noticed without being loud.
+            float pulse = 0.75f + 0.25f * (float)Math.Sin(Clock.Elapsed.TotalSeconds * 4);
+            string hint = $"+{c.FreeStatPoints} pts  -  Press I to spend";
+            var hr = new Rectangle(panel.X, panel.Bottom + 4, panel.Width, 26);
+            gfx.Rect(sb, hr, Color.Black * 0.65f);
+            gfx.Border(sb, hr, XpColor * pulse, 1);
+            gfx.TextCentered(sb, hint, hr, XpColor * pulse, 16f);
+        }
+    }
+
+    private static void XpBar(SpriteBatch sb, Gfx gfx, Rectangle r, Character c)
+    {
+        gfx.Rect(sb, r, XpBack);
+        float f = Math.Clamp(c.XpFraction, 0f, 1f);
+        if (f > 0) gfx.Rect(sb, new Rectangle(r.X, r.Y, Math.Max(1, (int)(r.Width * f)), r.Height), XpColor);
+        gfx.Border(sb, r, Color.Black, 1);
+        gfx.TextCentered(sb, $"XP {c.XpIntoLevel}/{c.XpForNextLevel}", r, Color.White, 13f);
     }
 
     private static void Bar(SpriteBatch sb, Gfx gfx, Rectangle r, int value, int max, Color fill, Color back, string label)
