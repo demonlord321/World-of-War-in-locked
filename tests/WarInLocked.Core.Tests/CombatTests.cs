@@ -50,7 +50,7 @@ public class CombatTests
     // ---- vitals (#12)
 
     [Fact]
-    public void MaxHealthIs100TimesTheConModifierAndMaxEnergyIs5TimesWisPerClass()
+    public void MaxHealthIs100TimesTheConModifierAndMaxEnergyIs50TimesTheWisModifierPerClass()
     {
         var w = Warrior();   // Con 13, Wis 7
         Assert.Equal(13, w.Stats.Constitution);
@@ -64,7 +64,7 @@ public class CombatTests
 
         var m = Make(StatDistribution.Mystic);   // Con 5, Wis 13
         Assert.Equal(50, m.MaxHealth);   // 100 x 0.5
-        Assert.Equal(65, m.MaxEnergy);
+        Assert.Equal(115, m.MaxEnergy);   // 50 x 2.3
     }
 
     [Theory]
@@ -86,15 +86,52 @@ public class CombatTests
         Assert.Equal(Character.HealthBase, 100);
     }
 
-    [Fact]
-    public void MaxEnergyIsStillFiveTimesWisWithNoMinimum()
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(3, 15)]
+    [InlineData(7, 35)]
+    [InlineData(9, 45)]
+    [InlineData(10, 100)]    // first milestone: 50 x 2.0
+    [InlineData(13, 115)]
+    [InlineData(25, 225)]    // 50 x 4.5
+    [InlineData(50, 400)]    // 50 x 8.0
+    public void MaxEnergyFollowsTheWisModifierCurve(int wis, int expected)
     {
-        var odd = new Character("Odd", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(7));
-        Assert.Equal(35, odd.MaxEnergy);
-        var low = new Character("Low", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(3));
-        Assert.Equal(15, low.MaxEnergy);
-        var high = new Character("High", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(25));
-        Assert.Equal(125, high.MaxEnergy);   // not on the modifier curve: plain 5 x Wis
+        var c = new Character("W", Race.Human, StatDistribution.Warrior, new StatBlock(8, 8, 8, wis, 8, 8, 8, 8));
+        Assert.Equal(expected, c.MaxEnergy);
+        Assert.Equal(expected, c.Energy);   // starts full
+        Assert.Equal(50, Character.EnergyBase);
+    }
+
+    [Fact]
+    public void EveryClassCanAffordSlashFromFullEnergy()
+    {
+        foreach (var d in new[] { StatDistribution.Warrior, StatDistribution.Merchant, StatDistribution.Mystic })
+            Assert.True(Make(d).MaxEnergy >= AbilityLibrary.SlashDefinition.EnergyCost);
+    }
+
+    [Fact]
+    public void ModifierReturnsTheStatModifierOfTheCurrentValue()
+    {
+        var c = new Character("M", Race.Human, StatDistribution.Warrior, new StatBlock(7, 9, 13, 10, 25, 50, 11, 8));
+        Assert.Equal(0.7, c.Modifier(StatType.Strength), 5);
+        Assert.Equal(0.9, c.Modifier(StatType.Dexterity), 5);
+        Assert.Equal(2.3, c.Modifier(StatType.Constitution), 5);
+        Assert.Equal(2.0, c.Modifier(StatType.Wisdom), 5);
+        Assert.Equal(4.5, c.Modifier(StatType.Intelligence), 5);
+        Assert.Equal(8.0, c.Modifier(StatType.Perception), 5);
+        Assert.Equal(2.1, c.Modifier(StatType.Charisma), 5);
+        Assert.Equal(0.8, c.Modifier(StatType.Luck), 5);
+    }
+
+    [Fact]
+    public void ModifierTracksAssignedPoints()
+    {
+        var c = Make(StatDistribution.Merchant);   // Wis 9
+        c.GainXp(50);
+        Assert.Equal(0.9, c.Modifier(StatType.Wisdom), 5);
+        c.AssignPoint(StatType.Wisdom);
+        Assert.Equal(2.0, c.Modifier(StatType.Wisdom), 5);
     }
 
     [Fact]

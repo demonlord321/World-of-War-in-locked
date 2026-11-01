@@ -103,11 +103,17 @@ namespace WarInLocked.Core.Characters
         /// rounded half up. Warrior (Con 13) = 230, Merchant (Con 9) = 90, Mystic (Con 5) = 50; Con 10 = 200, Con 25 = 450 (#15).
         /// </summary>
         public const int HealthBase = 100;
-        /// <summary>Energy per point of Wisdom. Warrior (Wis 7) = 35, Merchant (Wis 9) = 45, Mystic (Wis 13) = 65.</summary>
-        public const int EnergyPerWis = 5;
+        /// <summary>
+        /// Max energy = <c>EnergyBase</c> x the Wisdom modifier, rounded half up (#17, placeholder base).
+        /// Warrior (Wis 7) = 35, Merchant (Wis 9) = 45, Mystic (Wis 13) = 115; Wis 10 = 100.
+        /// </summary>
+        public const int EnergyBase = 50;
 
         public int MaxHealth => (int)Math.Round(HealthBase * (StatModifier.Tenths(Stats.Constitution) / 10m), MidpointRounding.AwayFromZero);
-        public int MaxEnergy => EnergyPerWis * Stats.Wisdom;
+        public int MaxEnergy => (int)Math.Round(EnergyBase * (StatModifier.Tenths(Stats.Wisdom) / 10m), MidpointRounding.AwayFromZero);
+
+        /// <summary>The modifier of a stat's current value (0.1 per point, +1.0 per milestone), e.g. 2.3 for 13 Constitution.</summary>
+        public double Modifier(StatType stat) => StatModifier.Value(Stats[stat]);
 
         /// <summary>Current health, 0..<see cref="MaxHealth"/>. Starts full.</summary>
         public int Health { get; private set; }

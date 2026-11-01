@@ -193,7 +193,23 @@ public class LevelingTests
         Assert.Equal(240, c.MaxHealth);       // Con 14: 100 x 2.4
         Assert.Equal(140, c.Health);          // current rose by the +10 as well
         Assert.True(c.AssignPoint(StatType.Wisdom));
-        Assert.Equal(40, c.MaxEnergy);
+        Assert.Equal(40, c.MaxEnergy);        // Wis 8: 50 x 0.8
+        Assert.Equal(30, c.Energy);
+    }
+
+    [Fact]
+    public void ReachingAMilestoneInWisGivesABigEnergyJumpAndCurrentEnergyFollows()
+    {
+        // Merchant: Wis 9 -> 45 EN. The 10th point reaches the milestone: 50 x 2.0 = 100 (+55).
+        var c = Make(StatDistribution.Merchant);
+        Assert.Equal(45, c.MaxEnergy);
+        c.SpendEnergy(15);                      // 30 / 45
+        c.GainXp(50);
+        Assert.True(c.AssignPoint(StatType.Wisdom));
+        Assert.Equal(100, c.MaxEnergy);
+        Assert.Equal(85, c.Energy);             // 30 + 55
+        Assert.True(c.UnassignPoint(StatType.Wisdom));
+        Assert.Equal(45, c.MaxEnergy);
         Assert.Equal(30, c.Energy);
     }
 
