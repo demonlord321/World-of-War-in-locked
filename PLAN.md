@@ -119,3 +119,10 @@ Open questions: Do slimes now attack the player, and how often? How much more da
 Decided 1 Nov (#24): slime HP is 50 / 75 / 100 for levels 1 / 2 / 3 (attack still 10 / 12 / 15). Placeholders: vulnerable = +25% damage taken; Energy Ball can cast without the staff. Still open: do slimes attack now?
 Status 1 Nov, 09:22: #21 to #24 on main (9f4439a, 06e6467, screens in 758d031; 247 tests). Await Dyllan's test. Still open: 25% vulnerability, slimes fighting back, slime XP/copper drops, Colonel's quest 3 hand-in lines.
 Decided 1 Nov: currency is copper, silver and gold. 100 copper = 1 silver, 100 silver = 1 gold (10,000 copper = 1 gold).
+
+### Added 1 Nov: #25 to #28
+- #25 Tutorial 4 "Shopping before adventure": hand in quest 3, the Colonel's two lines, then buy 1 Potion of Lesser Healing (0/1). Reward: Adventurer title, 50 XP, Adventurer's Rations.
+- #26 Items: item detail screen. Potion of Lesser Healing (dull red, tastes of strawberries): heals 50 HP, 5 s cooldown after use.
+- #27 Titles: a titles screen in the player interface. Adventurer: "+2 to all stats when equipped".
+- #28 Shops: after accepting quest 4, talking to the Colonel offers Talk ("Stop wasting time and let's get moving.") or Shop. The shop has Buy and Sell (Sell disabled). Buy lists the potion at 25 copper, then Buy or Haggle (Haggle disabled). A bought potion goes to the inventory.
+Open questions: What are Adventurer's Rations? How is a potion used (hotbar key, I menu)? Can only one title be equipped at a time? Can the potion be bought more than once? Do +2 stats count toward modifiers, health and energy?
