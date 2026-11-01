@@ -9,6 +9,13 @@ namespace WarInLocked.Core.Items
         public const string PracticeStaffId = "practice-staff";
         public const string LesserHealingPotionId = "potion-lesser-healing";
         public const string AdventurersRationsId = "adventurers-rations";
+        public const string SlimeJellyId = "slime-jelly";
+        /// <summary>PLACEHOLDER (#36): what a shop pays for one Slime Jelly, in copper. Dyllan gave no price.</summary>
+        public const int SlimeJellySellPrice = 3;
+        /// <summary>PLACEHOLDER stack size of Slime Jelly (#36).</summary>
+        public const int SlimeJellyStackSize = 20;
+        /// <summary>PLACEHOLDER flavour line for Slime Jelly (#36): Dyllan only said it has no use but selling.</summary>
+        public const string SlimeJellyDescription = "A wobbling blob of jelly. Good for nothing but selling."; 
 
         /// <summary>Health the Potion of lesser healing restores (#26).</summary>
         public const int LesserHealingPotionHeal = 50;
@@ -55,7 +62,11 @@ namespace WarInLocked.Core.Items
             maxStack: ConsumableStackSize, description: AdventurersRationsDescription,
             useCooldownSeconds: ConsumableCooldownSeconds, recoversVitals: true);
 
-        public static IReadOnlyList<Item> All { get; } = new[] { PracticeSword, PracticeStaff, LesserHealingPotion, AdventurersRations };
+        /// <summary>Slime Jelly (#36): every slime drops exactly one when it dies, whatever its level. No use except selling (a Misc item, not usable or equippable); stacks.</summary>
+        public static readonly Item SlimeJelly = new Item(SlimeJellyId, "Slime Jelly", ItemType.Misc, maxStack: SlimeJellyStackSize,
+            description: SlimeJellyDescription, sellPriceCopper: SlimeJellySellPrice);
+
+        public static IReadOnlyList<Item> All { get; } = new[] { PracticeSword, PracticeStaff, LesserHealingPotion, AdventurersRations, SlimeJelly };
 
         /// <summary>The item with this id, or null.</summary>
         public static Item Get(string id)

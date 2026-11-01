@@ -192,4 +192,82 @@ public class SlimeChaseTests
         w.GlideTo(5, 4);                        // same tile: no-op
         Assert.Equal(5f, w.X);
     }
+
+    // ---- #31: running out the combat timer ends the chase
+
+    [Fact]
+    public void WhenTheCombatTimerRunsOutAngrySlimesLoseTheirAggroAndHealUp()
+    {
+        var c = Hero();
+        c.Equipment.AddAndEquip(ItemLibrary.PracticeSword);
+        var s = Slime(6, 5, aggro: false);
+        var list = new[] { s };
+        c.Combat.BasicAttack(5, 5, list);
+        Assert.True(s.IsAggro);
+        Assert.True(s.Hp < s.MaxHp);
+        c.Combat.Update(14.9);
+        c.Combat.UpdateEnemies(list, 14.9, 40, 40);                // far away: it chases but the timer is still running
+        Assert.True(s.IsAggro);
+        int x = s.TileX, y = s.TileY;
+        c.Combat.Update(0.2);                                      // 15 s without damage dealt or taken
+        Assert.False(c.InCombat);
+        c.Combat.UpdateEnemies(list, 0.1, 40, 40);
+        Assert.False(s.IsAggro);
+        Assert.Equal(s.MaxHp, s.Hp);
+        Assert.Equal((x, y), (s.TileX, s.TileY));                  // it stays where it is
+        c.Combat.UpdateEnemies(list, 5.0, 40, 40);
+        Assert.Equal((x, y), (s.TileX, s.TileY));                  // and no longer chases
+    }
+
+    [Fact]
+    public void DamageResetsTheTimerSoAChasingSlimeThatKeepsHittingStaysAngry()
+    {
+        var c = Hero();
+        var s = Slime(6, 5);
+        var list = new[] { s };
+        for (int i = 0; i < 4; i++)
+        {
+            c.Combat.Update(6.0);
+            c.Combat.UpdateEnemies(list, 6.0, 5, 5);               // it hits every 6 s: that is damage taken
+        }
+        c.Combat.Update(1.0);
+        c.Combat.UpdateEnemies(list, 0.0, 5, 5);
+        Assert.True(s.IsAggro);
+    }
+
+    [Fact]
+    public void CalmingOnlyHappensOnceAndASlimeAngeredAfterwardsStaysAngryUntilTheNextExpiry()
+    {
+        var c = Hero();
+        c.Equipment.AddAndEquip(ItemLibrary.PracticeSword);
+        var a = Slime(6, 5, aggro: false);
+        c.Combat.BasicAttack(5, 5, new[] { a });
+        c.Combat.Update(15.1);
+        c.Combat.UpdateEnemies(new[] { a }, 0.1, 30, 30);
+        Assert.False(a.IsAggro);
+        var b = Slime(9, 9, aggro: false);
+        c.Combat.Update(1.0);
+        c.Combat.UpdateEnemies(new[] { b }, 0.1, 30, 30);
+        Assert.False(b.IsAggro);                                    // never angered, still passive
+        c.Combat.Update(0.7);
+        c.Combat.BasicAttack(9, 9, new[] { b });                    // angers it and restarts the timer
+        c.Combat.Update(3.0);
+        c.Combat.UpdateEnemies(new[] { b }, 0.1, 30, 30);
+        Assert.True(b.IsAggro);
+        c.Combat.Update(13.0);
+        c.Combat.UpdateEnemies(new[] { b }, 0.1, 30, 30);
+        Assert.False(b.IsAggro);
+    }
+
+    [Fact]
+    public void DeadSlimesStayDeadWhenTheTimerRunsOut()
+    {
+        var c = Hero();
+        var s = Slime(6, 5);
+        s.TakeDamage(1000);
+        c.Combat.MarkInCombat();
+        c.Combat.Update(15.1);
+        c.Combat.UpdateEnemies(new[] { s }, 0.1, 5, 5);
+        Assert.True(s.IsDead);
+    }
 }

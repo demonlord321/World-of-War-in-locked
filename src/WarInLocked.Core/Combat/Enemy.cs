@@ -21,6 +21,8 @@ namespace WarInLocked.Core.Combat
         public const int LowestSlimeLevel = 1, HighestSlimeLevel = 15;
         /// <summary>At night (7 pm to 8 am, #57) monsters are this many levels stronger than their base level (Dyllan: "ten levels stronger").</summary>
         public const int NightLevelBonus = 10;
+        /// <summary>XP a slime gives per level (#36, Dyllan: level 1 = 5, level 2 = 10, level 3 = 15). PLACEHOLDER for levels above 3 (path levels 4-5 and night levels): 5 x level.</summary>
+        public const int SlimeXpPerLevel = 5;
         /// <summary>The attack cooldown: after an attack an aggro'd enemy waits this long before the next one (Dyllan: 6 s, was 3).
         /// The first attack has no wait: it lands as soon as the player is in reach.</summary>
         public const double AttackIntervalSeconds = 6.0;
@@ -92,6 +94,11 @@ namespace WarInLocked.Core.Combat
         /// </summary>
         public int BaseLevel { get; private set; }
         public bool IsNightEmpowered => Level > BaseLevel;
+
+        /// <summary>XP the player gets when this enemy dies (#36): slimes give 5 x level (5 / 10 / 15 for levels 1-3, placeholder above); other types 0 for now.</summary>
+        public int XpReward => Type == SlimeType ? SlimeXpPerLevel * Level : 0;
+        /// <summary>The one item this enemy drops when it dies (#36), or null: slimes always drop exactly one Slime Jelly whatever their level. No copper drops from monsters.</summary>
+        public WarInLocked.Core.Items.Item DropItem => Type == SlimeType ? WarInLocked.Core.Items.ItemLibrary.SlimeJelly : null;
 
         /// <summary>A slime of the given level (1-15, default 1; pass a base level plus the clock to get the night bonus) with its health and attack. It takes standard damage (multipliers 1.0): Dyllan, 1 Nov, no weakness for now.</summary>
         public static Enemy NewSlime(int level = 1) =>

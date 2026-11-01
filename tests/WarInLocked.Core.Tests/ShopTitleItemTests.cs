@@ -168,7 +168,9 @@ public class ShopTitleItemTests
     {
         var t = TitleLibrary.Adventurer;
         Assert.Equal("Adventurer", t.Name);
-        Assert.Equal("You have completed the tutorial. The Adventurer is one who is prepared for the upcoming adventure.", t.Description);
+        Assert.StartsWith("You have completed the tutorial. The Adventurer is one who is prepared for the upcoming adventure.", t.Description);
+        Assert.Equal(TitleLibrary.AdventurerDescription + " " + TitleLibrary.AdventurerBonusExplanation, t.Description);   // #33: the milestone rule is in the text
+        Assert.Contains("never takes a stat up to or past its next milestone (10, 25, 50)", t.Description);
         Assert.Equal(new[] { "+2 to all stats when equipped." }, t.BonusLines);
     }
 
@@ -202,8 +204,9 @@ public class ShopTitleItemTests
         foreach (StatType s in System.Enum.GetValues(typeof(StatType)))
         {
             Assert.Equal(baseStats[s], c.Stats[s]);        // the I menu shows base + assigned
-            Assert.Equal(baseStats[s] + 2, c.EffectiveStats[s]);
-            Assert.Equal(2, c.TitleBonus(s));
+            int expected = StatModifier.LimitedBonus(baseStats[s], 2);   // #33: never up to or past the next milestone
+            Assert.Equal(baseStats[s] + expected, c.EffectiveStats[s]);
+            Assert.Equal(expected, c.TitleBonus(s));
         }
         Assert.True(c.Modifier(StatType.Constitution) > conMod);
         Assert.True(c.MaxHealth > maxHp);
@@ -245,13 +248,15 @@ public class ShopTitleItemTests
     [Fact]
     public void MilestonesCountEffectiveStats()
     {
-        // 8 + title bonus 2 = 10: the first milestone (+1.0 modifier) is reached through the title.
+        // #33: the title can no longer carry a stat onto the milestone: 8 + title = 9 (0.9), but a stat of 10 gets the full +2 (12 = 2.2).
         var c = new Character("Test", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(8));
-        double before = c.Modifier(StatType.Constitution);
         c.GrantTitle(TitleLibrary.AdventurerId);
         c.EquipTitle(TitleLibrary.AdventurerId);
-        Assert.Equal(StatModifier.Value(10), c.Modifier(StatType.Constitution));
-        Assert.True(c.Modifier(StatType.Constitution) > before + 0.19);
+        Assert.Equal(StatModifier.Value(9), c.Modifier(StatType.Constitution));
+        var d = new Character("Test", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(10));
+        d.GrantTitle(TitleLibrary.AdventurerId);
+        d.EquipTitle(TitleLibrary.AdventurerId);
+        Assert.Equal(StatModifier.Value(12), d.Modifier(StatType.Constitution));
     }
 
     // ---- #25 quest 4

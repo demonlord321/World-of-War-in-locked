@@ -39,6 +39,28 @@ namespace WarInLocked.Core.Combat
             return tenths;
         }
 
+        /// <summary>The smallest milestone above <paramref name="statPoints"/> (10 for 9, 25 for 10), or 0 if there is none left.</summary>
+        public static int NextMilestone(int statPoints)
+        {
+            int next = 0;
+            foreach (int m in _milestones)
+                if (m > statPoints && (next == 0 || m < next)) next = m;
+            return next;
+        }
+
+        /// <summary>
+        /// The part of a flat bonus (a title, #33) that really applies to a stat of <paramref name="baseValue"/>: at most <paramref name="bonus"/>, but it never takes the stat
+        /// up to or past its next milestone, so <c>max(0, min(bonus, nextMilestone - 1 - baseValue))</c>. Base 10 +2 = 12, 8 gives +1 (9), 9 gives 0, 23 gives +1 (24), 24 gives 0, 25 gives +2.
+        /// Own points can still reach the milestone; once they do, the full bonus applies again. With no milestone left the whole bonus applies. A bonus of 0 or less is returned unchanged.
+        /// </summary>
+        public static int LimitedBonus(int baseValue, int bonus)
+        {
+            if (bonus <= 0) return bonus;
+            int next = NextMilestone(baseValue);
+            if (next == 0) return bonus;
+            return Math.Max(0, Math.Min(bonus, next - 1 - baseValue));
+        }
+
         /// <summary>The modifier as a number, e.g. 1.9.</summary>
         public static double Value(int statPoints) => Tenths(statPoints) / 10.0;
     }

@@ -5,7 +5,7 @@ namespace WarInLocked.Core.Characters
 {
     /// <summary>
     /// A title the character can earn and wear (#27). One title is equipped at a time. While equipped it adds
-    /// <see cref="AllStatsBonus"/> to every stat (see <see cref="Character.EffectiveStats"/>).
+    /// up to <see cref="AllStatsBonus"/> to every stat, never taking a stat up to or past its next milestone (#33, see <see cref="Character.TitleBonus"/> and <see cref="Character.EffectiveStats"/>).
     /// </summary>
     public sealed class Title
     {
@@ -44,12 +44,17 @@ namespace WarInLocked.Core.Characters
     {
         public const string AdventurerId = "adventurer";
 
-        /// <summary>Dyllan's text from issue #27, verbatim.</summary>
+        /// <summary>Dyllan's text from issue #27, verbatim (the full description adds <see cref="AdventurerBonusExplanation"/>).</summary>
         public const string AdventurerDescription =
             "You have completed the tutorial. The Adventurer is one who is prepared for the upcoming adventure.";
 
+        /// <summary>#33 (Dyllan): the title's bonus stops short of the next milestone; it is part of the title's description.</summary>
+        public const string AdventurerBonusExplanation =
+            "Its +2 never takes a stat up to or past its next milestone (10, 25, 50): a stat of 8 gets +1 (9), a stat of 9 gets +0, and a stat of 10 gets the full +2 (12). "
+            + "Invest your own points to reach the milestone and the +2 applies again.";
+
         /// <summary>Reward of quest 4 "Shopping before adventure": +2 to all stats when equipped.</summary>
-        public static readonly Title Adventurer = new Title(AdventurerId, "Adventurer", AdventurerDescription, 2);
+        public static readonly Title Adventurer = new Title(AdventurerId, "Adventurer", AdventurerDescription + " " + AdventurerBonusExplanation, 2);
 
         public static IReadOnlyList<Title> All { get; } = new[] { Adventurer };
 

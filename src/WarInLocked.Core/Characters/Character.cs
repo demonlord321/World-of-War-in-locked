@@ -484,10 +484,24 @@ namespace WarInLocked.Core.Characters
         /// <see cref="Stats"/> plus the equipped title's bonus (#27). Everything that uses a stat (modifiers, max health and energy, damage) reads this,
         /// so a milestone (10, 25, 50) is reached by the effective value.
         /// </summary>
-        public StatBlock EffectiveStats => TitleBonus(StatType.Strength) == 0 ? Stats : Stats.Plus(StatBlock.Uniform(EquippedTitle.AllStatsBonus));
+        public StatBlock EffectiveStats
+        {
+            get
+            {
+                if (EquippedTitle == null) return Stats;
+                return new StatBlock(Stats.Strength + TitleBonus(StatType.Strength), Stats.Dexterity + TitleBonus(StatType.Dexterity),
+                    Stats.Constitution + TitleBonus(StatType.Constitution), Stats.Wisdom + TitleBonus(StatType.Wisdom),
+                    Stats.Intelligence + TitleBonus(StatType.Intelligence), Stats.Perception + TitleBonus(StatType.Perception),
+                    Stats.Charisma + TitleBonus(StatType.Charisma), Stats.Luck + TitleBonus(StatType.Luck));
+            }
+        }
 
-        /// <summary>What the equipped title adds to a stat (0 when no title is equipped).</summary>
-        public int TitleBonus(StatType stat) => EquippedTitle == null ? 0 : EquippedTitle.AllStatsBonus;
+        /// <summary>What the equipped title really adds to a stat (0 when no title is equipped). It never takes the stat up to or past its next milestone (#33, see <see cref="TitleBonusFor"/>).</summary>
+        public int TitleBonus(StatType stat) => EquippedTitle == null ? 0 : TitleBonusFor(EquippedTitle, stat);
+
+        /// <summary>What a title would add to a stat of this character right now (worn or not): the title's bonus limited so the stat stays below its next milestone (#33). For previews.</summary>
+        public int TitleBonusFor(Title title, StatType stat) =>
+            title == null ? 0 : StatModifier.LimitedBonus(Stats[stat], title.AllStatsBonus);
 
         private readonly List<Title> _titles = new List<Title>();
         /// <summary>Titles earned so far, in the order they were earned.</summary>
@@ -518,8 +532,9 @@ namespace WarInLocked.Core.Characters
         {
             if (!HasTitle(titleId) || (EquippedTitle != null && EquippedTitle.Id == titleId)) return false;
             var t = TitleLibrary.Get(titleId);
-            bool gain = t.AllStatsBonus > (EquippedTitle?.AllStatsBonus ?? 0);
-            ChangeStatsKeepingVitals(gain, () => EquippedTitle = t);
+            int now = 0, after = 0;
+            foreach (var stat in StatTypes.All) { now += TitleBonus(stat); after += TitleBonusFor(t, stat); }
+            ChangeStatsKeepingVitals(after > now, () => EquippedTitle = t);
             Version++;
             TitlesChanged?.Invoke();
             return true;

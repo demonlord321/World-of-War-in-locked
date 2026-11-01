@@ -33,8 +33,13 @@ namespace WarInLocked.Core.Combat
         private static readonly Quest[] None = new Quest[0];
 
         public CombatResult(CombatOutcome outcome, Enemy target = null, int damage = 0, IReadOnlyList<Quest> readyQuests = null,
-            Ability abilityUsed = null, bool abilityLeveledUp = false, ItemUseResult itemResult = null)
+            Ability abilityUsed = null, bool abilityLeveledUp = false, ItemUseResult itemResult = null,
+            int xpGained = 0, int levelsGained = 0, Item dropped = null, bool dropLost = false)
         {
+            XpGained = xpGained;
+            LevelsGained = levelsGained;
+            DroppedItem = dropped;
+            DropLost = dropLost;
             ItemResult = itemResult;
             Outcome = outcome;
             Target = target;
@@ -55,6 +60,14 @@ namespace WarInLocked.Core.Combat
         public Ability AbilityUsed { get; }
         /// <summary>True if this cast raised <see cref="AbilityUsed"/> to a new level.</summary>
         public bool AbilityLeveledUp { get; }
+        /// <summary>XP the kill gave (#36), already added to the character; 0 for anything but <see cref="CombatOutcome.Killed"/>. Show "+5 XP".</summary>
+        public int XpGained { get; }
+        /// <summary>Levels the kill's XP brought (usually 0); the character's <c>LeveledUp</c> event also fires.</summary>
+        public int LevelsGained { get; }
+        /// <summary>The item the kill dropped (#36), or null. If <see cref="DropLost"/> is false it is already in the inventory. Show "Slime Jelly" with its icon.</summary>
+        public Item DroppedItem { get; }
+        /// <summary>True when the drop did not fit in the full inventory and was lost (PLACEHOLDER rule, #36). Show <see cref="CombatController.DropLostText"/>.</summary>
+        public bool DropLost { get; }
         public bool Succeeded => Outcome == CombatOutcome.Hit || Outcome == CombatOutcome.Killed;
     }
 
@@ -117,7 +130,11 @@ namespace WarInLocked.Core.Combat
         {
             if (seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
             if (AttackCooldownRemaining > 0) AttackCooldownRemaining = Math.Max(0, AttackCooldownRemaining - seconds);
-            if (CombatCooldownRemaining > 0) CombatCooldownRemaining = Math.Max(0, CombatCooldownRemaining - seconds);
+            if (CombatCooldownRemaining > 0)
+            {
+                CombatCooldownRemaining = Math.Max(0, CombatCooldownRemaining - seconds);
+                if (CombatCooldownRemaining <= 0) _combatTimerRanOut = true;   // #31: angry slimes lose their aggro (see UpdateEnemies)
+            }
             _owner.Clock.Update(seconds);    // #56: the game clock only runs while the Game keeps calling Update (it pauses in menus)
             _owner.UpdateRespawn(seconds);   // #29: counts down while fallen, then respawns
             Hotbar.Update(seconds);
@@ -131,9 +148,10 @@ namespace WarInLocked.Core.Combat
         /// <summary>Seconds left of the in-combat window; 0 when out of combat.</summary>
         public double CombatCooldownRemaining { get; private set; }
         public bool InCombat => CombatCooldownRemaining > 0;
+        private bool _combatTimerRanOut;
         /// <summary>Starts (or restarts) the in-combat window. Called when the player deals or takes damage.</summary>
         /// <summary>Ends the in-combat window at once (a respawn does this).</summary>
-        public void ClearCombat() => CombatCooldownRemaining = 0;
+        public void ClearCombat() { CombatCooldownRemaining = 0; _combatTimerRanOut = false; }
 
         /// <summary>Makes every enemy passive again (aggro and attack timers reset). Call it from the <c>Character.Respawned</c> handler (#29).</summary>
         public static void CalmEnemies(IEnumerable<Enemy> enemies)
@@ -142,7 +160,7 @@ namespace WarInLocked.Core.Combat
             foreach (var e in enemies) e.Calm();
         }
 
-        public void MarkInCombat() => CombatCooldownRemaining = CombatDurationSeconds;
+        public void MarkInCombat() { CombatCooldownRemaining = CombatDurationSeconds; _combatTimerRanOut = false; }
 
         /// <summary>Puts a consumable (by item id) on a hotbar slot, replacing what was there (#26). Keys 1-5 then use it.</summary>
         public void AssignItemToHotbar(int slotIndex, string itemId) => Hotbar.AssignItem(slotIndex, itemId);
@@ -219,13 +237,20 @@ namespace WarInLocked.Core.Combat
         /// in the same call if the step brought them into reach and their cooldown is ready. Read the new <see cref="Enemy.TileX"/> / <see cref="Enemy.TileY"/> afterwards to draw them.
         /// <paramref name="isWalkable"/> (optional) says whether an enemy may stand on a tile: the screen supplies walls, NPCs, doors and map bounds. A diagonal step
         /// also needs both tiles it passes beside to be walkable (no cutting wall corners). Null means every tile is walkable. A dead player is not chased.
-        /// There is no give-up distance or calming down yet (open question in QUESTIONS.md).
+        /// Chasing ends with the combat timer (#31, Dyllan: "If you run out the combat timer, then the slimes lose their aggro"): when the 15 s out-of-combat
+        /// window has run out (no damage dealt or taken, see <see cref="CombatDurationSeconds"/>), the next call calms every aggro'd enemy in the list
+        /// (<see cref="Enemy.Calm"/>: passive again, healed to full, no chase). They stay where they are and the screen lets them wander again. There is no distance-based leash.
         /// </summary>
         public int UpdateEnemies(IReadOnlyList<Enemy> enemies, double seconds, int playerX, int playerY, Func<int, int, bool> isWalkable)
         {
             if (enemies == null) throw new ArgumentNullException(nameof(enemies));
             if (seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
             int total = 0;
+            if (_combatTimerRanOut)
+            {
+                _combatTimerRanOut = false;
+                foreach (var e in enemies) if (e != null && e.IsAggro && !e.IsDead) e.Calm();
+            }
             foreach (var e in enemies)
             {
                 if (e.IsAggro && !e.IsDead) Chase(e, seconds, playerX, playerY, enemies, isWalkable);
@@ -287,13 +312,20 @@ namespace WarInLocked.Core.Combat
             return false;
         }
 
+        /// <summary>PLACEHOLDER notice (#36) when a drop does not fit in a full inventory: the drop is lost.</summary>
+        public const string DropLostText = "Inventory full: the drop was lost";
+
         private CombatResult Strike(Enemy target, int damage)
         {
             int dealt = target.TakeDamage(damage);
             MarkInCombat();
             if (!target.IsDead) return new CombatResult(CombatOutcome.Hit, target, dealt);
+            int xp = target.XpReward;
+            int levels = xp > 0 ? _owner.GainXp(xp) : 0;                        // #36
+            var drop = target.DropItem;
+            bool lost = drop != null && _owner.Inventory.Add(drop, 1) < 1;      // a full inventory loses the drop (placeholder)
             var completed = _owner.Quests.RecordKill(target.Type);
-            return new CombatResult(CombatOutcome.Killed, target, dealt, completed);
+            return new CombatResult(CombatOutcome.Killed, target, dealt, completed, xpGained: xp, levelsGained: levels, dropped: drop, dropLost: lost);
         }
 
         /// <summary>The nearest living enemy on one of the 8 neighbouring tiles or the player's own tile; straight neighbours win over diagonals.</summary>

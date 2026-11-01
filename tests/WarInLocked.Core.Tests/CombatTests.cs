@@ -347,13 +347,13 @@ public class CombatTests
 
         Assert.Single(completed);
         Assert.Equal(QuestState.ReadyToTurnIn, c.Quests.Get(QuestLibrary.SliceAndSlimeId).State);
-        Assert.Equal(0, c.Xp);             // no reward until the Colonel has been talked to
+        Assert.Equal(25, c.Xp);            // only the 5 kills (5 XP each, #36): no quest reward until the Colonel has been talked to
         Assert.DoesNotContain("slash", c.Abilities);
 
         ColonelPowersQuest.QuestToOfferAfterDialogue(c);   // the turn-in
         Assert.Equal(QuestState.Complete, c.Quests.Get(QuestLibrary.SliceAndSlimeId).State);
-        Assert.Equal(50, c.Xp);
-        Assert.Equal(2, c.Level);          // the quest's 50 XP is exactly the cost of level 1 -> 2
+        Assert.Equal(75, c.Xp);            // 25 from the kills plus the quest's 50
+        Assert.Equal(2, c.Level);          // the kills (25) were not enough for level 2 on their own; with the quest's 50 XP it is
         Assert.Equal(3, c.FreeStatPoints);
         Assert.Contains("slash", c.Abilities);
     }
