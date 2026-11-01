@@ -125,8 +125,47 @@ namespace WarInLocked.Core.Characters
         /// </summary>
         public const int EnergyBase = 50;
 
-        public int MaxHealth => (int)Math.Round(HealthBase * (StatModifier.Tenths(EffectiveStats.Constitution) / 10m), MidpointRounding.AwayFromZero);
-        public int MaxEnergy => (int)Math.Round(EnergyBase * (StatModifier.Tenths(EffectiveStats.Wisdom) / 10m), MidpointRounding.AwayFromZero);
+        /// <summary>Max health including the Death debuff's cut (#35): base x Constitution modifier x <see cref="DeathDebuffMultiplier"/>, rounded half up once.</summary>
+        public int MaxHealth => (int)Math.Round(HealthBase * (StatModifier.Tenths(EffectiveStats.Constitution) / 10m) * (decimal)DeathDebuffMultiplier, MidpointRounding.AwayFromZero);
+        /// <summary>Max energy including the Death debuff's cut (#35).</summary>
+        public int MaxEnergy => (int)Math.Round(EnergyBase * (StatModifier.Tenths(EffectiveStats.Wisdom) / 10m) * (decimal)DeathDebuffMultiplier, MidpointRounding.AwayFromZero);
+
+        // ---- Death debuff (#35) ----
+
+        /// <summary>0 = none, 1-3 = Death debuff level (see <see cref="DeathDebuff"/>). A respawn adds a level while it is active.</summary>
+        public int DeathDebuffLevel { get; private set; }
+        /// <summary>Seconds left on the debuff (0 when none). Counts down in <c>Combat.Update</c> (so it pauses when the Game stops updating, and while fallen), in or out of combat.</summary>
+        public double DeathDebuffRemaining { get; private set; }
+        public bool HasDeathDebuff => DeathDebuffLevel > 0;
+        /// <summary>1.0 without the debuff, else 0.75 / 0.5 / 0.25: applied to max health, max energy and damage dealt.</summary>
+        public double DeathDebuffMultiplier => DeathDebuff.MultiplierFor(DeathDebuffLevel);
+        /// <summary>"Death debuff 2", or null without the debuff.</summary>
+        public string DeathDebuffName => DeathDebuff.NameFor(DeathDebuffLevel);
+        /// <summary>"Death debuff 2: -50% health, attack and energy (0:42)" (level 3 adds ", no XP from kills"), or null without the debuff. Changes every second: for the HUD tooltip.</summary>
+        public string DeathDebuffText => DeathDebuff.TextFor(DeathDebuffLevel, DeathDebuffRemaining);
+        /// <summary>True while kills give XP (false at Death debuff level 3). Quest XP is not affected.</summary>
+        public bool EarnsKillXp => DeathDebuffLevel < DeathDebuff.NoKillXpLevel;
+        /// <summary>Raised when the debuff level changes (applied, stacked, expired). Not raised for the ticking timer.</summary>
+        public event Action DeathDebuffChanged;
+
+        private void ApplyDeathDebuffStack()
+        {
+            DeathDebuffLevel = Math.Min(DeathDebuff.MaxLevel, DeathDebuffLevel + 1);
+            DeathDebuffRemaining = DeathDebuff.SecondsFor(DeathDebuffLevel);   // at level 3 a new death restarts the 60 s (guess)
+            Version++;
+            DeathDebuffChanged?.Invoke();
+        }
+
+        /// <summary>Counts the debuff down; at 0 the whole stack goes. Current health/energy stay where they are (they were already capped at the lower maximum). <c>Combat.Update</c> calls this. Frozen while fallen.</summary>
+        internal void TickDeathDebuff(double seconds)
+        {
+            if (DeathDebuffLevel == 0 || IsDead) return;
+            DeathDebuffRemaining = Math.Max(0, DeathDebuffRemaining - seconds);
+            if (DeathDebuffRemaining > 0) return;
+            DeathDebuffLevel = 0;
+            Version++;
+            DeathDebuffChanged?.Invoke();
+        }
 
         /// <summary>The modifier of a stat's effective value (with the equipped title's bonus; milestones count the effective value, #27) (0.1 per point, +1.0 per milestone), e.g. 2.3 for 13 Constitution.</summary>
         public double Modifier(StatType stat) => StatModifier.Value(EffectiveStats[stat]);
@@ -233,6 +272,7 @@ namespace WarInLocked.Core.Characters
             int lost = (int)Math.Max(0, Math.Min(RespawnXpPenalty, Xp - floor));
             Xp -= lost;
             LastRespawnXpLost = lost;
+            ApplyDeathDebuffStack();   // #35: before the refill, so you come back at the reduced maximum
             Health = MaxHealth;
             _energy = MaxEnergy;
             Combat.ClearCombat();
@@ -466,6 +506,13 @@ namespace WarInLocked.Core.Characters
             Copper = Math.Max(0, copper);
             RespawnRemaining = 0;
             Version++;
+        }
+
+        /// <summary>Restores the Death debuff from a save (#35). Call before <see cref="RestoreProgress"/> so health is capped at the reduced maximum.</summary>
+        internal void RestoreDeathDebuff(int level, double remaining)
+        {
+            DeathDebuffLevel = Math.Max(0, Math.Min(DeathDebuff.MaxLevel, level));
+            DeathDebuffRemaining = DeathDebuffLevel == 0 ? 0 : Math.Max(0.001, Math.Min(DeathDebuff.StackedSeconds, remaining));
         }
 
         internal void RestoreAbility(string abilityId, int level, int uses, int usesIntoLevel)

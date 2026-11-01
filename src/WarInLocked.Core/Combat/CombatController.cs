@@ -34,8 +34,9 @@ namespace WarInLocked.Core.Combat
 
         public CombatResult(CombatOutcome outcome, Enemy target = null, int damage = 0, IReadOnlyList<Quest> readyQuests = null,
             Ability abilityUsed = null, bool abilityLeveledUp = false, ItemUseResult itemResult = null,
-            int xpGained = 0, int levelsGained = 0, Item dropped = null, bool dropLost = false)
+            int xpGained = 0, int levelsGained = 0, Item dropped = null, bool dropLost = false, bool xpBlocked = false)
         {
+            XpBlocked = xpBlocked;
             XpGained = xpGained;
             LevelsGained = levelsGained;
             DroppedItem = dropped;
@@ -62,6 +63,8 @@ namespace WarInLocked.Core.Combat
         public bool AbilityLeveledUp { get; }
         /// <summary>XP the kill gave (#36), already added to the character; 0 for anything but <see cref="CombatOutcome.Killed"/>. Show "+5 XP".</summary>
         public int XpGained { get; }
+        /// <summary>True when the kill would have given XP but Death debuff level 3 is active (#35): <see cref="XpGained"/> is 0. Show "No XP while Death debuff 3".</summary>
+        public bool XpBlocked { get; }
         /// <summary>Levels the kill's XP brought (usually 0); the character's <c>LeveledUp</c> event also fires.</summary>
         public int LevelsGained { get; }
         /// <summary>The item the kill dropped (#36), or null. If <see cref="DropLost"/> is false it is already in the inventory. Show "Slime Jelly" with its icon.</summary>
@@ -137,6 +140,7 @@ namespace WarInLocked.Core.Combat
             }
             _owner.Clock.Update(seconds);    // #56: the game clock only runs while the Game keeps calling Update (it pauses in menus)
             _owner.UpdateRespawn(seconds);   // #29: counts down while fallen, then respawns
+            _owner.TickDeathDebuff(seconds); // #35: the Death debuff runs out (frozen while fallen)
             Hotbar.Update(seconds);
             _owner.TickItemCooldown(seconds);
             _owner.RegenEnergy(EnergyRegenPerSecond * seconds);
@@ -320,12 +324,13 @@ namespace WarInLocked.Core.Combat
             int dealt = target.TakeDamage(damage);
             MarkInCombat();
             if (!target.IsDead) return new CombatResult(CombatOutcome.Hit, target, dealt);
-            int xp = target.XpReward;
+            bool xpBlocked = target.XpReward > 0 && !_owner.EarnsKillXp;          // #35: Death debuff 3
+            int xp = xpBlocked ? 0 : target.XpReward;
             int levels = xp > 0 ? _owner.GainXp(xp) : 0;                        // #36
             var drop = target.DropItem;
             bool lost = drop != null && _owner.Inventory.Add(drop, 1) < 1;      // a full inventory loses the drop (placeholder)
             var completed = _owner.Quests.RecordKill(target.Type);
-            return new CombatResult(CombatOutcome.Killed, target, dealt, completed, xpGained: xp, levelsGained: levels, dropped: drop, dropLost: lost);
+            return new CombatResult(CombatOutcome.Killed, target, dealt, completed, xpGained: xp, levelsGained: levels, dropped: drop, dropLost: lost, xpBlocked: xpBlocked);
         }
 
         /// <summary>The nearest living enemy on one of the 8 neighbouring tiles or the player's own tile; straight neighbours win over diagonals.</summary>

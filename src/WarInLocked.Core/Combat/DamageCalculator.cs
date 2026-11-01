@@ -13,6 +13,7 @@ namespace WarInLocked.Core.Combat
     /// An ability adds its power n on top of the base (Slash: physical base + n; Energy Ball: magical base + n).
     /// The result is multiplied by the target's resistance multiplier (#24, 1.0 if none) and <b>rounded half up to a whole number</b>
     /// once at the very end (x.5 goes up; 10.5 -> 11). Computed in exact decimals, so 0.5 never drifts.
+    /// The Death debuff (#35) multiplies the result like a resistance: x0.75 / 0.5 / 0.25 (still rounded once at the end).
     /// Defence (#15) is not part of this yet.
     /// </summary>
     public static class DamageCalculator
@@ -56,14 +57,14 @@ namespace WarInLocked.Core.Combat
 
         /// <summary>Physical damage with an explicit bonus on top of the base 10 (weapon bonus + ability power) and the target's multiplier.</summary>
         public static int PhysicalDamage(Character c, int bonus, double targetMultiplier = 1.0) =>
-            Compute(bonus, StatModifier.Tenths(c.EffectiveStats.Strength), targetMultiplier);
+            Compute(bonus, StatModifier.Tenths(c.EffectiveStats.Strength), targetMultiplier * c.DeathDebuffMultiplier);
 
         /// <summary>Unarmed damage: base attack x Strength modifier (ignores anything held).</summary>
         public static int UnarmedDamage(Character c) => PhysicalDamage(c, 0, 1.0);
 
         /// <summary>Magic damage with an explicit bonus on top of the base 10 (staff bonus + spell power) and the target's multiplier.</summary>
         public static int MagicDamage(Character c, int bonus = 0, double targetMultiplier = 1.0) =>
-            Compute(bonus, StatModifier.Tenths(c.EffectiveStats.Intelligence), targetMultiplier);
+            Compute(bonus, StatModifier.Tenths(c.EffectiveStats.Intelligence), targetMultiplier * c.DeathDebuffMultiplier);
 
         private static int Compute(int bonus, int modifierTenths, double targetMultiplier)
         {

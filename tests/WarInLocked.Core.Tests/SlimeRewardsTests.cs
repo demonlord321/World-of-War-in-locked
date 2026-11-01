@@ -82,7 +82,7 @@ public class SlimeRewardsTests
         Assert.False(j.IsUsable);
         Assert.False(j.IsEquippable);
         Assert.True(j.IsSellable);
-        Assert.Equal(3, j.SellPriceCopper);                 // placeholder
+        Assert.Equal(2, j.SellPriceCopper);                 // Dyllan: usually 2 coppers (shops may vary)
         Assert.True(j.MaxStack > 1);
         Assert.Same(j, ItemLibrary.Get(ItemLibrary.SlimeJellyId));
         Assert.False(ItemLibrary.PracticeSword.IsSellable);  // nothing else has a sell price yet

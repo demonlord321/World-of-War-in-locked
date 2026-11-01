@@ -82,6 +82,9 @@ namespace WarInLocked.Core.Saving
         public int Health { get; set; }
         public double Energy { get; set; }
         public int Copper { get; set; }
+        /// <summary>Death debuff level (0-3, #35) and the seconds left on it. Absent in older saves = none.</summary>
+        public int DeathDebuffLevel { get; set; }
+        public double DeathDebuffRemaining { get; set; }
 
         // Things
         public List<SavedItemStack> Inventory { get; set; } = new List<SavedItemStack>();
@@ -121,6 +124,7 @@ namespace WarInLocked.Core.Saving
                 Name = c.Name, Race = c.Race, Distribution = c.Distribution,
                 FreeStatPoints = c.FreeStatPoints, Level = c.Level, Xp = c.Xp,
                 Health = c.Health, Energy = c.EnergyExact, Copper = c.Copper,
+                DeathDebuffLevel = c.DeathDebuffLevel, DeathDebuffRemaining = c.DeathDebuffRemaining,
                 InventoryCapacity = c.Inventory.Capacity,
                 EquippedTitle = c.EquippedTitle?.Id,
                 BindMapId = c.BindPoint.MapId, BindTileX = c.BindPoint.TileX, BindTileY = c.BindPoint.TileY,
@@ -181,6 +185,7 @@ namespace WarInLocked.Core.Saving
 
             c.RestoreTitles(Titles ?? new List<string>(), EquippedTitle);
             c.RestoreFlags(Flags ?? new List<string>());
+            c.RestoreDeathDebuff(DeathDebuffLevel, DeathDebuffRemaining);   // before the progress: health is capped at the reduced maximum
             c.RestoreProgress(Level, Xp, FreeStatPoints, AssignedPoints, Health, Energy, Copper);
 
             if (Inventory != null)

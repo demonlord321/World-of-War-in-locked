@@ -10,8 +10,8 @@ namespace WarInLocked.Core.Items
         public const string LesserHealingPotionId = "potion-lesser-healing";
         public const string AdventurersRationsId = "adventurers-rations";
         public const string SlimeJellyId = "slime-jelly";
-        /// <summary>PLACEHOLDER (#36): what a shop pays for one Slime Jelly, in copper. Dyllan gave no price.</summary>
-        public const int SlimeJellySellPrice = 3;
+        /// <summary>Base sell price of one Slime Jelly in copper (#36, Dyllan: "usually 2 coppers"); a shop may pay a different amount later.</summary>
+        public const int SlimeJellySellPrice = 2;
         /// <summary>PLACEHOLDER stack size of Slime Jelly (#36).</summary>
         public const int SlimeJellyStackSize = 20;
         /// <summary>PLACEHOLDER flavour line for Slime Jelly (#36): Dyllan only said it has no use but selling.</summary>

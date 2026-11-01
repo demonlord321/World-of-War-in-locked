@@ -180,3 +180,4 @@ Needed before a 3 to 4 hour build is testable:
 - Decided (#31): angry slimes chase; they calm down (full HP) when the 15 s combat timer runs out (closed).
 - Decided (#33): titles add up to +2 per stat but never onto or past the next milestone (8→9, 9→9, 10→12) (closed).
 - Decided (#36): slimes give 5 × level XP (levels 1-3) and one Slime Jelly (sell-only), no copper. Open: XP above level 3 and at night, jelly price and seller, full-inventory drops.
+- #35 (1 Nov): stacking Death debuff in Core (-25/50/75% max health, energy and damage; 30 s then 60 s; level 3 no kill XP; saved); #36: Slime Jelly base price 2 copper, night XP moved to #60.
