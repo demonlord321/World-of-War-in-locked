@@ -93,3 +93,7 @@ Order (Dyllan): #14 and #16 first; #15 is to be discussed.
 Decided 1 Nov: a milestone point adds 1 on top of its usual 0.1, so modifier = 0.1 x stat + 1 per milestone reached (9 gives 0.9, 10 gives 2.0, 25 gives 4.5, 50 gives 8.0).
 Status 1 Nov, 08:23: #14 and #16 rules in 6703ac8 (179 tests), Combat box in the I menu in ad4fefd. Placeholders: Practice Sword +5 before the multiply, slimes 30 HP. #15 under discussion: health = base x Constitution modifier (base 10 or 100?), and whether defense is also a separate damage reduction.
 Decided 1 Nov (#15): max health = 100 x Constitution modifier (Mystic 50, Merchant 90, Warrior 230). Energy stays 5 per Wisdom point for now.
+
+### Added 1 Nov: #17 Energy, #18 Modifiers on the stat page
+- #17: max energy = base x Wisdom modifier. Base not given yet (Warrior Wis 7, Merchant 9, Mystic 13 give 0.7 / 0.9 / 2.3).
+- #18: the I menu shows each stat with its modifier in brackets, e.g. "Str 10 (2)", for all 8 stats, all on the same curve. Mapmaker's screen, using Core's modifier.
