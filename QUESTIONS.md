@@ -161,3 +161,11 @@ Dyllan's text is verbatim, typos included. Typos kept as written: **"Your barely
 - **While it is active** the Colonel shows the Talk / Shop choice (no progress line). Talking to Whiplash **before accepting** counts nothing; it counts once the quest is Active.
 - **Whiplash's dialogue is a placeholder** (Dyllan gave none): "So the Colonel sent you. I am Whiplash." / "Keep your head down and your blade sharp, {name}, and I will advise you as we move forward." while the quest is active, and "Stay sharp out there, {name}." at any other time. What does Whiplash really say, and does he give the next quest?
 - The NPC id is `whiplash` and the map id `adventurers-encampment` (Mapmaker, #53). Core does not check which map the talk happens on.
+
+### Path map slimes, levels 4 and 5 (Dyllan, 1 Nov)
+A filler "Path map" between the forest and the encampment is filled with passive level 4 and 5 slimes (Mapmaker builds the map and transitions).
+- **PLACEHOLDER stats** (Dyllan gave level 4 and 5 only as placeholders): **level 4: 125 HP, attack 18; level 5: 150 HP, attack 21**. Levels 1-3 are unchanged (50/75/100 HP, attack 10/12/15).
+- Same as the forest slimes: **1.25x damage from physical and magical** (vulnerable), **passive until hit**, then hits every **6 s**, same aggro, calm and respawn rules.
+- **The level range is per map**: `Enemy.NewRandomSlime(rng)` stays forest 1-3; `Enemy.NewRandomSlime(rng, minLevel, maxLevel)` takes a range (Path: `Enemy.PathMinSlimeLevel`..`PathMaxSlimeLevel` = 4..5). Uniform over the range, as in the forest.
+- The level tag colour (`Hud.SlimeLevelColor`) has only green/yellow/orange, so level 4 and 5 show orange like level 3 until Mapmaker picks colours.
+- **Leaving the starting forest (Dyllan, 1 Nov):** the player cannot leave the Forest of Beginnings until Colonel Powers has given "Adventurers start" (**accepted or completed counts**; offered but not yet accepted does not). `Character.CanLeaveForest`. **PLACEHOLDER refusal text** (Dyllan gave none): "Colonel Powers isn't finished with you yet." (`Character.LeaveForestRefusal`). The forest exit (Mapmaker) must check it and show the text; Core does not block movement itself.

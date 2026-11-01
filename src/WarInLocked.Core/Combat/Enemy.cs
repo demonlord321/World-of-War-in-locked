@@ -12,8 +12,12 @@ namespace WarInLocked.Core.Combat
     {
         /// <summary>The quest enemy type, e.g. "slime".</summary>
         public const string SlimeType = "slime";
-        /// <summary>Slimes in the Forest of Beginnings are level 1 to 3 (#24).</summary>
+        /// <summary>Slimes in the Forest of Beginnings are level 1 to 3 (#24). These are the defaults of <see cref="NewRandomSlime(Random)"/>.</summary>
         public const int MinSlimeLevel = 1, MaxSlimeLevel = 3;
+        /// <summary>Slimes of the filler Path map between the forest and the encampment are level 4 to 5 (PLACEHOLDER, Dyllan 1 Nov).</summary>
+        public const int PathMinSlimeLevel = 4, PathMaxSlimeLevel = 5;
+        /// <summary>The slime levels that exist at all: 1 to 5.</summary>
+        public const int LowestSlimeLevel = 1, HighestSlimeLevel = 5;
         /// <summary>PLACEHOLDER: slimes take 1.25x from both physical and magical damage ("vulnerable to both", #24).</summary>
         public const double SlimeVulnerability = 1.25;
         /// <summary>Aggro'd enemies attack the player this often (Dyllan: every 6 s, was 3).</summary>
@@ -44,26 +48,34 @@ namespace WarInLocked.Core.Combat
             Hp = maxHp;
         }
 
-        /// <summary>Max health of a slime of this level: 50, 75, 100 (#24, Dyllan; first 100/125/150, changed 1 Nov).</summary>
-        public static int SlimeHealthFor(int level) => Clamp(level, 50, 75, 100);
-        /// <summary>Attack of a slime of this level: 10, 12, 15 (#24, Dyllan). Stored only; slimes do not fight back yet.</summary>
-        public static int SlimeAttackFor(int level) => Clamp(level, 10, 12, 15);
+        /// <summary>Max health of a slime of this level: 50, 75, 100 (#24, Dyllan) and, PLACEHOLDER for the Path map, 125 and 150.</summary>
+        public static int SlimeHealthFor(int level) => Pick(level, 50, 75, 100, 125, 150);
+        /// <summary>Attack of a slime of this level: 10, 12, 15 (#24, Dyllan) and, PLACEHOLDER for the Path map, 18 and 21.</summary>
+        public static int SlimeAttackFor(int level) => Pick(level, 10, 12, 15, 18, 21);
 
-        private static int Clamp(int level, int l1, int l2, int l3)
+        private static int Pick(int level, params int[] values)
         {
-            if (level < MinSlimeLevel || level > MaxSlimeLevel) throw new ArgumentOutOfRangeException(nameof(level), "Slimes are level 1 to 3.");
-            return level == 1 ? l1 : level == 2 ? l2 : l3;
+            if (level < LowestSlimeLevel || level > HighestSlimeLevel) throw new ArgumentOutOfRangeException(nameof(level), "Slimes are level 1 to 5.");
+            return values[level - 1];
         }
 
-        /// <summary>A slime of the given level (1-3, default 1) with its health, attack and the placeholder vulnerability to both damage types.</summary>
+        /// <summary>A slime of the given level (1-5, default 1) with its health, attack and the placeholder vulnerability to both damage types.</summary>
         public static Enemy NewSlime(int level = 1) =>
             new Enemy(SlimeType, SlimeHealthFor(level), level, SlimeAttackFor(level), SlimeVulnerability, SlimeVulnerability);
 
-        /// <summary>A slime with a uniformly random level 1-3. Pass a seeded <see cref="Random"/> to make it repeatable.</summary>
-        public static Enemy NewRandomSlime(Random rng)
+        /// <summary>A slime with a uniformly random level 1-3 (the forest). Pass a seeded <see cref="Random"/> to make it repeatable.</summary>
+        public static Enemy NewRandomSlime(Random rng) => NewRandomSlime(rng, MinSlimeLevel, MaxSlimeLevel);
+
+        /// <summary>
+        /// A slime with a uniformly random level from <paramref name="minLevel"/> to <paramref name="maxLevel"/> (both included, 1-5): the level range is
+        /// chosen per map, e.g. forest 1-3, Path 4-5 (<see cref="PathMinSlimeLevel"/>, <see cref="PathMaxSlimeLevel"/>).
+        /// </summary>
+        public static Enemy NewRandomSlime(Random rng, int minLevel, int maxLevel)
         {
             if (rng == null) throw new ArgumentNullException(nameof(rng));
-            return NewSlime(rng.Next(MinSlimeLevel, MaxSlimeLevel + 1));
+            if (minLevel < LowestSlimeLevel || maxLevel > HighestSlimeLevel || minLevel > maxLevel)
+                throw new ArgumentOutOfRangeException(nameof(minLevel), "Slime levels are 1 to 5 and min must not exceed max.");
+            return NewSlime(rng.Next(minLevel, maxLevel + 1));
         }
 
         public int Level { get; }

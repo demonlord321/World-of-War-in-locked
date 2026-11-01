@@ -164,4 +164,22 @@ public class AdventurersStartTests
         Assert.Equal(DialogueLibrary.WhiplashIdleId, WhiplashQuest.DialogueIdFor(c));
         Assert.Contains("Aragorn", Lines(WhiplashQuest.CreateDialogue(c))[0]);
     }
+
+    [Fact]
+    public void CannotLeaveTheForestUntilTheColonelHasGivenAdventurersStart()
+    {
+        var c = Hero();
+        Assert.False(c.CanLeaveForest);                       // nothing given yet
+        Assert.Equal("Colonel Powers isn't finished with you yet.", Character.LeaveForestRefusal);
+
+        var fresh = AtQuest5Offer();
+        Assert.False(fresh.CanLeaveForest);                   // offered but not accepted
+
+        ColonelPowersQuest.Accept(fresh, out _);
+        Assert.True(fresh.CanLeaveForest);                    // accepted
+
+        WhiplashQuest.AfterDialogue(fresh, out _);
+        Assert.Equal(QuestState.Complete, fresh.Quests.Get(QuestLibrary.AdventurersStartId)!.State);
+        Assert.True(fresh.CanLeaveForest);                    // completed still counts
+    }
 }

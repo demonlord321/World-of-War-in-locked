@@ -348,6 +348,22 @@ namespace WarInLocked.Core.Characters
         public bool HasFlag(string flag) => _flags.Contains(flag);
         public void SetFlag(string flag) => _flags.Add(flag);
 
+        /// <summary>PLACEHOLDER text shown when the player tries to leave the Forest of Beginnings too early (Dyllan gave none).</summary>
+        public const string LeaveForestRefusal = "Colonel Powers isn't finished with you yet.";
+
+        /// <summary>
+        /// Dyllan's rule: the player cannot leave the starting forest until Colonel Powers has given the "Adventurers start" quest
+        /// (accepted, handed in or completed all count; merely offered does not). The forest exit checks this and shows <see cref="LeaveForestRefusal"/>.
+        /// </summary>
+        public bool CanLeaveForest
+        {
+            get
+            {
+                var q = Quests.Get(WarInLocked.Core.Quests.QuestLibrary.AdventurersStartId);
+                return q != null && q.State != WarInLocked.Core.Quests.QuestState.Offered;
+            }
+        }
+
         /// <summary>Adds XP (total). Can level up several times at once. Returns how many levels were gained; each one grants free stat points.</summary>
         public int GainXp(int amount)
         {

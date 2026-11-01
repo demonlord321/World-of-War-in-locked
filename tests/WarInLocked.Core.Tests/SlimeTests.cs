@@ -13,6 +13,8 @@ public class SlimeTests
     [InlineData(1, 50, 10)]
     [InlineData(2, 75, 12)]
     [InlineData(3, 100, 15)]
+    [InlineData(4, 125, 18)]
+    [InlineData(5, 150, 21)]
     public void SlimeStatsPerLevel(int level, int hp, int attack)
     {
         var s = Enemy.NewSlime(level);
@@ -30,7 +32,7 @@ public class SlimeTests
     {
         Assert.Equal(1, Enemy.NewSlime().Level);
         Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewSlime(0));
-        Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewSlime(4));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewSlime(6));
     }
 
     [Fact]
@@ -107,5 +109,43 @@ public class SlimeTests
         // the game rerolls the level for the new slime
         var rng = new Random(7);
         Assert.InRange(Enemy.NewRandomSlime(rng).Level, 1, 3);
+    }
+
+    [Fact]
+    public void PathSlimesAreLevelFourAndFiveWithTheSameVulnerabilityAndInterval()
+    {
+        foreach (int level in new[] { 4, 5 })
+        {
+            var s = Enemy.NewSlime(level);
+            Assert.Equal(1.25, s.PhysicalMultiplier);
+            Assert.Equal(1.25, s.MagicalMultiplier);
+            Assert.False(s.IsAggro);                                   // passive until hit
+            s.TakeDamage(1);
+            Assert.Equal(6.0, s.AttackCooldownRemaining);
+        }
+        Assert.Equal(6.0, Enemy.AttackIntervalSeconds);
+    }
+
+    [Fact]
+    public void LevelRangeIsPerMapAndTheForestCallIsUnchanged()
+    {
+        var rng = new Random(77);
+        var path = new int[6];
+        var forest = new int[6];
+        for (int i = 0; i < 2000; i++)
+        {
+            path[Enemy.NewRandomSlime(rng, Enemy.PathMinSlimeLevel, Enemy.PathMaxSlimeLevel).Level]++;
+            forest[Enemy.NewRandomSlime(rng).Level]++;                 // old call: 1-3
+        }
+        Assert.Equal(0, path[1] + path[2] + path[3]);
+        Assert.InRange(path[4], 850, 1150);
+        Assert.InRange(path[5], 850, 1150);
+        Assert.Equal(0, forest[4] + forest[5]);
+        Assert.Equal(2000, forest[1] + forest[2] + forest[3]);
+
+        Assert.Equal(5, Enemy.NewRandomSlime(rng, 5, 5).Level);        // a single level works
+        Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewRandomSlime(rng, 0, 3));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewRandomSlime(rng, 3, 6));
+        Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewRandomSlime(rng, 5, 4));
     }
 }
