@@ -21,8 +21,6 @@ namespace WarInLocked.Core.Combat
         public const int LowestSlimeLevel = 1, HighestSlimeLevel = 15;
         /// <summary>At night (7 pm to 8 am, #57) monsters are this many levels stronger than their base level (Dyllan: "ten levels stronger").</summary>
         public const int NightLevelBonus = 10;
-        /// <summary>PLACEHOLDER: slimes take 1.25x from both physical and magical damage ("vulnerable to both", #24).</summary>
-        public const double SlimeVulnerability = 1.25;
         /// <summary>The attack cooldown: after an attack an aggro'd enemy waits this long before the next one (Dyllan: 6 s, was 3).
         /// The first attack has no wait: it lands as soon as the player is in reach.</summary>
         public const double AttackIntervalSeconds = 6.0;
@@ -95,9 +93,9 @@ namespace WarInLocked.Core.Combat
         public int BaseLevel { get; private set; }
         public bool IsNightEmpowered => Level > BaseLevel;
 
-        /// <summary>A slime of the given level (1-15, default 1; pass a base level plus the clock to get the night bonus) with its health, attack and the placeholder vulnerability to both damage types.</summary>
+        /// <summary>A slime of the given level (1-15, default 1; pass a base level plus the clock to get the night bonus) with its health and attack. It takes standard damage (multipliers 1.0): Dyllan, 1 Nov, no weakness for now.</summary>
         public static Enemy NewSlime(int level = 1) =>
-            new Enemy(SlimeType, SlimeHealthFor(level), level, SlimeAttackFor(level), SlimeVulnerability, SlimeVulnerability);
+            new Enemy(SlimeType, SlimeHealthFor(level), level, SlimeAttackFor(level));
 
         /// <summary>A slime with a uniformly random level 1-3 (the forest). Pass a seeded <see cref="Random"/> to make it repeatable.</summary>
         public static Enemy NewRandomSlime(Random rng) => NewRandomSlime(rng, MinSlimeLevel, MaxSlimeLevel);

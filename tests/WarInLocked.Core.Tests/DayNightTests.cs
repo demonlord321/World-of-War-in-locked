@@ -31,8 +31,8 @@ public class DayNightTests
         Assert.Equal(level, s.Level);
         Assert.Equal(hp, s.MaxHp);
         Assert.Equal(attack, s.Attack);
-        Assert.Equal(1.25, s.PhysicalMultiplier);
-        Assert.Equal(1.25, s.MagicalMultiplier);
+        Assert.Equal(1.0, s.PhysicalMultiplier);
+        Assert.Equal(1.0, s.MagicalMultiplier);
         Assert.Throws<ArgumentOutOfRangeException>(() => Enemy.NewSlime(16));
     }
 

@@ -237,13 +237,13 @@ public class DamageTests
         Assert.Throws<ArgumentOutOfRangeException>(() => DamageCalculator.PhysicalDamage(c, -1));
     }
 
-    // ---- how many hits does a level 1-3 slime take at the starting stats? (#24, with the 1.25x placeholder vulnerability)
+    // ---- how many hits does a level 1-3 slime take at the starting stats? (#24; standard damage, multiplier 1.0, per Dyllan on 1 Nov)
 
-    // Slash with the sword (Physical Attack 5): (10 + 5 + 5) x Str x 1.25. Energy Ball with the staff (Magical Attack 5): (10 + 5 + 5) x Int x 1.25.
+    // Slash with the sword (Physical Attack 5): (10 + 5 + 5) x Str. Energy Ball with the staff (Magical Attack 5): (10 + 5 + 5) x Int.
     [Theory]
-    [InlineData(StatDistribution.Warrior, 58, 1, 2, 2, 18, 3, 5, 6)]    // Str 13 = 2.3: 57.5 -> 58;  Int 7 = 0.7: 17.5 -> 18
-    [InlineData(StatDistribution.Mystic, 18, 3, 5, 6, 58, 1, 2, 2)]     // Str 7 = 0.7: 17.5 -> 18;   Int 13 = 2.3: 57.5 -> 58
-    [InlineData(StatDistribution.Merchant, 20, 3, 4, 5, 23, 3, 4, 5)]   // Str 8 = 0.8: 20;           Int 9 = 0.9: 22.5 -> 23
+    [InlineData(StatDistribution.Warrior, 46, 2, 2, 3, 14, 4, 6, 8)]    // Str 13 = 2.3: 46;  Int 7 = 0.7: 14
+    [InlineData(StatDistribution.Mystic, 14, 4, 6, 8, 46, 2, 2, 3)]     // Str 7 = 0.7: 14;   Int 13 = 2.3: 46
+    [InlineData(StatDistribution.Merchant, 16, 4, 5, 7, 18, 3, 5, 6)]   // Str 8 = 0.8: 16;           Int 9 = 0.9: 18
     public void HitsToKillSlimesWithSlashAndEnergyBall(StatDistribution d, int slash, int s1, int s2, int s3, int ball, int b1, int b2, int b3)
     {
         var sword = Armed(Make(d));
@@ -260,15 +260,15 @@ public class DamageTests
     }
 
     [Theory]
-    [InlineData(StatDistribution.Warrior, 2, 1)]   // unarmed 23 x 1.25 = 28.75 -> 29 vs L1 50 HP: 2; sword basic 15 x 2.3 x 1.25 = 43.125 -> 43: 2
+    [InlineData(StatDistribution.Warrior, 2, 1)]   // unarmed 23 vs L1 50 HP: 3 hits; sword basic 15 x 2.3 = 34.5 -> 35: 2 hits
     public void BasicAttackHitsAgainstALevelOneSlime(StatDistribution d, int unusedA, int unusedB)
     {
         var c = Make(d);
         var slime = Enemy.NewSlime(1);
-        Assert.Equal(29, DamageCalculator.PhysicalDamage(c, slime.PhysicalMultiplier));
-        Assert.Equal(2, HitsToKill(slime, 29));
-        Assert.Equal(43, CombatController.BasicAttackDamage(Armed(Make(d)), slime));
-        Assert.Equal(2, HitsToKill(slime, 43));
+        Assert.Equal(23, DamageCalculator.PhysicalDamage(c, slime.PhysicalMultiplier));
+        Assert.Equal(3, HitsToKill(slime, 23));
+        Assert.Equal(35, CombatController.BasicAttackDamage(Armed(Make(d)), slime));
+        Assert.Equal(2, HitsToKill(slime, 35));
     }
 
     private static int HitsToKill(Enemy slime, int damage) => (slime.MaxHealth + damage - 1) / damage;

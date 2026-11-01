@@ -98,11 +98,11 @@ Decided by Dyllan:
 - **Physical base attack = 10 + main-hand Physical Attack. Magic base = 10 + main-hand Magical Attack.** **Slash needs a weapon (any).**
 - **Energy Ball:** (magic base + n) x Intelligence modifier, n = 5 + (level - 1), **5 s cooldown, 5 energy** (was 15), description "Conjure an orb of pure energy."
 - **Quest 3 "Energy Ball practice"** (turn in at the Colonel): perform Energy Ball 5 times, progress "Energy ball 0/5", reward 50 XP + 50 copper, failure none, Accept Yes/No. The Colonel's speech after turning in quest 2 is Dyllan's text, and the player gets a Practice Staff.
-- **Slimes** are level 1-3 at random per spawn: L1 50 HP / 10 attack, L2 75 / 12, L3 100 / 15 (HP first said 100/125/150, changed by Dyllan on 1 Nov). Enemies have separate Physical and Magical multipliers; slimes are vulnerable to both.
+- **Slimes** are level 1-3 at random per spawn: L1 50 HP / 10 attack, L2 75 / 12, L3 100 / 15 (HP first said 100/125/150, changed by Dyllan on 1 Nov). Enemies have separate Physical and Magical multipliers; slimes now take standard damage (see the vulnerability entry below).
 
 My interpretations and placeholders, please confirm:
-- **Slime vulnerability = 1.25x to both physical and magical is a placeholder** (the number is mine). It applies to basic attacks, Slash and Energy Ball.
-- **The multiplier is applied before rounding**, so rounding happens once (Warrior with sword: basic attack 15 x 2.3 x 1.25 = 43.125 -> 43; Slash 20 x 2.3 x 1.25 = 57.5 -> 58).
+- **Slime vulnerability: RETIRED (#32, confirmed by Dyllan 1 Nov): enemies take standard damage for now, no weakness modifier.** Slimes' physical and magical multipliers are 1.0 (the old 1.25x placeholder and `Enemy.SlimeVulnerability` are gone). The multiplier mechanism stays in `Enemy` (`PhysicalMultiplier`, `MagicalMultiplier`, `ResistanceLabel`) for weaknesses and resistances that may return later; the damage tests still cover it with a custom enemy.
+- **The multiplier is applied before rounding**, so rounding happens once (with a 1.25 multiplier a Warrior's sword basic attack is 15 x 2.3 x 1.25 = 43.125 -> 43 and Slash 57.5 -> 58; slimes now use 1.0, so 35 and 46).
 - **Slimes store their attack (10/12/15) but still do not fight back.** Is that right for now? Should slimes attack, and does the number mean damage per hit?
 - **Slime level is uniform random 1-3** (a seeded `Random` can be passed in). **A respawned slime rolls a new level** (placeholder), after the usual 10 s.
 - **Energy Ball does not need a staff** (placeholder): anyone who knows it can cast it. The staff only adds its Magical Attack to the base. Quest 3's text says "Equip your staff", but the quest counts casts with or without the staff equipped.
@@ -113,15 +113,15 @@ My interpretations and placeholders, please confirm:
 - **Slash with a staff** works (any weapon counts) and is (10 + 0 + n) x Strength modifier: the staff adds nothing physical. A basic attack with a staff equals an unarmed attack.
 - **Copper** is the currency (starts at 0, never negative). Nothing spends it yet; it has no UI. Is "copper" the lowest coin, and are there silver and gold?
 
-Hits to kill (level 1 abilities, starting stats, 1.25x slime vulnerability, slime HP 50 / 75 / 100; sword Slash = (10+5+5) x Str, staff Energy Ball = (10+5+5) x Int):
+Hits to kill (level 1 abilities, starting stats, standard damage (multiplier 1.0), slime HP 50 / 75 / 100; sword Slash = (10+5+5) x Str, staff Energy Ball = (10+5+5) x Int):
 
 | Class | Slash with sword | vs L1 / L2 / L3 | Energy Ball with staff | vs L1 / L2 / L3 |
 |---|---|---|---|---|
-| Warrior (Str 13, Int 7) | 58 | 1 / 2 / 2 | 18 | 3 / 5 / 6 |
-| Mystic (Str 7, Int 13) | 18 | 3 / 5 / 6 | 58 | 1 / 2 / 2 |
-| Merchant (Str 8, Int 9) | 20 | 3 / 4 / 5 | 23 | 3 / 4 / 5 |
+| Warrior (Str 13, Int 7) | 46 | 2 / 2 / 3 | 14 | 4 / 6 / 8 |
+| Mystic (Str 7, Int 13) | 14 | 4 / 6 / 8 | 46 | 2 / 2 / 3 |
+| Merchant (Str 8, Int 9) | 16 | 4 / 5 / 7 | 18 | 3 / 5 / 6 |
 
-A Warrior with the sword needs 2 basic attacks (43 each) for a level 1 slime; unarmed 29 each, also 2.
+A Warrior with the sword needs 2 basic attacks (35 each) for a level 1 slime; unarmed 23 each needs 3.
 
 ## 11. Quest 4, consumables, titles and shops (#25, #26, #27, #28)
 
@@ -165,7 +165,7 @@ Dyllan's text is verbatim, typos included. Typos kept as written: **"Your barely
 ### Path map slimes, levels 4 and 5 (Dyllan, 1 Nov)
 A filler "Path map" between the forest and the encampment is filled with passive level 4 and 5 slimes (Mapmaker builds the map and transitions).
 - **PLACEHOLDER stats** (Dyllan gave level 4 and 5 only as placeholders): **level 4: 125 HP, attack 18; level 5: 150 HP, attack 21**. Levels 1-3 are unchanged (50/75/100 HP, attack 10/12/15).
-- Same as the forest slimes: **1.25x damage from physical and magical** (vulnerable), **passive until hit**, then hits every **6 s**, same aggro, calm and respawn rules.
+- Same as the forest slimes: **standard damage (1.0x, vulnerability retired)**, **passive until hit**, then hits every **6 s**, same aggro, calm and respawn rules.
 - **The level range is per map**: `Enemy.NewRandomSlime(rng)` stays forest 1-3; `Enemy.NewRandomSlime(rng, minLevel, maxLevel)` takes a range (Path: `Enemy.PathMinSlimeLevel`..`PathMaxSlimeLevel` = 4..5). Uniform over the range, as in the forest.
 - The level tag colour (`Hud.SlimeLevelColor`) has only green/yellow/orange, so level 4 and 5 show orange like level 3 until Mapmaker picks colours.
 - **Leaving the starting forest (Dyllan, 1 Nov):** the player cannot leave the Forest of Beginnings until Colonel Powers has given "Adventurers start" (**accepted or completed counts**; offered but not yet accepted does not). `Character.CanLeaveForest`. **PLACEHOLDER refusal text** (Dyllan gave none): "Colonel Powers isn't finished with you yet." (`Character.LeaveForestRefusal`). The forest exit (Mapmaker) must check it and show the text; Core does not block movement itself.
@@ -180,7 +180,7 @@ Dyllan: "Starts at 8 am and runs 5 times faster then normal time."
 Dyllan: "Day: During daylight hours, 8 am to 6pm monsters are at there original levels. Night time: 7pm to 7 am, monsters are ten levels stronger. Monsters cannot enter safe zones. Will be established later 'Non combat zones' and Wild zones. Can rest at inns in the former, can camp out fir the later. Details to be specified later" (typos "there", "fir" are Dyllan's).
 - **Confirmed by Dyllan (1 Nov):** **night is 7 pm to 8 am, day is 8 am to 7 pm, no gaps** (the issue text's "6pm" and "7 am" are superseded). `GameClock.IsNight` is true from 19:00 to 07:59; `NightStartHour` = 19, `NightEndHour` = 8.
 - **Night = base level + 10** (`Enemy.NightLevelBonus`; `Enemy.LevelFor(baseLevel, clock)`, `Enemy.NewSlime(baseLevel, clock)`, `Enemy.NewRandomSlime(rng, min, max, clock)`; `Enemy.BaseLevel` and `IsNightEmpowered` tell the screen it is a night slime). Forest slimes become 11-13 and Path slimes 14-15 at night.
-- **Slime stats above level 5 are placeholders** that continue the pattern **+25 HP and +3 attack per level**, up to level 15: level 6 = 175 HP / 24, level 11 = 300 / 39, level 15 = 400 HP / attack 51. (Level 4 = 125 / 18 and level 5 = 150 / 21 were already placeholders; levels 1-3 are Dyllan's.) Still 1.25x vulnerability and a 6 s interval. XP/reward per level is not scaled (nothing gives XP for kills yet).
+- **Slime stats above level 5 are placeholders** that continue the pattern **+25 HP and +3 attack per level**, up to level 15: level 6 = 175 HP / 24, level 11 = 300 / 39, level 15 = 400 HP / attack 51. (Level 4 = 125 / 18 and level 5 = 150 / 21 were already placeholders; levels 1-3 are Dyllan's.) Standard damage (1.0x) and a 6 s interval. XP/reward per level is not scaled (nothing gives XP for kills yet).
 - **Existing live slimes keep their level** when night falls or ends (placeholder); **new spawns and respawns use the time of the spawn**.
 - **Safe zones:** `MapIds.IsSafeZone(mapId)` / `MapIds.AllowsMonsters(mapId)`. **Only the Adventurers' Encampment is a safe zone (placeholder);** the forest and the path are wild zones. Nothing chases yet, so for now it is a flag (the encampment simply has no slime spawns). Inns/camping rules are "to be specified later" and are not implemented.
 

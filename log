@@ -8,4 +8,4 @@ VSTest version 17.11.1 (x64)
 Starting test execution, please wait...
 A total of 1 test files matched the specified pattern.
 
-Passed!  - Failed:     0, Passed:   463, Skipped:     0, Total:   463, Duration: 110 ms - WarInLocked.Core.Tests.dll (net8.0)
+Passed!  - Failed:     0, Passed:   464, Skipped:     0, Total:   464, Duration: 157 ms - WarInLocked.Core.Tests.dll (net8.0)
