@@ -32,6 +32,9 @@ public sealed class ForestScreen : Screen
     private readonly TileMap _map;
     private readonly List<Wanderer> _slimes = new();
     private readonly Dictionary<Wanderer, Enemy> _enemies = new();   // combat state (Hp, flicker) of each slime
+    private readonly Dictionary<Wanderer, Point> _spawnOf = new();   // where each slime came from (it respawns there)
+    private readonly RespawnQueue _respawns = new();                 // defeated slimes come back (#19)
+    private readonly Random _rng = new();
     private Vector2 _player;     // top-left, in pixels
     private Vector2 _camera;
     private readonly DialogueBox _dialogueBox = new();
@@ -54,17 +57,19 @@ public sealed class ForestScreen : Screen
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "forest-of-beginnings.txt");
         _map = TileMap.Parse(File.ReadAllText(path));
 
-        var rng = new Random();
-        foreach (var s in _map.SlimeSpawns)
-        {
-            var slime = new Wanderer(s.X, s.Y, rng);
-            _slimes.Add(slime);
-            _enemies[slime] = Enemy.NewSlime();
-        }
+        foreach (var s in _map.SlimeSpawns) AddSlime(s.X, s.Y);
         if (_map.Npcs.Count > 0) NpcPositions["colonel-powers"] = new Point(_map.Npcs[0].X, _map.Npcs[0].Y);
 
         var (sx, sy) = _map.PlayerStart;
         _player = new Vector2(sx * TileSize + (TileSize - PlayerSize) / 2f, sy * TileSize + (TileSize - PlayerSize) / 2f);
+    }
+
+    private void AddSlime(int x, int y)
+    {
+        var slime = new Wanderer(x, y, _rng);
+        _slimes.Add(slime);
+        _enemies[slime] = Enemy.NewSlime();
+        _spawnOf[slime] = new Point(x, y);
     }
 
     public override void Update(GameTime time, InputState input)
@@ -97,7 +102,8 @@ public sealed class ForestScreen : Screen
                 _dialogue = null;
                 if (_dialogueNpc == "colonel-powers")
                 {
-                    var offer = ColonelPowersQuest.QuestToOfferAfterDialogue(_character);
+                    var offer = ColonelPowersQuest.QuestToOfferAfterDialogue(_character, out var turnedIn); // turn-in gives the reward
+                    if (turnedIn != null) Toast(turnedIn, 6f);
                     if (offer != null) _questPrompt = new QuestPrompt(offer);
                 }
             }
@@ -131,6 +137,15 @@ public sealed class ForestScreen : Screen
             enemy.Update(dt);
         }
         _character.Combat.Update(dt);   // cooldowns, energy regen, Slash onto the hotbar
+
+        // Defeated slimes come back at their spawn tile once it is free.
+        foreach (var due in _respawns.Update(dt))
+        {
+            bool busy = (due.TileX == playerTile.X && due.TileY == playerTile.Y) || IsNpc(due.TileX, due.TileY) ||
+                        _slimes.Exists(o => o.TileX == due.TileX && o.TileY == due.TileY);
+            if (busy) _respawns.Schedule(due.TileX, due.TileY, 1.0);
+            else AddSlime(due.TileX, due.TileY);
+        }
 
         // Clamped follow camera.
         int w = WarInLockedGame.ScreenWidth, h = WarInLockedGame.ScreenHeight;
@@ -178,16 +193,23 @@ public sealed class ForestScreen : Screen
             case CombatOutcome.NotEnoughEnergy:
                 Toast("Not enough energy", 2f);
                 break;
+            case CombatOutcome.NeedsWeapon:
+                Toast(AbilityDefinition.NeedsWeaponText, 2f);
+                break;
             case CombatOutcome.Killed:
                 var dead = living[targets.IndexOf(result.Target!)];
                 _slimes.Remove(dead);
                 _enemies.Remove(dead);
-                if (result.CompletedQuests.Count > 0)
-                {
-                    var q = result.CompletedQuests[0];
-                    Toast($"Quest complete: {QuestLibrary.SliceAndSlimeShortTitle}!  +{q.Reward.Xp} XP, learned {string.Join(", ", q.Reward.AbilityIds.Select(AbilityLibrary.NameOf))}", 6f);
-                }
+                if (_spawnOf.Remove(dead, out var spawn)) _respawns.Schedule(spawn.X, spawn.Y);
                 break;
+        }
+
+        if (result.Succeeded)
+        {
+            if (result.ReadyQuests.Count > 0)
+                Toast($"{result.ReadyQuests[0].ShortTitle}: return to {result.ReadyQuests[0].TurnInNpcName}", 5f);
+            if (result.AbilityLeveledUp && result.AbilityUsed != null)
+                Toast($"{result.AbilityUsed.Name} reached level {result.AbilityUsed.Level}!", 4f);
         }
     }
 
@@ -275,10 +297,12 @@ public sealed class ForestScreen : Screen
         if (activeQuests.Count > 0)
         {
             var q = activeQuests[0];
-            string tracker = q.Id == QuestLibrary.SliceAndSlimeId
-                ? $"{QuestLibrary.SliceAndSlimeShortTitle} {q.Objectives[0].Current}/{q.Objectives[0].Required}"
-                : q.ProgressText;
-            var box = new Rectangle(10, 46, 250, 30);
+            string tracker = q.IsReadyToTurnIn
+                ? $"{q.ShortTitle}: return to {q.TurnInNpcName}"
+                : q.Id == QuestLibrary.SliceAndSlimeId
+                    ? $"{QuestLibrary.SliceAndSlimeShortTitle} {q.Objectives[0].Current}/{q.Objectives[0].Required}"
+                    : q.ProgressText;
+            var box = new Rectangle(10, 46, Math.Max(250, (int)gfx.Measure(tracker, 17f).X + 24), 30);
             gfx.Rect(sb, box, Color.Black * 0.6f);
             gfx.Border(sb, box, Theme.Accent, 1);
             gfx.TextLeft(sb, tracker, box, Theme.Text, 17f, 10);

@@ -208,14 +208,28 @@ public class CombatTests
     }
 
     [Fact]
-    public void SlashIsOneAndAHalfTimesWeaponDamage()
+    public void SlashDamageIsTenPlusWeaponPlusPowerTimesStrength()
     {
-        Assert.Equal(52, CombatController.AbilityDamage(ArmedStarterWarrior(), AbilityLibrary.SlashDefinition));   // 15 x 2.3 x 1.5 = 51.75, rounded once at the end
-        var c = ArmedWarrior();
-        Assert.Equal(18, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition));
-        Assert.Equal(1.5, AbilityLibrary.SlashDefinition.DamageMultiplier);
+        // (10 + weapon 5 + n 5) x 2.3 = 46
+        Assert.Equal(46, CombatController.AbilityDamage(ArmedStarterWarrior(), AbilityLibrary.SlashDefinition));
+        var c = ArmedWarrior();   // Str 8: 20 x 0.8 = 16
+        Assert.Equal(16, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition));
         Assert.Equal(10, AbilityLibrary.SlashDefinition.EnergyCost);
-        Assert.Equal(2.0, AbilityLibrary.SlashDefinition.CooldownSeconds);
+        Assert.Equal(5.0, AbilityLibrary.SlashDefinition.CooldownSeconds);
+        Assert.Equal("Cut an arch with your blade.", AbilityLibrary.SlashDefinition.Description);
+        Assert.True(AbilityLibrary.SlashDefinition.RequiresWeapon);
+    }
+
+    [Theory]
+    [InlineData(1, 5, 46)]    // 20 x 2.3
+    [InlineData(2, 6, 48)]    // 21 x 2.3 = 48.3
+    [InlineData(3, 7, 51)]    // 22 x 2.3 = 50.6
+    [InlineData(10, 14, 67)]  // 29 x 2.3 = 66.7
+    public void SlashPowerGrowsByOnePerLevel(int level, int n, int expected)
+    {
+        Assert.Equal(n, AbilityLibrary.SlashDefinition.PowerAt(level));
+        int dmg = CombatController.AbilityDamage(ArmedStarterWarrior(), AbilityLibrary.SlashDefinition, level);
+        Assert.Equal(expected, dmg);
     }
 
     // ---- basic attack
@@ -335,11 +349,16 @@ public class CombatTests
             Wait(c, 0.6);
             var kill = c.Combat.BasicAttack(5, 5, slimes);
             Assert.Equal(CombatOutcome.Killed, kill.Outcome);
-            if (kill.CompletedQuests.Count > 0) completed = kill.CompletedQuests;
+            if (kill.ReadyQuests.Count > 0) completed = kill.ReadyQuests;
             Wait(c, 0.6);
         }
 
         Assert.Single(completed);
+        Assert.Equal(QuestState.ReadyToTurnIn, c.Quests.Get(QuestLibrary.SliceAndSlimeId).State);
+        Assert.Equal(0, c.Xp);             // no reward until the Colonel has been talked to
+        Assert.DoesNotContain("slash", c.Abilities);
+
+        ColonelPowersQuest.QuestToOfferAfterDialogue(c);   // the turn-in
         Assert.Equal(QuestState.Complete, c.Quests.Get(QuestLibrary.SliceAndSlimeId).State);
         Assert.Equal(50, c.Xp);
         Assert.Equal(2, c.Level);          // the quest's 50 XP is exactly the cost of level 1 -> 2
@@ -388,11 +407,14 @@ public class CombatTests
         foreach (var s in slimes) s.TakeDamage(1000);
         c.Quests.RecordKill("slime"); c.Quests.RecordKill("slime"); c.Quests.RecordKill("slime"); c.Quests.RecordKill("slime"); c.Quests.RecordKill("slime");
         c.Combat.Update(0.016);
+        Assert.True(c.Combat.Hotbar[0].IsEmpty);   // nothing before the turn-in
+        ColonelPowersQuest.TurnInReadyQuest(c);
+        c.Combat.Update(0.016);
         Assert.Equal("slash", c.Combat.Hotbar[0].AbilityId);
     }
 
     [Fact]
-    public void SlashDealsOneAndAHalfDamageCostsEnergyAndStartsACooldown()
+    public void SlashDealsItsDamageCostsEnergyAndStartsAFiveSecondCooldown()
     {
         var c = ArmedWarrior();
         c.LearnAbility(AbilityLibrary.Slash);
@@ -402,17 +424,17 @@ public class CombatTests
         var r = c.Combat.UseHotbar(0, 5, 5, One(s));
 
         Assert.Equal(CombatOutcome.Hit, r.Outcome);
-        Assert.Equal(18, r.Damage);
-        Assert.Equal(12, s.Hp);
+        Assert.Equal(16, r.Damage);          // (10 + 5 + 5) x 0.8
+        Assert.Equal(14, s.Hp);
         Assert.Equal(25, c.Energy);
         var slot = c.Combat.Hotbar[0];
         Assert.False(slot.IsReady);
-        Assert.Equal(2.0, slot.CooldownRemaining, 2);
+        Assert.Equal(5.0, slot.CooldownRemaining, 2);
         Assert.Equal(1.0, slot.CooldownProgress, 2);
 
-        c.Combat.Update(1.0);
+        c.Combat.Update(2.5);
         Assert.InRange(slot.CooldownProgress, 0.45, 0.55);
-        c.Combat.Update(1.0);
+        c.Combat.Update(2.5);
         Assert.Equal(0, slot.CooldownProgress);
         Assert.True(slot.IsReady);
     }
@@ -431,7 +453,7 @@ public class CombatTests
         Assert.InRange(c.Energy, 25, 27);
 
         var far = new List<Enemy> { SlimeAt(9, 9) };
-        Wait(c, 2.5);
+        Wait(c, 5.1);
         Assert.Equal(CombatOutcome.NoTarget, c.Combat.UseHotbar(0, 5, 5, far).Outcome);   // no target: no cost
 
         var rich = ArmedWarrior();
@@ -450,6 +472,6 @@ public class CombatTests
         Assert.True(c.Combat.BasicAttack(5, 5, One(s)).Succeeded);
         Assert.Equal(CombatOutcome.OnCooldown, c.Combat.UseHotbar(0, 5, 5, One(s)).Outcome);
         c.Combat.Update(0.5);
-        Assert.Equal(CombatOutcome.Killed, c.Combat.UseHotbar(0, 5, 5, One(s)).Outcome);   // 18 hp left, 18 damage
+        Assert.Equal(CombatOutcome.Hit, c.Combat.UseHotbar(0, 5, 5, One(s)).Outcome);   // 18 hp left, Slash does 16
     }
 }

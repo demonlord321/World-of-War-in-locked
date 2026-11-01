@@ -57,26 +57,45 @@ public class QuestTests
     }
 
     [Fact]
-    public void FifthSlimeCompletesTheQuestAndGivesTheRewardsOnce()
+    public void FifthSlimeMakesTheQuestReadyToTurnInWithNoRewardYet()
     {
         var c = Hero();
         var q = c.Quests.Offer(QuestLibrary.SliceAndSlime());
         c.Quests.Accept(q.Id);
 
         for (int i = 0; i < 4; i++) Assert.Empty(c.Quests.RecordKill("slime"));
+        var ready = c.Quests.RecordKill("slime");
+
+        Assert.Single(ready);
+        Assert.Equal(QuestState.ReadyToTurnIn, q.State);
+        Assert.True(q.IsReadyToTurnIn);
         Assert.Equal(0, c.Xp);
+        Assert.Empty(c.Abilities);
+        Assert.Contains(q, c.Quests.Active);                 // still tracked: "return to Colonel Powers"
+        Assert.Equal("Colonel Powers", q.TurnInNpcName);
 
-        var done = c.Quests.RecordKill("slime");
+        Assert.Empty(c.Quests.RecordKill("slime"));          // no 6/5, nothing changes
+        Assert.Equal(5, q.Objectives[0].Current);
 
-        Assert.Single(done);
+        Assert.True(c.Quests.TurnIn(q.Id));
         Assert.Equal(QuestState.Complete, q.State);
         Assert.Equal(50, c.Xp);
         Assert.Contains("slash", c.Abilities);
-
-        Assert.Empty(c.Quests.RecordKill("slime"));        // no double reward, no 6/5
+        Assert.False(c.Quests.TurnIn(q.Id));                 // only once
         Assert.Equal(50, c.Xp);
-        Assert.Equal(5, q.Objectives[0].Current);
         Assert.Single(c.Abilities);
+    }
+
+    [Fact]
+    public void TurnInFailsForQuestsThatAreNotReady()
+    {
+        var c = Hero();
+        Assert.False(c.Quests.TurnIn("nope"));
+        var q = c.Quests.Offer(QuestLibrary.SliceAndSlime());
+        Assert.False(c.Quests.TurnIn(q.Id));
+        c.Quests.Accept(q.Id);
+        Assert.False(c.Quests.TurnIn(q.Id));
+        Assert.Equal(0, c.Xp);
     }
 
     [Fact]
@@ -159,8 +178,7 @@ public class QuestTests
         Assert.Equal("Keep at it, Aragorn... Slimes slain 0/5.", ColonelPowersQuest.CreateDialogue(c).Text);
 
         for (int i = 0; i < 5; i++) c.Quests.RecordKill("slime");
-        Assert.Equal("colonel-powers-done", ColonelPowersQuest.DialogueIdFor(c));
-        Assert.Null(ColonelPowersQuest.QuestToOfferAfterDialogue(c));
+        Assert.Equal("colonel-powers-turnin", ColonelPowersQuest.DialogueIdFor(c));   // the Colonel wants the report first
     }
 
     [Fact]
@@ -203,5 +221,120 @@ public class QuestTests
         Assert.Throws<ArgumentOutOfRangeException>(() => c.GainXp(-1));
         Assert.True(c.LearnAbility("slash"));
         Assert.False(c.LearnAbility("slash"));
+    }
+
+    // ---- #19: turn-in at the Colonel and Quest 2 "Slashing Practice"
+
+    private static Character FinishedQuest1()
+    {
+        var c = HeroWithActiveQuest();
+        for (int i = 0; i < 5; i++) c.Quests.RecordKill("slime");
+        return c;
+    }
+
+    [Fact]
+    public void TurnInDialogueHasDyllansTwoLinesAndTheRewardComesAfterwards()
+    {
+        var c = FinishedQuest1();
+        var talk = ColonelPowersQuest.CreateDialogue(c);
+        Assert.Equal("Not bad scrub, but you have much to learn. But do not worry, I shall train you, till you are ready...", talk.Text);
+        Assert.False(talk.HasOptions);
+        talk.Advance();
+        Assert.Equal("You now have your first ability, why not test it out...", talk.Text);
+        talk.Advance();
+        Assert.True(talk.IsEnded);
+        Assert.Equal(0, c.Xp);   // still nothing: the reward is given by QuestToOfferAfterDialogue when the dialogue ends
+
+        var offer = ColonelPowersQuest.QuestToOfferAfterDialogue(c, out var notice);
+
+        Assert.Equal("Quest complete: Slice and slime!  +50 XP, learned Slash", notice);
+        Assert.Equal(QuestState.Complete, c.Quests.Get(QuestLibrary.SliceAndSlimeId).State);
+        Assert.Equal(50, c.Xp);
+        Assert.Contains("slash", c.Abilities);
+        Assert.NotNull(offer);
+        Assert.Equal(QuestLibrary.SlashingPracticeId, offer.Id);
+        Assert.Equal(QuestState.Offered, offer.State);
+    }
+
+    [Fact]
+    public void TheSwordStaysAfterTheTurnIn()
+    {
+        var c = FinishedQuest1();
+        ColonelPowersQuest.QuestToOfferAfterDialogue(c);
+        Assert.Equal("Practice Sword", c.Equipment.Get(EquipmentSlot.MainHand).Name);
+    }
+
+    [Fact]
+    public void SlashingPracticeUsesDyllansText()
+    {
+        var q = QuestLibrary.SlashingPractice();
+        Assert.Equal("Quest: Slashing Practice.", q.Title);
+        Assert.Equal("Use Slash 5 times on enemies.", q.Description);
+        Assert.Equal("Slash used 0/5", q.ProgressText);
+        Assert.Equal("50 XP, Ability Energy Ball", q.Reward.Text);
+        Assert.Equal("None", q.FailureCondition);
+        Assert.Equal(QuestState.Offered, q.State);
+    }
+
+    [Fact]
+    public void SayingNoToQuest2MakesTheColonelOfferItAgain()
+    {
+        var c = FinishedQuest1();
+        var offer = ColonelPowersQuest.QuestToOfferAfterDialogue(c);       // prompt shown, player says No
+        Assert.Equal("colonel-powers-practice-offer", ColonelPowersQuest.DialogueIdFor(c));
+        Assert.Equal("You now have your first ability, why not test it out...", ColonelPowersQuest.CreateDialogue(c).Text);
+        Assert.Same(offer, ColonelPowersQuest.QuestToOfferAfterDialogue(c, out var notice));
+        Assert.Null(notice);
+        Assert.Equal(50, c.Xp);                                            // no second reward
+
+        Assert.True(ColonelPowersQuest.Accept(c, out var acceptNotice));
+        Assert.Null(acceptNotice);                                         // no second sword
+        Assert.Equal(QuestState.Active, offer.State);
+        Assert.Equal("Keep at it, Aragorn... Slash used 0/5.", ColonelPowersQuest.CreateDialogue(c).Text);
+        Assert.Null(ColonelPowersQuest.QuestToOfferAfterDialogue(c));
+    }
+
+    [Fact]
+    public void Quest2CompletesAfterFiveSlashesAndIsTurnedInAtTheColonel()
+    {
+        var c = FinishedQuest1();
+        ColonelPowersQuest.QuestToOfferAfterDialogue(c);
+        ColonelPowersQuest.Accept(c, out _);
+        var q2 = c.Quests.Get(QuestLibrary.SlashingPracticeId);
+
+        for (int i = 0; i < 4; i++) Assert.Empty(c.Quests.RecordAbilityUse("slash"));
+        Assert.Empty(c.Quests.RecordAbilityUse("energy-ball"));            // other abilities do not count
+        Assert.Equal("Slash used 4/5", q2.ProgressText);
+        Assert.Single(c.Quests.RecordAbilityUse("slash"));
+        Assert.Equal(QuestState.ReadyToTurnIn, q2.State);
+        int xp = c.Xp;
+        Assert.DoesNotContain("energy-ball", c.Abilities);
+
+        Assert.Equal("colonel-powers-practice-turnin", ColonelPowersQuest.DialogueIdFor(c));
+        Assert.Null(ColonelPowersQuest.QuestToOfferAfterDialogue(c, out var notice));
+        Assert.Equal("Quest complete: Slashing Practice!  +50 XP, learned Energy Ball", notice);
+        Assert.Equal(QuestState.Complete, q2.State);
+        Assert.Equal(xp + 50, c.Xp);
+        Assert.Contains("energy-ball", c.Abilities);
+        Assert.Equal("colonel-powers-done", ColonelPowersQuest.DialogueIdFor(c));
+        Assert.Null(ColonelPowersQuest.QuestToOfferAfterDialogue(c, out var again));
+        Assert.Null(again);
+    }
+
+    [Fact]
+    public void RespawnQueueBringsPointsBackAfterTheDelay()
+    {
+        var q = new WarInLocked.Core.World.RespawnQueue();
+        q.Schedule(3, 4);
+        q.Schedule(7, 8, 2.0);
+        Assert.Equal(2, q.Pending);
+        Assert.Empty(q.Update(1.0));
+        var due = q.Update(9.5);       // 10.5 s: the first (10 s) is due, the 2 s one came due earlier in the same call
+        Assert.Equal(2, due.Count);
+        Assert.Equal(0, q.Pending);
+        Assert.Empty(q.Update(100));
+
+        q.Schedule(1, 1, 0.0);
+        Assert.Single(q.Update(0.0));  // zero delay: due on the next update
     }
 }

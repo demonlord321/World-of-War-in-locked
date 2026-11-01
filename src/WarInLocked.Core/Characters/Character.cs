@@ -181,11 +181,30 @@ namespace WarInLocked.Core.Characters
             return gained;
         }
 
-        /// <summary>Learns an ability. Returns false if it was already known.</summary>
+        private readonly List<Ability> _abilityStates = new List<Ability>();
+        /// <summary>The learned abilities with their level and uses (#20), in the order they were learned. Ids unknown to <see cref="AbilityLibrary"/> have no entry.</summary>
+        public IReadOnlyList<Ability> LearnedAbilities => _abilityStates;
+        /// <summary>The level/uses state of a learned ability, or null if it is not learned.</summary>
+        public Ability GetAbility(string abilityId)
+        {
+            foreach (var a in _abilityStates) if (a.Id == abilityId) return a;
+            return null;
+        }
+        /// <summary>Raised when any learned ability levels up.</summary>
+        public event Action<Ability> AbilityLeveledUp;
+
+        /// <summary>Learns an ability (level 1). Returns false if it was already known.</summary>
         public bool LearnAbility(string abilityId)
         {
             if (_abilities.Contains(abilityId)) return false;
             _abilities.Add(abilityId);
+            var def = AbilityLibrary.Get(abilityId);
+            if (def != null)
+            {
+                var state = new Ability(def);
+                state.LeveledUp += a => AbilityLeveledUp?.Invoke(a);
+                _abilityStates.Add(state);
+            }
             return true;
         }
 

@@ -4,20 +4,39 @@ using System.Linq;
 
 namespace WarInLocked.Core.Quests
 {
-    public enum QuestState { Offered, Active, Complete }
+    /// <summary>
+    /// Offered (shown, not accepted), Active (being done), ReadyToTurnIn (all objectives done, go back to the quest giver;
+    /// no reward yet) and Complete (turned in, reward given).
+    /// </summary>
+    public enum QuestState { Offered, Active, ReadyToTurnIn, Complete }
 
-    /// <summary>"Kill N enemies of one type" (the enemy type is a plain string such as "slime").</summary>
+    /// <summary>What an objective counts: enemies of a type being defeated, or casts of an ability.</summary>
+    public enum ObjectiveKind { Kill, UseAbility }
+
+    /// <summary>"Kill N enemies of one type" (the enemy type is a plain string such as "slime") or "Use ability X N times".</summary>
     public sealed class QuestObjective
     {
-        public QuestObjective(string enemyType, int required, string label)
+        public QuestObjective(string enemyType, int required, string label) : this(ObjectiveKind.Kill, enemyType, null, required, label) { }
+
+        private QuestObjective(ObjectiveKind kind, string enemyType, string abilityId, int required, string label)
         {
             if (required < 1) throw new ArgumentOutOfRangeException(nameof(required));
+            Kind = kind;
             EnemyType = enemyType;
+            AbilityId = abilityId;
             Required = required;
             Label = label;
         }
 
+        /// <summary>An objective that counts casts of an ability that actually fired (hit an enemy), e.g. "Slash used 0/5".</summary>
+        public static QuestObjective UseAbility(string abilityId, int required, string label) =>
+            new QuestObjective(ObjectiveKind.UseAbility, null, abilityId, required, label);
+
+        public ObjectiveKind Kind { get; }
+        /// <summary>The enemy type for a Kill objective, otherwise null.</summary>
         public string EnemyType { get; }
+        /// <summary>The ability id for a UseAbility objective, otherwise null.</summary>
+        public string AbilityId { get; }
         public int Required { get; }
         /// <summary>Shown to the player, e.g. "Slimes slain".</summary>
         public string Label { get; }
@@ -55,7 +74,7 @@ namespace WarInLocked.Core.Quests
     /// <summary>A quest and its progress. Owned by a <see cref="QuestLog"/>; state changes go through the log.</summary>
     public sealed class Quest
     {
-        public Quest(string id, string title, string description, IEnumerable<QuestObjective> objectives, QuestReward reward, string failureCondition = "None")
+        public Quest(string id, string title, string description, IEnumerable<QuestObjective> objectives, QuestReward reward, string failureCondition = "None", string shortTitle = null, string turnInNpcName = "Colonel Powers")
         {
             Id = id;
             Title = title;
@@ -63,6 +82,8 @@ namespace WarInLocked.Core.Quests
             Objectives = objectives.ToArray();
             Reward = reward;
             FailureCondition = failureCondition;
+            ShortTitle = shortTitle ?? title;
+            TurnInNpcName = turnInNpcName;
             State = QuestState.Offered;
         }
 
@@ -73,6 +94,11 @@ namespace WarInLocked.Core.Quests
         public QuestReward Reward { get; }
         public string FailureCondition { get; }
         public QuestState State { get; internal set; }
+        /// <summary>Short name for the HUD tracker, e.g. "Slice and slime".</summary>
+        public string ShortTitle { get; }
+        /// <summary>Who the quest is turned in to once every objective is done, e.g. "Colonel Powers".</summary>
+        public string TurnInNpcName { get; }
+        public bool IsReadyToTurnIn => State == QuestState.ReadyToTurnIn;
 
         public bool AllObjectivesDone => Objectives.All(o => o.IsDone);
 

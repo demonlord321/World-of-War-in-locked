@@ -23,6 +23,13 @@ namespace WarInLocked.Core.Combat
         /// <summary>Intelligence modifier for the character.</summary>
         public static double IntelligenceModifier(Character c) => StatModifier.Value(c.Stats.Intelligence);
 
+        /// <summary>True if the main hand holds a weapon.</summary>
+        public static bool HasWeapon(Character c)
+        {
+            var weapon = c.Equipment.Get(EquipmentSlot.MainHand);
+            return weapon != null && weapon.Type == ItemType.Weapon;
+        }
+
         /// <summary>The attack bonus of the weapon in the main hand (0 when unarmed or holding a non-weapon).</summary>
         public static int WeaponBonus(Character c)
         {

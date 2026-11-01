@@ -12,13 +12,15 @@ namespace WarInLocked.Core.Combat
         NoTarget,
         /// <summary>The attack cooldown or the ability's own cooldown is still running.</summary>
         OnCooldown,
+        /// <summary>The ability needs a weapon in the main hand and there is none. Nothing is spent, no cooldown starts, no use is counted.</summary>
+        NeedsWeapon,
         /// <summary>The ability costs more energy than the character has.</summary>
         NotEnoughEnergy,
         /// <summary>The hotbar slot is empty.</summary>
         EmptySlot,
         /// <summary>The target was hit and survived.</summary>
         Hit,
-        /// <summary>The target was hit and died; quests were told (see <see cref="CombatResult.CompletedQuests"/>).</summary>
+        /// <summary>The target was hit and died; quests were told (see <see cref="CombatResult.ReadyQuests"/>).</summary>
         Killed,
     }
 
@@ -26,19 +28,26 @@ namespace WarInLocked.Core.Combat
     {
         private static readonly Quest[] None = new Quest[0];
 
-        public CombatResult(CombatOutcome outcome, Enemy target = null, int damage = 0, IReadOnlyList<Quest> completedQuests = null)
+        public CombatResult(CombatOutcome outcome, Enemy target = null, int damage = 0, IReadOnlyList<Quest> readyQuests = null,
+            Ability abilityUsed = null, bool abilityLeveledUp = false)
         {
             Outcome = outcome;
             Target = target;
             Damage = damage;
-            CompletedQuests = completedQuests ?? None;
+            ReadyQuests = readyQuests ?? None;
+            AbilityUsed = abilityUsed;
+            AbilityLeveledUp = abilityLeveledUp;
         }
 
         public CombatOutcome Outcome { get; }
         public Enemy Target { get; }
         public int Damage { get; }
-        /// <summary>Quests that finished because of this kill (rewards already granted).</summary>
-        public IReadOnlyList<Quest> CompletedQuests { get; }
+        /// <summary>Quests whose objectives were finished by this attack. They are now ReadyToTurnIn (no reward until turned in).</summary>
+        public IReadOnlyList<Quest> ReadyQuests { get; }
+        /// <summary>The ability that was cast (null for a basic attack or a failed attempt). Its Uses/Level already include this cast.</summary>
+        public Ability AbilityUsed { get; }
+        /// <summary>True if this cast raised <see cref="AbilityUsed"/> to a new level.</summary>
+        public bool AbilityLeveledUp { get; }
         public bool Succeeded => Outcome == CombatOutcome.Hit || Outcome == CombatOutcome.Killed;
     }
 
@@ -72,9 +81,25 @@ namespace WarInLocked.Core.Combat
         /// <summary>Basic attack damage: (10 + weapon bonus) x Strength modifier, rounded half up; unarmed is 10 x the modifier. See <see cref="DamageCalculator"/>.</summary>
         public static int BasicAttackDamage(Character character) => DamageCalculator.PhysicalDamage(character);
 
-        /// <summary>Damage of an ability: the physical damage times its multiplier (Slash 1.5x), rounded half up once at the end.</summary>
-        public static int AbilityDamage(Character character, AbilityDefinition ability) =>
-            DamageCalculator.PhysicalDamage(character, DamageCalculator.WeaponBonus(character), ability.DamageMultiplier);
+        /// <summary>
+        /// Damage of an ability at a level, n = 5 + (level - 1), rounded half up once.
+        /// Physical (Slash): (10 + weapon bonus + n) x Strength modifier, so the sword (+5) counts. Magic (Energy Ball, placeholder): (10 + n) x Intelligence modifier, no weapon.
+        /// </summary>
+        public static int AbilityDamage(Character character, AbilityDefinition ability, int level = 1)
+        {
+            int n = ability.PowerAt(level);
+            return ability.Kind == AbilityKind.Magic
+                ? DamageCalculator.MagicDamage(character, n)
+                : DamageCalculator.PhysicalDamage(character, DamageCalculator.WeaponBonus(character) + n);
+        }
+
+        /// <summary>Why the character cannot cast the ability right now for a reason the UI can show ("Needs a weapon"), or null if nothing blocks it.
+        /// Cooldown, energy and target are checked at cast time and are not part of this.</summary>
+        public static string CannotCastReason(Character character, AbilityDefinition ability) =>
+            ability.RequiresWeapon && !DamageCalculator.HasWeapon(character) ? AbilityDefinition.NeedsWeaponText : null;
+
+        /// <summary>Damage of a learned ability at its current level.</summary>
+        public static int AbilityDamage(Character character, Ability ability) => AbilityDamage(character, ability.Definition, ability.Level);
 
         /// <summary>Advances cooldowns, regenerates energy and puts newly learned abilities on the hotbar.</summary>
         public void Update(double seconds)
@@ -109,8 +134,10 @@ namespace WarInLocked.Core.Combat
         {
             SyncHotbar();
             var slot = Hotbar.Get(slotIndex);
-            var ability = slot.IsEmpty ? null : AbilityLibrary.Get(slot.AbilityId);
+            var state = slot.IsEmpty ? null : _owner.GetAbility(slot.AbilityId);
+            var ability = state?.Definition;
             if (ability == null) return new CombatResult(CombatOutcome.EmptySlot);
+            if (CannotCastReason(_owner, ability) != null) return new CombatResult(CombatOutcome.NeedsWeapon);
             if (!AttackReady || !slot.IsReady) return new CombatResult(CombatOutcome.OnCooldown);
             if (_owner.Energy < ability.EnergyCost) return new CombatResult(CombatOutcome.NotEnoughEnergy);
             var target = FindTarget(playerX, playerY, enemies);
@@ -119,7 +146,14 @@ namespace WarInLocked.Core.Combat
             _owner.SpendEnergy(ability.EnergyCost);
             Hotbar.StartCooldown(slotIndex, ability.CooldownSeconds);
             AttackCooldownRemaining = AttackCooldownSeconds;
-            return Strike(target, AbilityDamage(_owner, ability));
+            var result = Strike(target, AbilityDamage(_owner, state));
+
+            // The cast fired: it is a use (levels the ability) and counts for "use X N times" quests.
+            bool leveled = state.RecordUse();
+            var ready = new List<Quest>(result.ReadyQuests);
+            foreach (var q in _owner.Quests.RecordAbilityUse(ability.Id))
+                if (!ready.Contains(q)) ready.Add(q);
+            return new CombatResult(result.Outcome, result.Target, result.Damage, ready, state, leveled);
         }
 
         private CombatResult Strike(Enemy target, int damage)

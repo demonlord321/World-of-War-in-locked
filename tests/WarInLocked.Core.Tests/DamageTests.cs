@@ -127,13 +127,27 @@ public class DamageTests
     }
 
     [Fact]
-    public void SlashIsOneAndAHalfTimesAndRoundsOnlyAtTheEnd()
+    public void SlashIsTenPlusWeaponPlusPowerTimesStrengthRoundedOnce()
     {
-        var c = Armed(WithStats(13, 8));   // sword: 15 x 2.3 = 34.5 -> 35; Slash 15 x 2.3 x 1.5 = 51.75 -> 52 (not 35 x 1.5 = 52.5 -> 53)
+        var c = Armed(WithStats(13, 8));   // sword: 15 x 2.3 = 34.5 -> 35 basic; Slash (15 + 5) x 2.3 = 46
         Assert.Equal(35, CombatController.BasicAttackDamage(c));
-        Assert.Equal(52, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition));
-        var d = WithStats(13, 8);
-        Assert.Equal(35, CombatController.AbilityDamage(d, AbilityLibrary.SlashDefinition));   // unarmed: 23 x 1.5 = 34.5
+        Assert.Equal(46, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition));
+        Assert.Equal(48, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition, 2));   // n 6: 21 x 2.3 = 48.3
+        var d = WithStats(13, 8);   // unarmed: the formula still gives (10 + 0 + 5) x 2.3 = 34.5 -> 35, but Slash cannot be cast without a weapon
+        Assert.Equal(35, CombatController.AbilityDamage(d, AbilityLibrary.SlashDefinition));
+    }
+
+    [Fact]
+    public void EnergyBallIsTenPlusPowerTimesIntelligenceAndIgnoresTheWeapon()
+    {
+        var c = Armed(WithStats(8, 13));   // (10 + 5) x 2.3 = 34.5 -> 35, the sword adds nothing
+        Assert.Equal(35, CombatController.AbilityDamage(c, AbilityLibrary.EnergyBallDefinition));
+        Assert.Equal(35, CombatController.AbilityDamage(WithStats(8, 13), AbilityLibrary.EnergyBallDefinition));
+        Assert.Equal(37, CombatController.AbilityDamage(c, AbilityLibrary.EnergyBallDefinition, 2));   // 16 x 2.3 = 36.8
+        Assert.Equal(12, CombatController.AbilityDamage(WithStats(13, 8), AbilityLibrary.EnergyBallDefinition));   // Int 8: 15 x 0.8
+        Assert.Equal(15, AbilityLibrary.EnergyBallDefinition.EnergyCost);
+        Assert.Equal(5.0, AbilityLibrary.EnergyBallDefinition.CooldownSeconds);
+        Assert.Equal(AbilityKind.Magic, AbilityLibrary.EnergyBallDefinition.Kind);
     }
 
     [Fact]
@@ -202,9 +216,9 @@ public class DamageTests
     // ---- is a 30 HP slime still sensible at the start stats?
 
     [Theory]
-    [InlineData(StatDistribution.Warrior, 2, 1, 1)]    // unarmed 23, sword 35, Slash 52
-    [InlineData(StatDistribution.Mystic, 5, 3, 2)]     // unarmed 7,  sword 11, Slash 16 (15 x 0.7 x 1.5 = 15.75)
-    [InlineData(StatDistribution.Merchant, 4, 3, 2)]   // unarmed 8,  sword 12, Slash 18
+    [InlineData(StatDistribution.Warrior, 2, 1, 1)]    // unarmed 23, sword 35, Slash 46
+    [InlineData(StatDistribution.Mystic, 5, 3, 3)]     // unarmed 7,  sword 11, Slash 14 (20 x 0.7)
+    [InlineData(StatDistribution.Merchant, 4, 3, 2)]   // unarmed 8,  sword 12, Slash 16
     public void HitsToKillASlimeAtTheStartStats(StatDistribution d, int unarmed, int sword, int slash)
     {
         var c = Make(d);
