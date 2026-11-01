@@ -18,12 +18,10 @@ Assumed for now: 1 to 20 characters, letters, digits, spaces, `'` and `-`. Is th
 
 Placeholders until you confirm them:
 - **Basic attack (Space)** hits one adjacent slime (8 tiles around you, or your own tile) with a 0.5 s cooldown.
-- **Damage** = weapon base damage + floor(Strength / 2). The Practice Sword's base damage is **10**, so Strength 13 deals 16.
-- **Unarmed** (no weapon in Main Hand) = 2 + floor(Strength / 4), so Strength 13 deals 5. There is no "you need a weapon" message any more.
-- **Slimes** have 30 HP, and the Practice Sword needs 2 hits. They do **not fight back yet**: should they? How much damage do they do, and should they respawn?
-- **Slash** (hotbar slot 1 once learned): 1.5x basic attack damage rounded down (24 with the sword and Strength 13), costs 10 energy, 2 s cooldown. Using Slash also starts the 0.5 s attack delay. It does nothing if no slime is next to you, and then costs nothing. Is that right?
+- **Damage**: replaced by the #14 rules, see entry 8.
+- **Slimes** have 30 HP (hits to kill: see entry 8). They do **not fight back yet**: should they? How much damage do they do, and should they respawn?
+- **Slash** (hotbar slot 1 once learned): 1.5x the physical damage, rounded half up once at the end (52 with the sword and Strength 13), costs 10 energy, 2 s cooldown. Using Slash also starts the 0.5 s attack delay. It does nothing if no slime is next to you, and then costs nothing. Is that right?
 - **Energy** regenerates 2 per second (placeholder).
-- Which stats should scale damage besides Strength?
 
 ## 4b. Health and energy maximum (#12) - ANSWERED
 
@@ -41,12 +39,33 @@ Also assumed: the Practice Sword is given (and auto-equipped to Main Hand) when 
 
 Items that can be worn never stack. Items with a stack size above 1 would stack up to that size (none exist yet). The Slash ability is only recorded on the character for now: what does it do, and how is it triggered?
 
-## 7. Levelling and free stat points (#13)
+## 7. Levelling and free stat points (#13) - RESOLVED (stat points)
 
 XP cost to go from level L to L+1 follows the issue: 50, 100, 150, 200 (L1-4), then 300 ... 700 (L5-9), then from L10 the step is 200 and doubles every 10 levels (L10-19 add 200: 900 ... 2700; L20-29 add 400: 3100 ...; L30-39 add 800, and so on). The numbers live in one class, `Leveling`.
 
-Placeholders, please confirm:
-- **Stat points:** each level-up gives **3** points, but a level that is a multiple of 5 gives **5 instead of 3** (not 5 extra on top of the 3). The constants are `Leveling.StatPointsPerLevel` and `StatPointsOnBonusLevel`. If you meant +5 extra (8 on those levels), it is a one-line change.
+Still placeholders, please confirm:
+- **Stat points:** RESOLVED. Dyllan confirmed each level-up gives **3** points, but every 5th level gives **5 instead of 3**. The constants are `Leveling.StatPointsPerLevel` and `StatPointsOnBonusLevel`.
 - **Points are spent one at a time into any of the eight stats**, with no cap. Assigned points can be taken back (Unassign) until the player leaves the menu or the game decides to lock them in; there is no "confirm" step in Core yet.
 - **Health and energy:** when Constitution or Wisdom rises, the maximum goes up by 20 / 5 per point and the **current** value rises by the same amount (so a full bar stays full). Giving a point back lowers the current value too, but never kills the player (health stays at least 1). Levelling up by itself does **not** heal.
 - XP is kept as a running total (`Xp`); the bar uses `XpIntoLevel / XpForNextLevel`. Extra XP carries over into the next level.
+
+## 8. Physical and magical damage (#14, #16)
+
+Dyllan's rules, as built:
+- **Stat modifier** = 0.1 per stat point **plus 1.0 for every milestone reached**. Milestones are 10, 25 and 50 (a list, `StatModifier.Milestones`). So 9 -> 0.9, 10 -> 2.0, 11 -> 2.1, 25 -> 4.5, 50 -> 8.0.
+- **Base attack** is 10 for everyone. **Physical damage** = (10 + weapon bonus) x Strength modifier. **Unarmed** = 10 x Strength modifier. **Slash** = 1.5 x that. **Magic damage** = (10 + spell power) x Intelligence modifier (no spells exist yet).
+- **Rounding:** the result is rounded **half up** to a whole number (10.5 becomes 11), once at the very end (so Slash is not rounded twice).
+
+Placeholders, please confirm:
+- The weapon bonus is **added to the base 10 before multiplying** (not multiplied after). The **Practice Sword's bonus is 5** (so 15 x modifier).
+- Defence (#15) is not part of the damage yet.
+
+Hits to kill a 30 HP slime at the starting stats (Human, Strength 13/7/8):
+
+| Class | Unarmed | Practice Sword | Slash (sword) |
+|---|---|---|---|
+| Warrior (Str 13 = 2.3) | 23 dmg, 2 hits | 35 dmg, 1 hit | 52 dmg, 1 hit |
+| Mystic (Str 7 = 0.7) | 7 dmg, 5 hits | 11 dmg, 3 hits | 16 dmg, 2 hits |
+| Merchant (Str 8 = 0.8) | 8 dmg, 4 hits | 12 dmg, 3 hits | 18 dmg, 2 hits |
+
+A Warrior with the sword kills every slime in one hit, which makes the tutorial quick; Mystics and Merchants need 3. Should slimes have more HP?

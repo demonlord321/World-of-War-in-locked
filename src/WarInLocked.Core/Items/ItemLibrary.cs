@@ -5,8 +5,8 @@ namespace WarInLocked.Core.Items
     {
         public const string PracticeSwordId = "practice-sword";
 
-        /// <summary>PLACEHOLDER base damage (see QUESTIONS.md).</summary>
-        public const int PracticeSwordBaseDamage = 10;
+        /// <summary>PLACEHOLDER attack bonus, added to the base attack of 10 before the Strength modifier (see QUESTIONS.md).</summary>
+        public const int PracticeSwordBaseDamage = 5;
 
         /// <summary>The sword Colonel Powers hands out in the tutorial quest (issue #8).</summary>
         public static readonly Item PracticeSword = new Item(PracticeSwordId, "Practice Sword", ItemType.Weapon, EquipSlot.MainHand, baseDamage: PracticeSwordBaseDamage);

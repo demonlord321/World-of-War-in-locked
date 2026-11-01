@@ -212,9 +212,9 @@ public class LevelingTests
     {
         var c = Make();
         c.GainXp(50);
-        int before = Combat.CombatController.BasicAttackDamage(c);   // unarmed: 2 + floor(13/4) = 5
+        Assert.Equal(23, Combat.CombatController.BasicAttackDamage(c));   // unarmed: 10 x 2.3
         for (int i = 0; i < 3; i++) c.AssignPoint(StatType.Strength);   // Str 16
-        Assert.Equal(before + 1, Combat.CombatController.BasicAttackDamage(c));   // 2 + 4
+        Assert.Equal(26, Combat.CombatController.BasicAttackDamage(c));   // Str 16 -> 2.6 x 10
     }
 
     [Fact]

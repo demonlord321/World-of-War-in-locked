@@ -6,7 +6,7 @@ namespace WarInLocked.Core.Items
     public sealed class Item
     {
         /// <param name="equipSlot">Where the item can be worn, or null if it cannot be equipped.</param>
-        /// <param name="baseDamage">For weapons: the damage of a basic attack before stat bonuses (#11).</param>
+        /// <param name="baseDamage">For weapons: the attack bonus added to the base attack before the Strength modifier (#14).</param>
         /// <param name="maxStack">How many fit in one inventory slot. Equippable items must be 1.</param>
         public Item(string id, string name, ItemType type, EquipSlot? equipSlot = null, int maxStack = 1, int baseDamage = 0)
         {
@@ -28,7 +28,7 @@ namespace WarInLocked.Core.Items
         public ItemType Type { get; }
         public EquipSlot? EquipSlot { get; }
         public int MaxStack { get; }
-        /// <summary>Base damage of a weapon (0 for everything else).</summary>
+        /// <summary>Attack bonus of a weapon (0 for everything else); see DamageCalculator.</summary>
         public int BaseDamage { get; }
 
         /// <summary>True if the item has an <see cref="EquipSlot"/>. Whether it fits a specific slot is decided by <see cref="Equipment.CanEquip"/>.</summary>

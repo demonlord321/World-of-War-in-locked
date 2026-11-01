@@ -12,16 +12,21 @@ public class CombatTests
 
     private static Character Warrior() => Make(StatDistribution.Warrior);   // Str 13, Con 13, Wis 7
 
+    /// <summary>Warrior vitals (Con 13, Wis 7: 260 HP, 35 energy) but Strength 8 (modifier 0.8), so fights last several hits:
+    /// sword (10 + 5) x 0.8 = 12, unarmed 8, Slash 18, slime 30 HP.</summary>
+    private static Character Rookie() =>
+        new Character("Rookie", Race.Human, StatDistribution.Warrior, new StatBlock(8, 8, 13, 7, 6, 10, 8, 8));
+
     private static Character ArmedWarrior()
     {
-        var c = Warrior();
+        var c = Rookie();
         c.Equipment.AddAndEquip(ItemLibrary.PracticeSword);
         return c;
     }
 
     private static Character WarriorWithQuest()
     {
-        var c = Warrior();
+        var c = Rookie();
         ColonelPowersQuest.QuestToOfferAfterDialogue(c);
         Assert.True(ColonelPowersQuest.Accept(c, out _));
         return c;
@@ -116,34 +121,42 @@ public class CombatTests
     // ---- damage formula (#11)
 
     [Fact]
-    public void PracticeSwordDamageIsTenPlusHalfStrength()
+    public void PracticeSwordDamageIsFifteenTimesTheStrengthModifier()
     {
-        var c = ArmedWarrior();   // Str 13 -> 10 + 6
-        Assert.Equal(16, CombatController.BasicAttackDamage(c));
+        Assert.Equal(35, CombatController.BasicAttackDamage(ArmedStarterWarrior()));   // Str 13 -> 2.3 x 15 = 34.5 -> 35
+        Assert.Equal(12, CombatController.BasicAttackDamage(ArmedWarrior()));          // Str 8  -> 0.8 x 15
     }
 
     [Fact]
-    public void UnarmedDamageIsTwoPlusQuarterStrength()
+    public void UnarmedDamageIsTenTimesTheStrengthModifier()
     {
-        var c = Warrior();   // Str 13 -> 2 + 3
-        Assert.Equal(5, CombatController.BasicAttackDamage(c));
+        Assert.Equal(23, CombatController.BasicAttackDamage(Warrior()));   // Str 13 -> 2.3 x 10
+        Assert.Equal(8, CombatController.BasicAttackDamage(Rookie()));
         var weak = new Character("W", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(3));
-        Assert.Equal(2, CombatController.BasicAttackDamage(weak));
+        Assert.Equal(3, CombatController.BasicAttackDamage(weak));         // 0.3 x 10
     }
 
     [Fact]
     public void DamageDependsOnStrength()
     {
-        var strong = new Character("S", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(20));
+        var strong = new Character("S", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(25));
         strong.Equipment.AddAndEquip(ItemLibrary.PracticeSword);
-        Assert.Equal(20, CombatController.BasicAttackDamage(strong));
+        Assert.Equal(68, CombatController.BasicAttackDamage(strong));      // 4.5 x 15 = 67.5 -> 68
+    }
+
+    private static Character ArmedStarterWarrior()
+    {
+        var c = Warrior();
+        c.Equipment.AddAndEquip(ItemLibrary.PracticeSword);
+        return c;
     }
 
     [Fact]
     public void SlashIsOneAndAHalfTimesWeaponDamage()
     {
+        Assert.Equal(52, CombatController.AbilityDamage(ArmedStarterWarrior(), AbilityLibrary.SlashDefinition));   // 15 x 2.3 x 1.5 = 51.75, rounded once at the end
         var c = ArmedWarrior();
-        Assert.Equal(24, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition));
+        Assert.Equal(18, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition));
         Assert.Equal(1.5, AbilityLibrary.SlashDefinition.DamageMultiplier);
         Assert.Equal(10, AbilityLibrary.SlashDefinition.EnergyCost);
         Assert.Equal(2.0, AbilityLibrary.SlashDefinition.CooldownSeconds);
@@ -195,8 +208,8 @@ public class CombatTests
         var r = c.Combat.BasicAttack(5, 5, One(s));
 
         Assert.Equal(CombatOutcome.Hit, r.Outcome);
-        Assert.Equal(16, r.Damage);
-        Assert.Equal(14, s.Hp);
+        Assert.Equal(12, r.Damage);
+        Assert.Equal(18, s.Hp);
         Assert.True(s.IsDamaged);
         Assert.Equal(1.0, s.LastHitTime);
         Assert.Equal(Enemy.FlashDuration, s.DamageFlash);
@@ -213,22 +226,24 @@ public class CombatTests
         var s = SlimeAt(6, 5);
         Assert.True(c.Combat.BasicAttack(5, 5, One(s)).Succeeded);
         Assert.Equal(CombatOutcome.OnCooldown, c.Combat.BasicAttack(5, 5, One(s)).Outcome);
-        Assert.Equal(14, s.Hp);
+        Assert.Equal(18, s.Hp);
 
         c.Combat.Update(0.3);
         Assert.Equal(CombatOutcome.OnCooldown, c.Combat.BasicAttack(5, 5, One(s)).Outcome);
         c.Combat.Update(0.25);
+        Assert.Equal(CombatOutcome.Hit, c.Combat.BasicAttack(5, 5, One(s)).Outcome);   // 6 left
+        c.Combat.Update(0.5);
         Assert.Equal(CombatOutcome.Killed, c.Combat.BasicAttack(5, 5, One(s)).Outcome);
     }
 
     [Fact]
     public void UnarmedAttacksWorkButAreWeak()
     {
-        var c = Warrior();
+        var c = Rookie();
         var s = SlimeAt(6, 5);
         var r = c.Combat.BasicAttack(5, 5, One(s));
-        Assert.Equal(5, r.Damage);
-        Assert.Equal(25, s.Hp);
+        Assert.Equal(8, r.Damage);
+        Assert.Equal(22, s.Hp);
     }
 
     [Fact]
@@ -257,8 +272,10 @@ public class CombatTests
         for (int i = 0; i < 5; i++)
         {
             var s = slimes[i];
-            Assert.Equal(CombatOutcome.Hit, c.Combat.BasicAttack(5, 5, slimes).Outcome);   // 16 of 30: not dead yet
+            Assert.Equal(CombatOutcome.Hit, c.Combat.BasicAttack(5, 5, slimes).Outcome);   // 12 of 30: not dead yet
             Assert.Equal($"Slimes slain {i}/5", c.Quests.Get(QuestLibrary.SliceAndSlimeId).ProgressText);
+            Wait(c, 0.6);
+            Assert.Equal(CombatOutcome.Hit, c.Combat.BasicAttack(5, 5, slimes).Outcome);   // 24 of 30
             Wait(c, 0.6);
             var kill = c.Combat.BasicAttack(5, 5, slimes);
             Assert.Equal(CombatOutcome.Killed, kill.Outcome);
@@ -329,8 +346,8 @@ public class CombatTests
         var r = c.Combat.UseHotbar(0, 5, 5, One(s));
 
         Assert.Equal(CombatOutcome.Hit, r.Outcome);
-        Assert.Equal(24, r.Damage);
-        Assert.Equal(6, s.Hp);
+        Assert.Equal(18, r.Damage);
+        Assert.Equal(12, s.Hp);
         Assert.Equal(25, c.Energy);
         var slot = c.Combat.Hotbar[0];
         Assert.False(slot.IsReady);
@@ -377,6 +394,6 @@ public class CombatTests
         Assert.True(c.Combat.BasicAttack(5, 5, One(s)).Succeeded);
         Assert.Equal(CombatOutcome.OnCooldown, c.Combat.UseHotbar(0, 5, 5, One(s)).Outcome);
         c.Combat.Update(0.5);
-        Assert.Equal(CombatOutcome.Killed, c.Combat.UseHotbar(0, 5, 5, One(s)).Outcome);   // 14 hp left, 24 damage
+        Assert.Equal(CombatOutcome.Killed, c.Combat.UseHotbar(0, 5, 5, One(s)).Outcome);   // 18 hp left, 18 damage
     }
 }

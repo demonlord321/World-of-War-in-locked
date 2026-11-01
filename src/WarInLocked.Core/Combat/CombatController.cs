@@ -53,8 +53,8 @@ namespace WarInLocked.Core.Combat
         public const double AttackCooldownSeconds = 0.5;
         /// <summary>PLACEHOLDER energy regeneration, energy per second.</summary>
         public const double EnergyRegenPerSecond = 2.0;
-        /// <summary>PLACEHOLDER unarmed damage: 2 + floor(Strength / 4).</summary>
-        public const int UnarmedBaseDamage = 2;
+        /// <summary>Everyone's unarmed base attack (#14).</summary>
+        public const int UnarmedBaseDamage = DamageCalculator.BaseAttack;
 
         private readonly Character _owner;
 
@@ -69,21 +69,12 @@ namespace WarInLocked.Core.Combat
         public double AttackCooldownRemaining { get; private set; }
         public bool AttackReady => AttackCooldownRemaining <= 0;
 
-        /// <summary>
-        /// Basic attack damage. With a weapon in the main hand: weapon base damage + floor(Strength / 2)
-        /// (Practice Sword: 10 + floor(Str/2)). Unarmed: 2 + floor(Strength / 4).
-        /// </summary>
-        public static int BasicAttackDamage(Character character)
-        {
-            int str = character.Stats.Strength;
-            var weapon = character.Equipment.Get(EquipmentSlot.MainHand);
-            if (weapon != null && weapon.Type == ItemType.Weapon) return weapon.BaseDamage + str / 2;
-            return UnarmedBaseDamage + str / 4;
-        }
+        /// <summary>Basic attack damage: (10 + weapon bonus) x Strength modifier, rounded half up; unarmed is 10 x the modifier. See <see cref="DamageCalculator"/>.</summary>
+        public static int BasicAttackDamage(Character character) => DamageCalculator.PhysicalDamage(character);
 
-        /// <summary>Damage of an ability: the basic attack damage times its multiplier, rounded down (Slash 1.5x).</summary>
+        /// <summary>Damage of an ability: the physical damage times its multiplier (Slash 1.5x), rounded half up once at the end.</summary>
         public static int AbilityDamage(Character character, AbilityDefinition ability) =>
-            (int)Math.Floor(BasicAttackDamage(character) * ability.DamageMultiplier);
+            DamageCalculator.PhysicalDamage(character, DamageCalculator.WeaponBonus(character), ability.DamageMultiplier);
 
         /// <summary>Advances cooldowns, regenerates energy and puts newly learned abilities on the hotbar.</summary>
         public void Update(double seconds)
