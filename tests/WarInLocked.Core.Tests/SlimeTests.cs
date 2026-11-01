@@ -121,7 +121,7 @@ public class SlimeTests
             Assert.Equal(1.25, s.MagicalMultiplier);
             Assert.False(s.IsAggro);                                   // passive until hit
             s.TakeDamage(1);
-            Assert.Equal(6.0, s.AttackCooldownRemaining);
+            Assert.Equal(0, s.AttackCooldownRemaining);                // aggro'd and ready
         }
         Assert.Equal(6.0, Enemy.AttackIntervalSeconds);
     }

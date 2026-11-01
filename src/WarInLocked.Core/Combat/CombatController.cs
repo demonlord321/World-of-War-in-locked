@@ -207,7 +207,7 @@ namespace WarInLocked.Core.Combat
         /// <summary>
         /// Drives aggro'd enemies (call once per frame with the same seconds as <see cref="Update"/>). Each aggro'd, living enemy
         /// on a tile next to the player (or on it) hits the player for its <see cref="Enemy.Attack"/> every
-        /// <see cref="Enemy.AttackIntervalSeconds"/>; the damage counts as damage received (starts the combat window).
+        /// <see cref="Enemy.AttackIntervalSeconds"/> (a cooldown: the first hit is immediate once the player is in reach, and reach is checked before every hit); the damage counts as damage received (starts the combat window).
         /// Passive enemies never attack. A dead player is not attacked. Returns the damage the player lost this call.
         /// </summary>
         public int UpdateEnemies(IReadOnlyList<Enemy> enemies, double seconds, int playerX, int playerY)

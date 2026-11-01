@@ -23,7 +23,8 @@ namespace WarInLocked.Core.Combat
         public const int NightLevelBonus = 10;
         /// <summary>PLACEHOLDER: slimes take 1.25x from both physical and magical damage ("vulnerable to both", #24).</summary>
         public const double SlimeVulnerability = 1.25;
-        /// <summary>Aggro'd enemies attack the player this often (Dyllan: every 6 s, was 3).</summary>
+        /// <summary>The attack cooldown: after an attack an aggro'd enemy waits this long before the next one (Dyllan: 6 s, was 3).
+        /// The first attack has no wait: it lands as soon as the player is in reach.</summary>
         public const double AttackIntervalSeconds = 6.0;
         /// <summary>How long <see cref="AttackFlash"/> lasts after an attack, in seconds.</summary>
         public const double AttackFlashDuration = 0.25;
@@ -166,18 +167,18 @@ namespace WarInLocked.Core.Combat
         /// so aggro starts over. Draw an "angry" state while true.
         /// </summary>
         public bool IsAggro { get; private set; }
-        /// <summary>Seconds until the next attack while aggro'd (counts down from <see cref="AttackIntervalSeconds"/> at aggro).</summary>
+        /// <summary>Attack cooldown left in seconds while aggro'd: 0 = ready (0 at aggro, so the first hit is immediate), then <see cref="AttackIntervalSeconds"/> after each attack.</summary>
         public double AttackCooldownRemaining { get; private set; }
         /// <summary>Seconds of attack flash left (1 = just struck): <see cref="AttackFlashFraction"/> for a lunge/flicker.</summary>
         public double AttackFlash { get; private set; }
         public double AttackFlashFraction => AttackFlash / AttackFlashDuration;
 
-        /// <summary>Makes the enemy hostile; the first attack comes <see cref="AttackIntervalSeconds"/> later. No effect if already aggro'd or dead.</summary>
+        /// <summary>Makes the enemy hostile and ready (cooldown 0): it attacks the first time the player is in reach, then waits <see cref="AttackIntervalSeconds"/>. No effect if already aggro'd or dead.</summary>
         public void Provoke()
         {
             if (IsAggro || IsDead) return;
             IsAggro = true;
-            AttackCooldownRemaining = AttackIntervalSeconds;
+            AttackCooldownRemaining = 0;
         }
 
         /// <summary>
@@ -191,7 +192,8 @@ namespace WarInLocked.Core.Combat
             if (!IsDead) Hp = MaxHp;
         }
 
-        /// <summary>Counts down the attack timer; returns true when an attack lands now. The timer waits (at 0) while the target is out of reach.</summary>
+        /// <summary>Counts down the cooldown; returns true when an attack lands now (cooldown 0 and the target in reach, checked on every attack).
+        /// Out of reach nothing happens and the enemy stays ready (cooldown 0) so it hits as soon as the player is back in reach.</summary>
         internal bool TickAttack(double seconds, bool targetInReach)
         {
             if (AttackFlash > 0) AttackFlash = Math.Max(0, AttackFlash - seconds);

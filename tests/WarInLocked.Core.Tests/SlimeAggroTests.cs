@@ -56,7 +56,7 @@ public class SlimeAggroTests
     }
 
     [Fact]
-    public void DamagingASlimeAggrosItAndItHitsEveryThreeSeconds()
+    public void DamagingASlimeAggrosItAndItHitsImmediatelyThenEverySixSeconds()
     {
         var c = Hero();
         var s = Slime(2);
@@ -64,11 +64,11 @@ public class SlimeAggroTests
         c.Combat.BasicAttack(5, 5, list);
         Assert.True(s.IsAggro);
         Assert.Equal(6.0, Enemy.AttackIntervalSeconds);
-        Assert.Equal(Enemy.AttackIntervalSeconds, s.AttackCooldownRemaining);
+        Assert.Equal(0, s.AttackCooldownRemaining);                       // ready: the first hit is immediate
 
-        Assert.Equal(0, c.Combat.UpdateEnemies(list, Enemy.AttackIntervalSeconds - 0.1, 5, 5));
-        Assert.Equal(12, c.Combat.UpdateEnemies(list, 0.2, 5, 5));
+        Assert.Equal(12, c.Combat.UpdateEnemies(list, 0.0, 5, 5));
         Assert.Equal(c.MaxHealth - 12, c.Health);
+        Assert.Equal(Enemy.AttackIntervalSeconds, s.AttackCooldownRemaining);
         Assert.Equal(0, c.Combat.UpdateEnemies(list, Enemy.AttackIntervalSeconds - 0.1, 5, 5));
         Assert.Equal(12, c.Combat.UpdateEnemies(list, 0.2, 5, 5));
         Assert.Equal(c.MaxHealth - 24, c.Health);
