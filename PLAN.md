@@ -116,3 +116,4 @@ Status 1 Nov, 08:57: abilities screen on K in 3ab52ec. #8 to #20 (except #15 def
 - #23 Spells: Energy Ball = (base magic damage + n) x Intelligence modifier, n = 5 at level 1. Cooldown 5 s, cost 5 energy (was the 15 placeholder).
 - #24 Slimes: levels 1 to 3 in the forest. Lv 1 100 HP / 10 attack, Lv 2 125 / 12, Lv 3 150 / 15. Vulnerable to both physical and magic damage (other monsters may resist).
 Open questions: Do slimes now attack the player, and how often? How much more damage does "vulnerable" mean? Does Energy Ball need the staff equipped? Do slimes give XP or drop copper? How is the level 1 to 3 mix spread?
+Decided 1 Nov (#24): slime HP is 50 / 75 / 100 for levels 1 / 2 / 3 (attack still 10 / 12 / 15). Placeholders: vulnerable = +25% damage taken; Energy Ball can cast without the staff. Still open: do slimes attack now?
