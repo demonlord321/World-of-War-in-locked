@@ -111,16 +111,15 @@ public class RespawnTests
     }
 
     [Fact]
-    public void RespawnKeepsXpCopperItemsAndQuests()
+    public void RespawnKeepsCopperAndItems()
     {
         var c = Hero();
         c.GainXp(30);
         c.GainCopper(40);
         c.Inventory.Add(ItemLibrary.LesserHealingPotion, 2);
-        int xp = c.Xp; int copper = c.Copper;
+        int copper = c.Copper;
         Fall(c);
         c.UpdateRespawn(5);
-        Assert.Equal(xp, c.Xp);
         Assert.Equal(copper, c.Copper);
         Assert.Equal(2, c.Inventory.CountOf(ItemLibrary.LesserHealingPotionId));
     }
@@ -173,6 +172,77 @@ public class RespawnTests
             c.UpdateRespawn(5);
             Assert.Equal(slime.MaxHp, slime.Hp);
         }
+    }
+
+    private static Character AtLevel(int level, int extraXp)
+    {
+        var c = Hero();
+        while (c.Level < level) c.GainXp(c.XpForNextLevel);
+        c.GainXp(extraXp);
+        Assert.Equal(level, c.Level);
+        return c;
+    }
+
+    [Fact]
+    public void RespawnPenaltyIs50UpToLevelFiveAnd100AfterThat()
+    {
+        foreach (var (level, pen) in new[] { (1, 50), (4, 50), (5, 50), (6, 100), (10, 100), (11, 100), (14, 100) })
+            Assert.Equal(pen, AtLevel(level, 0).RespawnXpPenalty);
+        Assert.Equal(50, Character.RespawnXpPenaltyLow);
+        Assert.Equal(100, Character.RespawnXpPenaltyHigh);
+    }
+
+    [Fact]
+    public void RespawnTakesTheXpPenaltyAndReportsIt()
+    {
+        var c = AtLevel(3, 0);
+        c.GainXp(c.XpForNextLevel - 1);          // plenty of XP into level 3
+        int before = c.Xp;
+        Assert.True(c.XpIntoLevel >= 50);
+        int seenLost = -1;
+        c.Respawned += _ => seenLost = c.LastRespawnXpLost;
+        Fall(c);
+        Assert.Equal(0, c.LastRespawnXpLost);
+        c.UpdateRespawn(5);
+        Assert.Equal(before - 50, c.Xp);
+        Assert.Equal(50, c.LastRespawnXpLost);
+        Assert.Equal(50, seenLost);              // already set when the event fires
+        Assert.Equal(3, c.Level);
+    }
+
+    [Fact]
+    public void LevelSixToTenLoseOneHundred()
+    {
+        var c = AtLevel(7, 0);
+        c.GainXp(c.XpForNextLevel - 1);
+        int before = c.Xp;
+        Fall(c);
+        c.UpdateRespawn(5);
+        Assert.Equal(100, c.LastRespawnXpLost);
+        Assert.Equal(before - 100, c.Xp);
+    }
+
+    [Fact]
+    public void RespawnXpNeverGoesBelowTheLevelStartOrZeroAndNeverDeLevels()
+    {
+        var c = AtLevel(3, 20);                   // only 20 XP into level 3
+        int start = c.Xp - 20;
+        Fall(c);
+        c.UpdateRespawn(5);
+        Assert.Equal(20, c.LastRespawnXpLost);
+        Assert.Equal(start, c.Xp);
+        Assert.Equal(3, c.Level);
+        Fall(c);                                  // dying again at the level start loses nothing
+        c.UpdateRespawn(5);
+        Assert.Equal(0, c.LastRespawnXpLost);
+        Assert.Equal(start, c.Xp);
+
+        var fresh = Hero();                       // level 1 with 10 XP: lose 10, never below 0
+        fresh.GainXp(10);
+        Fall(fresh);
+        fresh.UpdateRespawn(5);
+        Assert.Equal(10, fresh.LastRespawnXpLost);
+        Assert.Equal(0, fresh.Xp);
     }
 
     [Fact]

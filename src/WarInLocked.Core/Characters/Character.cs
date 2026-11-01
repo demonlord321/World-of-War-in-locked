@@ -196,6 +196,15 @@ namespace WarInLocked.Core.Characters
         /// </summary>
         public event Action<BindPoint> Respawned;
 
+        /// <summary>XP lost per respawn at levels 1-5 (Dyllan).</summary>
+        public const int RespawnXpPenaltyLow = 50;
+        /// <summary>XP lost per respawn at levels 6-10 (Dyllan). PLACEHOLDER: the same 100 applies above level 10.</summary>
+        public const int RespawnXpPenaltyHigh = 100;
+        /// <summary>The most XP a respawn costs at the current level: 50 up to level 5, 100 from level 6. The actual loss can be less (see <see cref="LastRespawnXpLost"/>).</summary>
+        public int RespawnXpPenalty => Level <= 5 ? RespawnXpPenaltyLow : RespawnXpPenaltyHigh;
+        /// <summary>The XP the last respawn actually took (set before <see cref="Respawned"/> fires; never below the current level's starting XP, never below 0). 0 before any respawn. Show "-50 XP".</summary>
+        public int LastRespawnXpLost { get; private set; }
+
         /// <summary>Counts the respawn down while fallen and respawns at 0. Does nothing while alive. <c>Combat.Update</c> calls this, so the screen needs no extra call.</summary>
         public void UpdateRespawn(double seconds)
         {
@@ -203,7 +212,11 @@ namespace WarInLocked.Core.Characters
             if (!IsDead) return;
             RespawnRemaining = Math.Max(0, RespawnRemaining - seconds);
             if (RespawnRemaining > 0) return;
-            // PLACEHOLDERS (QUESTIONS.md): full health and energy, no penalty, combat window cleared. Quests, XP, copper and items are untouched.
+            // Dyllan: full health and energy, and the XP penalty. PLACEHOLDER: combat window cleared. Quests, copper and items are untouched.
+            long floor = Leveling.TotalXpFor(Level);   // never de-level (placeholder)
+            int lost = (int)Math.Max(0, Math.Min(RespawnXpPenalty, Xp - floor));
+            Xp -= lost;
+            LastRespawnXpLost = lost;
             Health = MaxHealth;
             _energy = MaxEnergy;
             Combat.ClearCombat();
