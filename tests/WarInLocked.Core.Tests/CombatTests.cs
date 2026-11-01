@@ -50,32 +50,51 @@ public class CombatTests
     // ---- vitals (#12)
 
     [Fact]
-    public void MaxHealthIs20TimesConAndMaxEnergyIs5TimesWisPerClass()
+    public void MaxHealthIs100TimesTheConModifierAndMaxEnergyIs5TimesWisPerClass()
     {
         var w = Warrior();   // Con 13, Wis 7
         Assert.Equal(13, w.Stats.Constitution);
         Assert.Equal(7, w.Stats.Wisdom);
-        Assert.Equal(260, w.MaxHealth);
+        Assert.Equal(230, w.MaxHealth);   // 100 x 2.3
         Assert.Equal(35, w.MaxEnergy);
 
         var me = Make(StatDistribution.Merchant);   // Con 9, Wis 9
-        Assert.Equal(180, me.MaxHealth);
+        Assert.Equal(90, me.MaxHealth);   // 100 x 0.9
         Assert.Equal(45, me.MaxEnergy);
 
         var m = Make(StatDistribution.Mystic);   // Con 5, Wis 13
-        Assert.Equal(100, m.MaxHealth);
+        Assert.Equal(50, m.MaxHealth);   // 100 x 0.5
         Assert.Equal(65, m.MaxEnergy);
     }
 
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(3, 30)]
+    [InlineData(5, 50)]
+    [InlineData(9, 90)]
+    [InlineData(10, 200)]    // first milestone: 100 x 2.0
+    [InlineData(11, 210)]
+    [InlineData(13, 230)]
+    [InlineData(24, 340)]
+    [InlineData(25, 450)]    // 100 x 4.5
+    [InlineData(50, 800)]    // 100 x 8.0
+    public void MaxHealthFollowsTheConModifierCurve(int con, int expected)
+    {
+        var c = new Character("C", Race.Human, StatDistribution.Warrior, new StatBlock(8, 8, con, 8, 8, 8, 8, 8));
+        Assert.Equal(expected, c.MaxHealth);
+        Assert.Equal(expected, c.Health);   // starts full
+        Assert.Equal(Character.HealthBase, 100);
+    }
+
     [Fact]
-    public void MaximaScaleLinearlyWithNoFloorOrMinimum()
+    public void MaxEnergyIsStillFiveTimesWisWithNoMinimum()
     {
         var odd = new Character("Odd", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(7));
-        Assert.Equal(140, odd.MaxHealth);   // 20 * 7, no rounding to blocks of 5
-        Assert.Equal(35, odd.MaxEnergy);    // 5 * 7
+        Assert.Equal(35, odd.MaxEnergy);
         var low = new Character("Low", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(3));
-        Assert.Equal(60, low.MaxHealth);    // no minimum
         Assert.Equal(15, low.MaxEnergy);
+        var high = new Character("High", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(25));
+        Assert.Equal(125, high.MaxEnergy);   // not on the modifier curve: plain 5 x Wis
     }
 
     [Fact]
@@ -92,8 +111,8 @@ public class CombatTests
     {
         var c = Warrior();
         Assert.Equal(60, c.TakeDamage(60));
-        Assert.Equal(200, c.Health);
-        Assert.Equal(200, c.TakeDamage(1000));
+        Assert.Equal(170, c.Health);
+        Assert.Equal(170, c.TakeDamage(1000));
         Assert.True(c.IsDead);
         c.Heal(10000);
         Assert.Equal(c.MaxHealth, c.Health);

@@ -184,14 +184,14 @@ public class LevelingTests
     [Fact]
     public void ConAndWisFeedTheMaximaAndCurrentValuesRiseByTheSameAmount()
     {
-        var c = Make();                       // Warrior: Con 13 -> 260 HP, Wis 7 -> 35 EN
+        var c = Make();                       // Warrior: Con 13 -> 230 HP, Wis 7 -> 35 EN
         c.GainXp(50);
-        c.TakeDamage(100);                    // 160 / 260
+        c.TakeDamage(100);                    // 130 / 230
         c.SpendEnergy(10);                    // 25 / 35
 
         Assert.True(c.AssignPoint(StatType.Constitution));
-        Assert.Equal(280, c.MaxHealth);
-        Assert.Equal(180, c.Health);          // current rose by the +20 as well
+        Assert.Equal(240, c.MaxHealth);       // Con 14: 100 x 2.4
+        Assert.Equal(140, c.Health);          // current rose by the +10 as well
         Assert.True(c.AssignPoint(StatType.Wisdom));
         Assert.Equal(40, c.MaxEnergy);
         Assert.Equal(30, c.Energy);
@@ -204,7 +204,7 @@ public class LevelingTests
         c.GainXp(50);
         c.AssignPoint(StatType.Constitution);
         Assert.Equal(c.MaxHealth, c.Health);
-        Assert.Equal(280, c.Health);
+        Assert.Equal(240, c.Health);
     }
 
     [Fact]
@@ -226,8 +226,8 @@ public class LevelingTests
         Assert.True(c.UnassignPoint(StatType.Constitution));
         Assert.Equal(13, c.Stats.Constitution);
         Assert.Equal(3, c.FreeStatPoints);
-        Assert.Equal(260, c.MaxHealth);
-        Assert.Equal(260, c.Health);
+        Assert.Equal(230, c.MaxHealth);
+        Assert.Equal(230, c.Health);
     }
 
     [Fact]
@@ -247,10 +247,26 @@ public class LevelingTests
     {
         var c = Make();
         c.GainXp(50);
-        c.AssignPoint(StatType.Constitution);   // 280
-        c.TakeDamage(279);                      // 1 left
+        c.AssignPoint(StatType.Constitution);   // 240
+        c.TakeDamage(239);                      // 1 left
         Assert.True(c.UnassignPoint(StatType.Constitution));
         Assert.Equal(1, c.Health);
         Assert.False(c.IsDead);
+    }
+
+    [Fact]
+    public void ReachingAMilestoneInConGivesABigHealthJumpAndCurrentHealthFollows()
+    {
+        // Merchant: Con 9 -> 90 HP. The 10th point reaches the milestone: 100 x 2.0 = 200 (+110).
+        var c = new CharacterCreation { Name = "M", Race = Race.Human, Distribution = StatDistribution.Merchant }.Create();
+        Assert.Equal(90, c.MaxHealth);
+        c.TakeDamage(40);                       // 50 / 90
+        c.GainXp(50);
+        Assert.True(c.AssignPoint(StatType.Constitution));
+        Assert.Equal(200, c.MaxHealth);
+        Assert.Equal(160, c.Health);            // 50 + 110
+        Assert.True(c.UnassignPoint(StatType.Constitution));
+        Assert.Equal(90, c.MaxHealth);
+        Assert.Equal(50, c.Health);
     }
 }

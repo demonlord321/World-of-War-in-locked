@@ -98,12 +98,15 @@ namespace WarInLocked.Core.Characters
             _energy = Math.Min(_energy, MaxEnergy);
         }
 
-        /// <summary>Health per point of Constitution. Warrior (Con 13) = 260, Merchant (Con 9) = 180, Mystic (Con 5) = 100.</summary>
-        public const int HealthPerCon = 20;
+        /// <summary>
+        /// Max health = <c>HealthBase</c> x the Constitution modifier (0.1 per point, +1.0 per milestone; see <c>StatModifier</c>),
+        /// rounded half up. Warrior (Con 13) = 230, Merchant (Con 9) = 90, Mystic (Con 5) = 50; Con 10 = 200, Con 25 = 450 (#15).
+        /// </summary>
+        public const int HealthBase = 100;
         /// <summary>Energy per point of Wisdom. Warrior (Wis 7) = 35, Merchant (Wis 9) = 45, Mystic (Wis 13) = 65.</summary>
         public const int EnergyPerWis = 5;
 
-        public int MaxHealth => HealthPerCon * Stats.Constitution;
+        public int MaxHealth => (int)Math.Round(HealthBase * (StatModifier.Tenths(Stats.Constitution) / 10m), MidpointRounding.AwayFromZero);
         public int MaxEnergy => EnergyPerWis * Stats.Wisdom;
 
         /// <summary>Current health, 0..<see cref="MaxHealth"/>. Starts full.</summary>

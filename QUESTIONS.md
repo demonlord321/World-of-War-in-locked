@@ -25,7 +25,9 @@ Placeholders until you confirm them:
 
 ## 4b. Health and energy maximum (#12) - ANSWERED
 
-Answered by Dyllan: **MaxHealth = 20 x Constitution** and **MaxEnergy = 5 x Wisdom**, with no rounding down and no minimum. Warrior (Con 13, Wis 7) = 260 health / 35 energy, Merchant (Con 9, Wis 9) = 180 / 45, Mystic (Con 5, Wis 13) = 100 / 65.
+Answered by Dyllan: **MaxEnergy = 5 x Wisdom** (no rounding, no minimum). **MaxHealth** was first 20 x Constitution, then changed with #15 to **100 x the Constitution modifier** (the same curve as damage: 0.1 per point, +1.0 per milestone at 10, 25, 50), rounded half up. Warrior (Con 13) = 230, Merchant (Con 9) = 90, Mystic (Con 5) = 50; Con 10 = 200, Con 25 = 450. Energy: Warrior 35, Merchant 45, Mystic 65.
+
+Note: reaching a milestone in Constitution is a big jump (Con 9 to 10 is 90 to 200 health, +110). Current health rises by the same amount when a point is assigned, and drops by it when the point is given back.
 
 ## 5. Colonel Powers' other lines (#8)
 
