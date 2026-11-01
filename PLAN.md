@@ -173,3 +173,4 @@ Needed before a 3 to 4 hour build is testable:
 - Decided (#31): angered slimes chase the player (give-up distance still open).
 - #30 Core (1 Nov): respawn XP penalty 50 / 100 / 200 / 400 / 800, doubling every ten levels from level 11 (level 10 stays 100, boundary logged as a question). #31 Core (1 Nov): aggro'd slimes chase (Enemy.ChaseStepSeconds, UpdateEnemies walkability callback); leash/give-up is an open question. Both issues stay open for Dyllan.
 - Decided: defense (#15, #34) is not planned for now; revisit with armour-based defense.
+- Decided: enemies take standard damage (no 1.25× slime weakness); weaknesses may return later as a real mechanic.
