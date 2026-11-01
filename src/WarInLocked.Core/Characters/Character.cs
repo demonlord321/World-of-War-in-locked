@@ -143,6 +143,7 @@ namespace WarInLocked.Core.Characters
             if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             int lost = Math.Min(amount, Health);
             Health -= lost;
+            if (amount > 0) Combat.MarkInCombat();
             return lost;
         }
 
@@ -201,6 +202,11 @@ namespace WarInLocked.Core.Characters
 
         // ---- consumables (#26)
 
+        /// <summary>True while in combat: dealt or took damage within the last <see cref="CombatController.CombatDurationSeconds"/> seconds (counts down in <c>Combat.Update</c>).</summary>
+        public bool InCombat => Combat.InCombat;
+        /// <summary>Seconds until the character counts as out of combat again (0 = out of combat).</summary>
+        public double CombatCooldownRemaining => Combat.CombatCooldownRemaining;
+
         /// <summary>Seconds until another consumable can be used (0 = ready). Shared by all consumables; counts down in <c>Combat.Update</c>.</summary>
         public double ItemCooldownRemaining { get; private set; }
         /// <summary>The full length of the running item cooldown (for a cooldown overlay).</summary>
@@ -221,7 +227,9 @@ namespace WarInLocked.Core.Characters
             var item = Inventory.Contains(itemId) ? ItemLibrary.Get(itemId) : null;
             if (item == null) return Inventory.Contains(itemId) ? ItemUseResult.CannotUseText : ItemUseResult.NoneLeftText;
             if (!item.IsUsable) return ItemUseResult.CannotUseText;
+            if (item.RecoversVitals && InCombat) return ItemUseResult.InCombatText;
             if (!ItemReady) return ItemUseResult.OnCooldownText;
+            if (item.RecoversVitals && Health >= MaxHealth && _energy >= MaxEnergy) return ItemUseResult.FullyRecoveredText;
             if (item.HealAmount > 0 && Health >= MaxHealth) return ItemUseResult.FullHealthText;
             return null;
         }
@@ -237,13 +245,21 @@ namespace WarInLocked.Core.Characters
             if (reason != null) return ItemUseResult.Refused(item, reason);
 
             int before = Health;
+            double energyBefore = _energy;
+            if (item.RecoversVitals)
+            {
+                // Up to level 10 everything comes back; above that half of the max (capped at max).
+                bool full = Level <= Item.FullRecoveryMaxLevel;
+                Heal(full ? MaxHealth : (int)Math.Round(MaxHealth * Item.ReducedRecoveryFraction, MidpointRounding.AwayFromZero));
+                RegenEnergy(full ? MaxEnergy : MaxEnergy * Item.ReducedRecoveryFraction);
+            }
             Heal(item.HealAmount);
             Inventory.RemoveItem(itemId, 1);
             ItemCooldownDuration = item.UseCooldownSeconds;
             ItemCooldownRemaining = item.UseCooldownSeconds;
             Combat.OnItemUsed(item.UseCooldownSeconds);
             Version++;
-            return ItemUseResult.Used(item, Health - before);
+            return ItemUseResult.Used(item, Health - before, (int)Math.Floor(_energy) - (int)Math.Floor(energyBefore));
         }
 
         private readonly List<string> _abilities = new List<string>();

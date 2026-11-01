@@ -55,14 +55,6 @@ public class ShopTitleItemTests
     }
 
     [Fact]
-    public void RationsArePlaceholderWithNoEffect()
-    {
-        var r = ItemLibrary.AdventurersRations;
-        Assert.Empty(r.EffectLines);
-        Assert.False(r.IsUsable);
-    }
-
-    [Fact]
     public void PotionsStackInTheInventory()
     {
         var c = Hero();
@@ -133,10 +125,10 @@ public class ShopTitleItemTests
     {
         var c = Hero();
         Assert.Equal("None left", c.CanUse(ItemLibrary.LesserHealingPotionId));
-        c.Inventory.Add(ItemLibrary.AdventurersRations);
-        Assert.Equal("Cannot be used", c.CanUse(ItemLibrary.AdventurersRationsId));
-        Assert.False(c.UseItem(ItemLibrary.AdventurersRationsId).Success);
-        Assert.Equal(1, c.Inventory.CountOf(ItemLibrary.AdventurersRationsId));
+        c.Inventory.Add(new Item("trinket", "Trinket", ItemType.Misc));
+        Assert.Equal("Cannot be used", c.CanUse("trinket"));
+        Assert.False(c.UseItem("trinket").Success);
+        Assert.Equal(1, c.Inventory.CountOf("trinket"));
     }
 
     [Fact]

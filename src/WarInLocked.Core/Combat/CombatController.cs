@@ -117,11 +117,20 @@ namespace WarInLocked.Core.Combat
         {
             if (seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
             if (AttackCooldownRemaining > 0) AttackCooldownRemaining = Math.Max(0, AttackCooldownRemaining - seconds);
+            if (CombatCooldownRemaining > 0) CombatCooldownRemaining = Math.Max(0, CombatCooldownRemaining - seconds);
             Hotbar.Update(seconds);
             _owner.TickItemCooldown(seconds);
             _owner.RegenEnergy(EnergyRegenPerSecond * seconds);
             SyncHotbar();
         }
+
+        /// <summary>PLACEHOLDER (#26): you are in combat for this many seconds after dealing or taking damage.</summary>
+        public const double CombatDurationSeconds = 5.0;
+        /// <summary>Seconds left of the in-combat window; 0 when out of combat.</summary>
+        public double CombatCooldownRemaining { get; private set; }
+        public bool InCombat => CombatCooldownRemaining > 0;
+        /// <summary>Starts (or restarts) the in-combat window. Called when the player deals or takes damage.</summary>
+        public void MarkInCombat() => CombatCooldownRemaining = CombatDurationSeconds;
 
         /// <summary>Puts a consumable (by item id) on a hotbar slot, replacing what was there (#26). Keys 1-5 then use it.</summary>
         public void AssignItemToHotbar(int slotIndex, string itemId) => Hotbar.AssignItem(slotIndex, itemId);
@@ -186,6 +195,7 @@ namespace WarInLocked.Core.Combat
         private CombatResult Strike(Enemy target, int damage)
         {
             int dealt = target.TakeDamage(damage);
+            MarkInCombat();
             if (!target.IsDead) return new CombatResult(CombatOutcome.Hit, target, dealt);
             var completed = _owner.Quests.RecordKill(target.Type);
             return new CombatResult(CombatOutcome.Killed, target, dealt, completed);

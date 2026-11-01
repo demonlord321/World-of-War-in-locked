@@ -19,8 +19,9 @@ namespace WarInLocked.Core.Items
 
         /// <summary>Dyllan's text from issue #26, verbatim.</summary>
         public const string LesserHealingPotionDescription = "A dull red colour. Tastes oddly like strawberries.";
-        /// <summary>PLACEHOLDER (Dyllan gave no text for the rations).</summary>
-        public const string AdventurersRationsDescription = "Dried meat and hard bread. Enough to keep an adventurer going.";
+        /// <summary>Dyllan's text from issue #26, verbatim. It describes the effect, so it is the description (there is no flavour line).</summary>
+        public const string AdventurersRationsDescription =
+            "When outside of combat, recover completely. Up till level 10. After that the rations are only half as effective.";
 
         /// <summary>Physical Attack bonus of the sword (#22), added to the base attack of 10 before the Strength modifier.</summary>
         public const int PracticeSwordPhysicalAttack = 5;
@@ -46,9 +47,13 @@ namespace WarInLocked.Core.Items
             maxStack: ConsumableStackSize, description: LesserHealingPotionDescription,
             healAmount: LesserHealingPotionHeal, useCooldownSeconds: ConsumableCooldownSeconds);
 
-        /// <summary>Adventurer's rations (#25): PLACEHOLDER item with no effect yet.</summary>
-        public static readonly Item AdventurersRations = new Item(AdventurersRationsId, "Adventurer's rations", ItemType.Misc,
-            maxStack: ConsumableStackSize, description: AdventurersRationsDescription);
+        /// <summary>
+        /// Adventurer's rations (#25, #26): out of combat only; restore health and energy completely up to level 10, half of the max above that.
+        /// Shares the item cooldown.
+        /// </summary>
+        public static readonly Item AdventurersRations = new Item(AdventurersRationsId, "Adventurer's rations", ItemType.Consumable,
+            maxStack: ConsumableStackSize, description: AdventurersRationsDescription,
+            useCooldownSeconds: ConsumableCooldownSeconds, recoversVitals: true);
 
         public static IReadOnlyList<Item> All { get; } = new[] { PracticeSword, PracticeStaff, LesserHealingPotion, AdventurersRations };
 

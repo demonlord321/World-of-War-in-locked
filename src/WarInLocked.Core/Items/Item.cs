@@ -13,7 +13,7 @@ namespace WarInLocked.Core.Items
         /// <param name="healAmount">Consumables: health restored when used (#26), capped at the character's max health. 0 = no heal.</param>
         /// <param name="useCooldownSeconds">Consumables: the shared use cooldown that starts after using one (#26).</param>
         /// <param name="maxStack">How many fit in one inventory slot. Equippable items must be 1.</param>
-        public Item(string id, string name, ItemType type, EquipSlot? equipSlot = null, int maxStack = 1, int physicalAttack = 0, int magicalAttack = 0, string description = "", int healAmount = 0, double useCooldownSeconds = 0)
+        public Item(string id, string name, ItemType type, EquipSlot? equipSlot = null, int maxStack = 1, int physicalAttack = 0, int magicalAttack = 0, string description = "", int healAmount = 0, double useCooldownSeconds = 0, bool recoversVitals = false)
         {
             if (string.IsNullOrWhiteSpace(id)) throw new ArgumentException("An item needs an id.", nameof(id));
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("An item needs a name.", nameof(name));
@@ -31,6 +31,7 @@ namespace WarInLocked.Core.Items
             Description = description ?? "";
             if (healAmount < 0) throw new ArgumentOutOfRangeException(nameof(healAmount));
             if (useCooldownSeconds < 0) throw new ArgumentOutOfRangeException(nameof(useCooldownSeconds));
+            RecoversVitals = recoversVitals;
             HealAmount = healAmount;
             UseCooldownSeconds = useCooldownSeconds;
         }
@@ -51,7 +52,14 @@ namespace WarInLocked.Core.Items
         /// <summary>Seconds of shared cooldown after using one (0 if none).</summary>
         public double UseCooldownSeconds { get; }
         /// <summary>True for items that can be used from the inventory or hotbar (type Consumable with an effect), see <c>Character.UseItem</c>.</summary>
-        public bool IsUsable => Type == ItemType.Consumable && HealAmount > 0;
+        /// <summary>
+        /// Rations-style recovery (#26): usable only out of combat; restores health AND energy to max up to level <see cref="FullRecoveryMaxLevel"/>,
+        /// and <see cref="ReducedRecoveryFraction"/> of the max above that.
+        /// </summary>
+        public bool RecoversVitals { get; }
+        public const int FullRecoveryMaxLevel = 10;
+        public const double ReducedRecoveryFraction = 0.5;
+        public bool IsUsable => Type == ItemType.Consumable && (HealAmount > 0 || RecoversVitals);
 
         /// <summary>What using the item does, ready to print, e.g. "Heals 50 HP." and "Cooldown after use 5s". Empty if it has no effect.</summary>
         public IReadOnlyList<string> EffectLines
