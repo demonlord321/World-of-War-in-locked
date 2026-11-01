@@ -367,6 +367,14 @@ public sealed class ForestScreen : Screen
             bool onTile = playerTile.X == sp.X && playerTile.Y == sp.Y;
             if (_talkTarget == null || onTile) { _savePointTile = new Point(sp.X, sp.Y); _talkTarget = null; }
         }
+        // #62: F picks up the nearest ground item (own tile or the 8 around it).
+        if (!_character.IsDead && input.Pressed(Keys.F))
+        {
+            var pick = _character.PickUp(playerTile.X, playerTile.Y);
+            if (pick.Message != null) Toast(pick.Message, 2.5f);
+            else if (pick.Success && pick.Item != null) Toast($"Picked up {pick.Item.Item.Name}" + (pick.Taken > 1 ? $" x{pick.Taken}" : ""), 2f);
+            return;
+        }
         if (_savePointTile != null && (input.Pressed(Keys.E) || input.Pressed(Keys.Enter)))
         {
             SavePoints.Interact(_character, _mapId, playerTile.X, playerTile.Y, out var saveNotice);
@@ -391,7 +399,7 @@ public sealed class ForestScreen : Screen
             if (input.Pressed(Keys.D1 + slot) || input.Pressed(Keys.NumPad1 + slot)) Attack(playerTile, slot);
 
         // I opens the character menu; it gets this same screen back on close, so the position is kept.
-        if (!_character.IsDead && input.Pressed(Keys.I)) { Screens.Replace(new CharacterMenuScreen(this, _character)); return; }
+        if (!_character.IsDead && input.Pressed(Keys.I)) { Screens.Replace(new CharacterMenuScreen(this, _character, CurrentTile)); return; }
 
         // K opens the abilities screen (#20); it also gets this same screen back on close.
         if (!_character.IsDead && input.Pressed(Keys.K)) { Screens.Replace(new AbilitiesScreen(this, _character)); return; }
@@ -485,6 +493,33 @@ public sealed class ForestScreen : Screen
         for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++)
             if (dx != 0 || dy != 0) gfx.TextCentered(sb, glyph, new Rectangle(box.X + dx * 2, box.Y + dy * 2, box.Width, box.Height), Color.Black, 28f);
         gfx.TextCentered(sb, glyph, box, color, 28f);
+    }
+
+    private Point CurrentTile => new((int)((_player.X + PlayerSize / 2f) / TileSize), (int)((_player.Y + PlayerSize / 2f) / TileSize));
+
+    /// <summary>#62: items lying on the map (Core Ground), with a "Pick up (F)" prompt for the one in reach.</summary>
+    private void DrawGroundItems(SpriteBatch sb, Gfx gfx)
+    {
+        foreach (var g in _character.Combat.Ground.Items)
+        {
+            var r = Screen(g.TileX * TileSize + 8, g.TileY * TileSize + 12, 16, 14);
+            bool jelly = g.Item.Name.Contains("Jelly");
+            var col = jelly ? new Color(90, 200, 90) : new Color(200, 170, 90);
+            gfx.Rect(sb, new Rectangle(r.X + 2, r.Y, r.Width - 4, r.Height), col);
+            gfx.Rect(sb, new Rectangle(r.X, r.Y + 4, r.Width, r.Height - 4), col);
+            gfx.Border(sb, new Rectangle(r.X, r.Y, r.Width, r.Height), Color.Black * 0.6f, 1);
+            gfx.Rect(sb, new Rectangle(r.X + 4, r.Y + 3, 3, 3), Color.White);
+            if (g.Count > 1) gfx.Text(sb, "x" + g.Count, new Vector2(r.Right, r.Bottom - 8), Color.White, 13f);
+        }
+        if (_character.IsDead) return;
+        var t = CurrentTile;
+        if (_character.Combat.Ground.FindNear(t.X, t.Y) is { } near)
+        {
+            string label = $"Pick up {near.Item.Name}" + (near.Count > 1 ? $" x{near.Count}" : "") + " (F)";
+            var pr = Screen(_player.X + PlayerSize / 2f - 110, _player.Y + PlayerSize + 6, 220, 22);
+            gfx.Rect(sb, pr, Color.Black * 0.6f);
+            gfx.TextCentered(sb, label, pr, Theme.Text, 15f);
+        }
     }
 
     private bool IsNpc(int x, int y)
@@ -637,6 +672,7 @@ public sealed class ForestScreen : Screen
             DrawQuestMarker(sb, gfx, id, p);
         }
 
+        DrawGroundItems(sb, gfx);
         var pr = Screen(_player.X, _player.Y, PlayerSize, PlayerSize);
         bool hitBlink = _hitFlash > 0 && (int)(_hitFlash * 20) % 2 == 0;
         gfx.Rect(sb, pr, hitBlink ? new Color(235, 60, 60) : Theme.Accent);

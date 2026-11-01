@@ -35,8 +35,11 @@ public sealed class CharacterMenuScreen : Screen
     private static readonly Color SlotFill = new(26, 29, 40);
     private static readonly Color Outline = new(52, 58, 80);
 
-    public CharacterMenuScreen(Screen back, Character character)
+    private readonly Point _playerTile;   // where X drops items (#62)
+
+    public CharacterMenuScreen(Screen back, Character character, Point playerTile = default)
     {
+        _playerTile = playerTile;
         _back = back;
         _character = character;
         foreach (var stat in StatTypes.All) _lockedAssigned[(int)stat] = character.AssignedPoints(stat);
@@ -90,6 +93,7 @@ public sealed class CharacterMenuScreen : Screen
         if (_focus >= EquipCount && _focus < StatBase)
         {
             if (input.Pressed(Keys.U)) UseItem(_focus - EquipCount);
+            if (input.Pressed(Keys.X)) DropFocused(_focus - EquipCount, Keyboard.GetState().IsKeyDown(Keys.LeftShift) || Keyboard.GetState().IsKeyDown(Keys.RightShift));
             for (int slot = 0; slot < Hotbar.SlotCount; slot++)
                 if (input.Pressed(Keys.D1 + slot) || input.Pressed(Keys.NumPad1 + slot)) AssignToHotbar(_focus - EquipCount, slot);
         }
@@ -143,6 +147,15 @@ public sealed class CharacterMenuScreen : Screen
         var stat = StatTypes.All[s];
         if (NewPoints(s) <= 0) { _message = _character.AssignedPoints(stat) > 0 ? "Points from before this menu are locked in" : null; return; }
         _message = _character.UnassignPoint(stat) ? $"{stat} -1" : null;
+    }
+
+    /// <summary>#62: X drops one of the focused bag item onto the player's tile, Shift+X the whole stack. Equipped gear is not in the bag; quest items are refused by Core.</summary>
+    private void DropFocused(int invSlot, bool wholeStack)
+    {
+        var stack = _character.Inventory.Get(invSlot);
+        if (stack == null) { _message = null; return; }
+        var r = wholeStack ? _character.DropStack(invSlot, _playerTile.X, _playerTile.Y) : _character.DropItem(invSlot, 1, _playerTile.X, _playerTile.Y);
+        _message = r.Message ?? (r.Dropped ? $"Dropped {r.Item.Name}" + (r.Count > 1 ? $" x{r.Count}" : "") : null);
     }
 
     /// <summary>Enter or click: equips the item in an inventory slot, or unequips the item in an equipment slot (Core rules).</summary>
@@ -252,7 +265,7 @@ public sealed class CharacterMenuScreen : Screen
 
         gfx.Rect(sb, new Rectangle(0, 0, w, 56), Theme.Panel);
         gfx.TextLeft(sb, $"Character  -  {_character.Name}", new Rectangle(0, 0, w, 56), Theme.Accent, 26f, 30);
-        gfx.TextLeft(sb, "Arrows/mouse: select  -  Enter: equip/use  -  U: use  -  1-5: hotbar  -  T: titles  -  I/Esc: close", new Rectangle(w - 900, 0, 900, 56), Theme.TextDim, 15f);
+        gfx.TextLeft(sb, "Arrows/mouse: select  -  Enter: equip/use  -  U: use  -  1-5: hotbar  -  X: drop (Shift: all)  -  T: titles  -  I/Esc: close", new Rectangle(w - 900, 0, 900, 56), Theme.TextDim, 15f);
 
         var left = new Rectangle(30, 76, 600, 548);
         var right = new Rectangle(650, 76, 600, 548);
@@ -329,7 +342,7 @@ public sealed class CharacterMenuScreen : Screen
                 : why == ItemUseResult.OnCooldownText ? $"On cooldown {_character.ItemCooldownRemaining:0.0}s (runs in the forest)"
                 : why;
             gfx.Text(sb, status, new Vector2(x, r.Bottom - 26), why == null ? Theme.Positive : Theme.Negative, 14f);
-            gfx.Text(sb, "Enter/U: use  -  1-5: hotbar", new Vector2(bx, r.Bottom - 26), Theme.TextDim, 14f);
+            gfx.Text(sb, "Enter/U: use  -  1-5: hotbar  -  X: drop", new Vector2(bx, r.Bottom - 26), Theme.TextDim, 14f);
             return;
         }
         string enter = _focus < EquipCount ? "Enter to unequip" : item.IsEquippable ? "Enter to equip" : "Cannot be equipped";
