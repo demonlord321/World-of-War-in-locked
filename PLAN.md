@@ -168,3 +168,6 @@ Needed before a 3 to 4 hour build is testable:
 - #55 Core (1 Nov): Barracks Master dialogue + BarracksMaster.Apply (Rest +3 h, Sleep until morning at night, Set as home). Mapmaker wires the NPC menu and the notices.
 - #54 Core (1 Nov): SaveGame (JSON, version 1) capture/restore/Save/Load, SavePoints (save-colonel, save-whiplash). Mapmaker wires Load game, the save point interaction and a clock HUD.
 - #54 to #57 Game wiring done (1 Nov, 532d4e5): clock HUD, night overlay and night slimes, Barracks Master menu, save point interaction and Load game on the main menu. Issues #54 to #57 are still open on GitHub for Dyllan to test and close.
+
+- Decided (#30): death XP penalty is 200 from level 10 to 20, 400 from 20 to 30, doubling every ten levels.
+- Decided (#31): angered slimes chase the player (give-up distance still open).
