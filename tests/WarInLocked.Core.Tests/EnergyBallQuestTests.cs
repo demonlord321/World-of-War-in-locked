@@ -200,11 +200,12 @@ public class EnergyBallQuestTests
 
         int xp = c.Xp;
         Assert.Equal("colonel-powers-energy-turnin", ColonelPowersQuest.DialogueIdFor(c));
-        Assert.Null(ColonelPowersQuest.QuestToOfferAfterDialogue(c, out var notice));
+        var next = ColonelPowersQuest.QuestToOfferAfterDialogue(c, out var notice);   // #25: turning it in offers quest 4
+        Assert.Equal(QuestLibrary.ShoppingBeforeAdventureId, next!.Id);
         Assert.Equal("Quest complete: Energy Ball practice!  +50 XP, +50 copper", notice);
         Assert.Equal(xp + 50, c.Xp);
         Assert.Equal(50, c.Copper);
-        Assert.Equal("colonel-powers-done", ColonelPowersQuest.DialogueIdFor(c));
+        Assert.Equal("colonel-powers-shop-offer", ColonelPowersQuest.DialogueIdFor(c));
         Assert.Null(ColonelPowersQuest.TurnInReadyQuest(c));   // no second reward
         Assert.Equal(50, c.Copper);
     }

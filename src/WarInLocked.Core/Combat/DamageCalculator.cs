@@ -20,9 +20,9 @@ namespace WarInLocked.Core.Combat
         public const int BaseAttack = 10;
 
         /// <summary>Strength modifier for the character, e.g. 2.3 at Str 13.</summary>
-        public static double StrengthModifier(Character c) => StatModifier.Value(c.Stats.Strength);
+        public static double StrengthModifier(Character c) => StatModifier.Value(c.EffectiveStats.Strength);
         /// <summary>Intelligence modifier for the character.</summary>
-        public static double IntelligenceModifier(Character c) => StatModifier.Value(c.Stats.Intelligence);
+        public static double IntelligenceModifier(Character c) => StatModifier.Value(c.EffectiveStats.Intelligence);
 
         /// <summary>True if the main hand holds a weapon (any weapon: sword or staff).</summary>
         public static bool HasWeapon(Character c)
@@ -56,14 +56,14 @@ namespace WarInLocked.Core.Combat
 
         /// <summary>Physical damage with an explicit bonus on top of the base 10 (weapon bonus + ability power) and the target's multiplier.</summary>
         public static int PhysicalDamage(Character c, int bonus, double targetMultiplier = 1.0) =>
-            Compute(bonus, StatModifier.Tenths(c.Stats.Strength), targetMultiplier);
+            Compute(bonus, StatModifier.Tenths(c.EffectiveStats.Strength), targetMultiplier);
 
         /// <summary>Unarmed damage: base attack x Strength modifier (ignores anything held).</summary>
         public static int UnarmedDamage(Character c) => PhysicalDamage(c, 0, 1.0);
 
         /// <summary>Magic damage with an explicit bonus on top of the base 10 (staff bonus + spell power) and the target's multiplier.</summary>
         public static int MagicDamage(Character c, int bonus = 0, double targetMultiplier = 1.0) =>
-            Compute(bonus, StatModifier.Tenths(c.Stats.Intelligence), targetMultiplier);
+            Compute(bonus, StatModifier.Tenths(c.EffectiveStats.Intelligence), targetMultiplier);
 
         private static int Compute(int bonus, int modifierTenths, double targetMultiplier)
         {

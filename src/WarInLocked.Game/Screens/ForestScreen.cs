@@ -199,6 +199,12 @@ public sealed class ForestScreen : Screen
             case CombatOutcome.NeedsWeapon:
                 Toast(AbilityDefinition.NeedsWeaponText, 2f);
                 break;
+            case CombatOutcome.ItemUsed:
+                Toast($"{result.ItemResult!.Item.Name}: healed {result.ItemResult.Healed} HP", 2f);
+                break;
+            case CombatOutcome.ItemRefused:
+                Toast(result.ItemResult!.Reason, 2f);   // "On cooldown", "Already at full health", "None left"
+                break;
             case CombatOutcome.Killed:
                 var dead = living[targets.IndexOf(result.Target!)];
                 _slimes.Remove(dead);

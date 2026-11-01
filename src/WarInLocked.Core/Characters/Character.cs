@@ -79,11 +79,23 @@ namespace WarInLocked.Core.Characters
 
         private void ChangeStat(StatType stat, int delta)
         {
+            ChangeStatsKeepingVitals(delta > 0, () =>
+            {
+                Stats = Stats.WithAdded(stat, delta);
+                _assigned[(int)stat] += delta;
+            });
+        }
+
+        /// <summary>
+        /// Runs a change that can move MaxHealth/MaxEnergy (a stat point, a title) and moves the current health and energy by the same amount:
+        /// up when <paramref name="gain"/> is true; when it is false it never kills and never drops health below 1.
+        /// </summary>
+        private void ChangeStatsKeepingVitals(bool gain, Action change)
+        {
             int oldHealth = MaxHealth, oldEnergy = MaxEnergy;
-            Stats = Stats.WithAdded(stat, delta);
-            _assigned[(int)stat] += delta;
+            change();
             int dh = MaxHealth - oldHealth, de = MaxEnergy - oldEnergy;
-            if (delta > 0)
+            if (gain)
             {
                 if (dh != 0 && Health > 0) Health += dh;
                 _energy += de;
@@ -109,11 +121,11 @@ namespace WarInLocked.Core.Characters
         /// </summary>
         public const int EnergyBase = 50;
 
-        public int MaxHealth => (int)Math.Round(HealthBase * (StatModifier.Tenths(Stats.Constitution) / 10m), MidpointRounding.AwayFromZero);
-        public int MaxEnergy => (int)Math.Round(EnergyBase * (StatModifier.Tenths(Stats.Wisdom) / 10m), MidpointRounding.AwayFromZero);
+        public int MaxHealth => (int)Math.Round(HealthBase * (StatModifier.Tenths(EffectiveStats.Constitution) / 10m), MidpointRounding.AwayFromZero);
+        public int MaxEnergy => (int)Math.Round(EnergyBase * (StatModifier.Tenths(EffectiveStats.Wisdom) / 10m), MidpointRounding.AwayFromZero);
 
-        /// <summary>The modifier of a stat's current value (0.1 per point, +1.0 per milestone), e.g. 2.3 for 13 Constitution.</summary>
-        public double Modifier(StatType stat) => StatModifier.Value(Stats[stat]);
+        /// <summary>The modifier of a stat's effective value (with the equipped title's bonus; milestones count the effective value, #27) (0.1 per point, +1.0 per milestone), e.g. 2.3 for 13 Constitution.</summary>
+        public double Modifier(StatType stat) => StatModifier.Value(EffectiveStats[stat]);
 
         /// <summary>Current health, 0..<see cref="MaxHealth"/>. Starts full.</summary>
         public int Health { get; private set; }
@@ -186,6 +198,54 @@ namespace WarInLocked.Core.Characters
             CopperChanged?.Invoke(Copper);
             return true;
         }
+
+        // ---- consumables (#26)
+
+        /// <summary>Seconds until another consumable can be used (0 = ready). Shared by all consumables; counts down in <c>Combat.Update</c>.</summary>
+        public double ItemCooldownRemaining { get; private set; }
+        /// <summary>The full length of the running item cooldown (for a cooldown overlay).</summary>
+        public double ItemCooldownDuration { get; private set; }
+        public bool ItemReady => ItemCooldownRemaining <= 0;
+
+        internal void TickItemCooldown(double seconds)
+        {
+            if (ItemCooldownRemaining > 0) ItemCooldownRemaining = Math.Max(0, ItemCooldownRemaining - seconds);
+        }
+
+        /// <summary>
+        /// Why this item cannot be used right now ("None left", "Cannot be used", "On cooldown", "Already at full health"), or null if it can.
+        /// Using a healing item at full health is refused and nothing is spent.
+        /// </summary>
+        public string CanUse(string itemId)
+        {
+            var item = Inventory.Contains(itemId) ? ItemLibrary.Get(itemId) : null;
+            if (item == null) return Inventory.Contains(itemId) ? ItemUseResult.CannotUseText : ItemUseResult.NoneLeftText;
+            if (!item.IsUsable) return ItemUseResult.CannotUseText;
+            if (!ItemReady) return ItemUseResult.OnCooldownText;
+            if (item.HealAmount > 0 && Health >= MaxHealth) return ItemUseResult.FullHealthText;
+            return null;
+        }
+
+        /// <summary>
+        /// Uses one consumable from the inventory: heals (capped at max health), removes one from the stack and starts the shared item
+        /// cooldown (also shown on hotbar slots holding items). If refused (see <see cref="CanUse"/>) nothing changes.
+        /// </summary>
+        public ItemUseResult UseItem(string itemId)
+        {
+            string reason = CanUse(itemId);
+            var item = ItemLibrary.Get(itemId);
+            if (reason != null) return ItemUseResult.Refused(item, reason);
+
+            int before = Health;
+            Heal(item.HealAmount);
+            Inventory.RemoveItem(itemId, 1);
+            ItemCooldownDuration = item.UseCooldownSeconds;
+            ItemCooldownRemaining = item.UseCooldownSeconds;
+            Combat.OnItemUsed(item.UseCooldownSeconds);
+            Version++;
+            return ItemUseResult.Used(item, Health - before);
+        }
+
         private readonly List<string> _abilities = new List<string>();
         /// <summary>Ability ids learned so far, e.g. "slash".</summary>
         public IReadOnlyList<string> Abilities => _abilities;
@@ -241,7 +301,62 @@ namespace WarInLocked.Core.Characters
         public string Name { get; }
         public Race Race { get; }
         public StatDistribution Distribution { get; }
-        /// <summary>Current stats: the creation values plus any assigned points.</summary>
+        /// <summary>The creation values plus any assigned points. This is what the I menu lets you assign; it does NOT include the equipped title's bonus (see <see cref="EffectiveStats"/>).</summary>
         public StatBlock Stats { get; private set; }
+
+        /// <summary>
+        /// <see cref="Stats"/> plus the equipped title's bonus (#27). Everything that uses a stat (modifiers, max health and energy, damage) reads this,
+        /// so a milestone (10, 25, 50) is reached by the effective value.
+        /// </summary>
+        public StatBlock EffectiveStats => TitleBonus(StatType.Strength) == 0 ? Stats : Stats.Plus(StatBlock.Uniform(EquippedTitle.AllStatsBonus));
+
+        /// <summary>What the equipped title adds to a stat (0 when no title is equipped).</summary>
+        public int TitleBonus(StatType stat) => EquippedTitle == null ? 0 : EquippedTitle.AllStatsBonus;
+
+        private readonly List<Title> _titles = new List<Title>();
+        /// <summary>Titles earned so far, in the order they were earned.</summary>
+        public IReadOnlyList<Title> Titles => _titles.ToArray();
+        /// <summary>The title being worn, or null. Only one at a time.</summary>
+        public Title EquippedTitle { get; private set; }
+        public bool HasTitle(string titleId) => _titles.Exists(t => t.Id == titleId);
+
+        /// <summary>Raised when a title is earned, equipped or unequipped. <see cref="Version"/> also bumps.</summary>
+        public event Action TitlesChanged;
+
+        /// <summary>Earns a title (not equipped automatically). Returns false if the id is unknown or it was already earned.</summary>
+        public bool GrantTitle(string titleId)
+        {
+            var t = TitleLibrary.Get(titleId);
+            if (t == null || HasTitle(titleId)) return false;
+            _titles.Add(t);
+            Version++;
+            TitlesChanged?.Invoke();
+            return true;
+        }
+
+        /// <summary>
+        /// Wears an earned title, replacing the one worn now. Max health/energy follow the bonus like assigning points does.
+        /// Returns false if the title was not earned (or is already worn).
+        /// </summary>
+        public bool EquipTitle(string titleId)
+        {
+            if (!HasTitle(titleId) || (EquippedTitle != null && EquippedTitle.Id == titleId)) return false;
+            var t = TitleLibrary.Get(titleId);
+            bool gain = t.AllStatsBonus > (EquippedTitle?.AllStatsBonus ?? 0);
+            ChangeStatsKeepingVitals(gain, () => EquippedTitle = t);
+            Version++;
+            TitlesChanged?.Invoke();
+            return true;
+        }
+
+        /// <summary>Takes the worn title off. Current health/energy drop with the maximums (never below 1 health). Returns false if none was worn.</summary>
+        public bool UnequipTitle()
+        {
+            if (EquippedTitle == null) return false;
+            ChangeStatsKeepingVitals(false, () => EquippedTitle = null);
+            Version++;
+            TitlesChanged?.Invoke();
+            return true;
+        }
     }
 }

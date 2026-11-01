@@ -6,15 +6,33 @@ namespace WarInLocked.Core.Dialogue
     /// <summary>A choice the player can pick. <see cref="NextId"/> is the node it leads to; null or empty ends the dialogue.</summary>
     public sealed class DialogueOption
     {
-        public DialogueOption(string text, string nextId)
+        public DialogueOption(string text, string nextId, string action = null)
         {
             Text = text;
             NextId = nextId;
+            Action = action;
         }
+
+        /// <summary>
+        /// Optional signal for the game when this option is picked (e.g. <see cref="DialogueActions.OpenShop"/>), or null.
+        /// The runner exposes it as <see cref="DialogueRunner.Action"/>.
+        /// </summary>
+        public string Action { get; }
 
         /// <summary>What the player says. May contain {name}.</summary>
         public string Text { get; }
         public string NextId { get; }
+    }
+
+    /// <summary>Signals a dialogue option can give to the game (#28).</summary>
+    public static class DialogueActions
+    {
+        public const string ShopPrefix = "shop:";
+        /// <summary>The action for "open the shop with this id" (see <c>ShopLibrary.Get</c>).</summary>
+        public static string OpenShop(string shopId) => ShopPrefix + shopId;
+        public static bool IsOpenShop(string action) => action != null && action.StartsWith(ShopPrefix);
+        /// <summary>The shop id inside an OpenShop action, or null.</summary>
+        public static string ShopIdOf(string action) => IsOpenShop(action) ? action.Substring(ShopPrefix.Length) : null;
     }
 
     /// <summary>

@@ -23,6 +23,8 @@ namespace WarInLocked.Core.Quests
             new[] { QuestLibrary.SliceAndSlimeId, DialogueLibrary.ColonelPowersReofferId, DialogueLibrary.ColonelPowersActiveId, DialogueLibrary.ColonelPowersTurnInId },
             new[] { QuestLibrary.SlashingPracticeId, DialogueLibrary.ColonelPowersPracticeOfferId, DialogueLibrary.ColonelPowersPracticeActiveId, DialogueLibrary.ColonelPowersPracticeTurnInId },
             new[] { QuestLibrary.EnergyBallPracticeId, DialogueLibrary.ColonelPowersEnergyOfferId, DialogueLibrary.ColonelPowersEnergyActiveId, DialogueLibrary.ColonelPowersEnergyTurnInId },
+            // While quest 4 is active the Colonel shows the Talk / Shop choice (#28) instead of a progress line.
+            new[] { QuestLibrary.ShoppingBeforeAdventureId, DialogueLibrary.ColonelPowersShopOfferId, DialogueLibrary.ColonelPowersMenuId, DialogueLibrary.ColonelPowersShopTurnInId },
         };
 
         private static Quest NewQuest(string id)
@@ -31,6 +33,7 @@ namespace WarInLocked.Core.Quests
             {
                 case QuestLibrary.SliceAndSlimeId: return QuestLibrary.SliceAndSlime();
                 case QuestLibrary.SlashingPracticeId: return QuestLibrary.SlashingPractice();
+                case QuestLibrary.ShoppingBeforeAdventureId: return QuestLibrary.ShoppingBeforeAdventure();
                 default: return QuestLibrary.EnergyBallPractice();
             }
         }
@@ -49,7 +52,7 @@ namespace WarInLocked.Core.Quests
                     case QuestState.ReadyToTurnIn: return Chain[i][3];
                 }
             }
-            return DialogueLibrary.ColonelPowersDoneId;
+            return DialogueLibrary.ColonelPowersMenuId;   // everything done: the Talk / Shop choice stays (#28)
         }
 
         public static DialogueRunner CreateDialogue(Character character)
@@ -106,11 +109,13 @@ namespace WarInLocked.Core.Quests
             {
                 var q = character.Quests.Get(step[0]);
                 if (q == null || q.State != QuestState.ReadyToTurnIn) continue;
-                character.Quests.TurnIn(q.Id);
+                if (!character.Quests.TurnIn(q.Id)) return InventoryFullNotice;   // reward items do not fit: nothing given, still ready
                 var parts = new List<string>();
+                foreach (var t in q.Reward.TitleIds) parts.Add("title " + (TitleLibrary.Get(t)?.Name ?? t));
                 if (q.Reward.Xp > 0) parts.Add("+" + q.Reward.Xp + " XP");
                 if (q.Reward.Copper > 0) parts.Add("+" + q.Reward.Copper + " copper");
                 foreach (var a in q.Reward.AbilityIds) parts.Add("learned " + AbilityLibrary.NameOf(a));
+                foreach (var i in q.Reward.ItemIds) parts.Add(ItemLibrary.Get(i)?.Name ?? i);
                 return "Quest complete: " + q.ShortTitle + "!  " + string.Join(", ", parts);
             }
             return null;

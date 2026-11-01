@@ -52,9 +52,31 @@ namespace WarInLocked.Core.Quests
         public IReadOnlyList<Quest> RecordKill(string enemyType) =>
             Record(o => o.Kind == ObjectiveKind.Kill && o.EnemyType == enemyType);
 
+        /// <summary>True if the quest is ready and its reward items fit in the inventory right now.</summary>
+        public bool CanTurnIn(string id)
+        {
+            var q = Get(id);
+            return q != null && q.State == QuestState.ReadyToTurnIn && RewardItemsFit(q);
+        }
+
+        // Each reward item must fit on its own (rewards have one item today; two competing for the last slot is not handled).
+        private bool RewardItemsFit(Quest q)
+        {
+            foreach (var i in q.Reward.ItemIds)
+            {
+                var item = Items.ItemLibrary.Get(i);
+                if (item != null && !_owner.Inventory.CanAdd(item, 1)) return false;
+            }
+            return true;
+        }
+
         /// <summary>Counts one cast of an ability that actually fired. Same rules as <see cref="RecordKill"/> for "Use Slash N times" quests.</summary>
         public IReadOnlyList<Quest> RecordAbilityUse(string abilityId) =>
             Record(o => o.Kind == ObjectiveKind.UseAbility && o.AbilityId == abilityId);
+
+        /// <summary>Counts one purchase of an item (#25). Same rules as <see cref="RecordKill"/> for "Buy N x" quests; a purchase from any shop counts.</summary>
+        public IReadOnlyList<Quest> RecordPurchase(string itemId) =>
+            Record(o => o.Kind == ObjectiveKind.Buy && o.ItemId == itemId);
 
         private IReadOnlyList<Quest> Record(Func<QuestObjective, bool> matches)
         {
@@ -80,14 +102,21 @@ namespace WarInLocked.Core.Quests
         }
 
         /// <summary>
-        /// ReadyToTurnIn to Complete: gives the reward (XP, copper, abilities) to the character, once. Returns false if the quest is
-        /// unknown or not ready.
+        /// ReadyToTurnIn to Complete: gives the reward (XP, copper, abilities, titles, items) to the character, once. Returns false if the quest is
+        /// unknown or not ready, or when a reward item does not fit in the inventory (see <see cref="CanTurnIn"/>): then nothing is given and
+        /// the quest stays ReadyToTurnIn.
         /// </summary>
         public bool TurnIn(string id)
         {
             var q = Get(id);
-            if (q == null || q.State != QuestState.ReadyToTurnIn) return false;
+            if (q == null || q.State != QuestState.ReadyToTurnIn || !RewardItemsFit(q)) return false;
             q.State = QuestState.Complete;
+            foreach (var t in q.Reward.TitleIds) _owner.GrantTitle(t);
+            foreach (var i in q.Reward.ItemIds)
+            {
+                var item = Items.ItemLibrary.Get(i);
+                if (item != null) _owner.Inventory.Add(item, 1);
+            }
             _owner.GainXp(q.Reward.Xp);
             _owner.GainCopper(q.Reward.Copper);
             foreach (var a in q.Reward.AbilityIds) _owner.LearnAbility(a);

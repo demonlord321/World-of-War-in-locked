@@ -62,6 +62,9 @@ namespace WarInLocked.Core.Dialogue
             }
         }
 
+        /// <summary>The action of the last option the player picked (e.g. open the shop, #28), or null. Read it once <see cref="IsEnded"/>.</summary>
+        public string Action { get; private set; }
+
         /// <summary>Id of the current node (handy for tests and debugging).</summary>
         public string CurrentNodeId => Current.Id;
 
@@ -80,6 +83,7 @@ namespace WarInLocked.Core.Dialogue
             DialogueNode node = Current;
             if (node.Options.Count == 0) throw new InvalidOperationException("This line has no options; call Advance.");
             if (index < 0 || index >= node.Options.Count) throw new ArgumentOutOfRangeException(nameof(index));
+            Action = node.Options[index].Action;
             GoTo(node.Options[index].NextId);
         }
 

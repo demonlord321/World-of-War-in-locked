@@ -7,7 +7,10 @@ namespace WarInLocked.Core.Combat
     {
         /// <summary>The ability in this slot, e.g. "slash", or null if the slot is empty.</summary>
         public string AbilityId { get; internal set; }
-        public bool IsEmpty => AbilityId == null;
+        /// <summary>The consumable item in this slot (#26), or null. A slot holds an ability OR an item, never both.</summary>
+        public string ItemId { get; internal set; }
+        public bool IsItem => ItemId != null;
+        public bool IsEmpty => AbilityId == null && ItemId == null;
         /// <summary>Seconds until the ability can be used again (0 = ready).</summary>
         public double CooldownRemaining { get; internal set; }
         /// <summary>The full length of the cooldown that is running.</summary>
@@ -52,8 +55,26 @@ namespace WarInLocked.Core.Combat
         {
             var slot = Get(index);
             slot.AbilityId = abilityId;
+            slot.ItemId = null;
             slot.CooldownRemaining = 0;
             slot.CooldownDuration = 0;
+        }
+
+        /// <summary>Puts a consumable item (by item id) into a slot (null empties it) and clears the slot's cooldown (#26). The item uses the shared item cooldown.</summary>
+        public void AssignItem(int index, string itemId)
+        {
+            var slot = Get(index);
+            slot.AbilityId = null;
+            slot.ItemId = itemId;
+            slot.CooldownRemaining = 0;
+            slot.CooldownDuration = 0;
+        }
+
+        /// <summary>The slot holding an item, or -1.</summary>
+        public int IndexOfItem(string itemId)
+        {
+            for (int i = 0; i < SlotCount; i++) if (_slots[i].ItemId == itemId) return i;
+            return -1;
         }
 
         /// <summary>Puts an ability into the first empty slot unless it is already on the bar. Returns the slot index or -1 if full.</summary>

@@ -5,6 +5,7 @@ namespace WarInLocked.Core.Quests
         public const string SliceAndSlimeId = "slice-and-slime";
         public const string SlashingPracticeId = "slashing-practice";
         public const string EnergyBallPracticeId = "energy-ball-practice";
+        public const string ShoppingBeforeAdventureId = "shopping-before-adventure";
 
         /// <summary>The tutorial quest (issue #8), Dyllan's text. A fresh object each call. Reward is given when turned in to the Colonel (#19).</summary>
         public static Quest SliceAndSlime() => new Quest(
@@ -36,9 +37,23 @@ namespace WarInLocked.Core.Quests
             "None",
             EnergyBallPracticeShortTitle);
 
+        /// <summary>
+        /// Tutorial quest 4 (#25), Dyllan's text (including "baught"): buy a Potion of lesser healing from the Colonel.
+        /// Reward: title Adventurer, 50 XP and Adventurer's rations.
+        /// </summary>
+        public static Quest ShoppingBeforeAdventure() => new Quest(
+            ShoppingBeforeAdventureId,
+            "Quest: Shopping before adventure.",
+            "Colonel Powers has a potion of lesser healing he is willing to sell to you.",
+            new[] { QuestObjective.Buy(Items.ItemLibrary.LesserHealingPotionId, 1, "Potion of lesser healing baught") },
+            new QuestReward(50, null, 0, new[] { Characters.TitleLibrary.AdventurerId }, new[] { Items.ItemLibrary.AdventurersRationsId }),
+            "None",
+            ShoppingBeforeAdventureShortTitle);
+
         /// <summary>Short name for the HUD tracker: "Slice and slime".</summary>
         public const string SliceAndSlimeShortTitle = "Slice and slime";
         public const string SlashingPracticeShortTitle = "Slashing Practice";
         public const string EnergyBallPracticeShortTitle = "Energy Ball practice";
+        public const string ShoppingBeforeAdventureShortTitle = "Shopping before adventure";
     }
 }

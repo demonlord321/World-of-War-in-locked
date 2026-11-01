@@ -7,6 +7,20 @@ namespace WarInLocked.Core.Items
     {
         public const string PracticeSwordId = "practice-sword";
         public const string PracticeStaffId = "practice-staff";
+        public const string LesserHealingPotionId = "potion-lesser-healing";
+        public const string AdventurersRationsId = "adventurers-rations";
+
+        /// <summary>Health the Potion of lesser healing restores (#26).</summary>
+        public const int LesserHealingPotionHeal = 50;
+        /// <summary>Shared cooldown (seconds) after using any consumable (#26).</summary>
+        public const double ConsumableCooldownSeconds = 5.0;
+        /// <summary>PLACEHOLDER stack size for consumables (#26).</summary>
+        public const int ConsumableStackSize = 10;
+
+        /// <summary>Dyllan's text from issue #26, verbatim.</summary>
+        public const string LesserHealingPotionDescription = "A dull red colour. Tastes oddly like strawberries.";
+        /// <summary>PLACEHOLDER (Dyllan gave no text for the rations).</summary>
+        public const string AdventurersRationsDescription = "Dried meat and hard bread. Enough to keep an adventurer going.";
 
         /// <summary>Physical Attack bonus of the sword (#22), added to the base attack of 10 before the Strength modifier.</summary>
         public const int PracticeSwordPhysicalAttack = 5;
@@ -27,7 +41,16 @@ namespace WarInLocked.Core.Items
         public static readonly Item PracticeStaff = new Item(PracticeStaffId, "Practice Staff", ItemType.Weapon, EquipSlot.MainHand,
             magicalAttack: PracticeStaffMagicalAttack, description: PracticeStaffDescription);
 
-        public static IReadOnlyList<Item> All { get; } = new[] { PracticeSword, PracticeStaff };
+        /// <summary>Potion of lesser healing (#26): heals 50 HP, shared 5 s cooldown, stacks to 10.</summary>
+        public static readonly Item LesserHealingPotion = new Item(LesserHealingPotionId, "Potion of lesser healing", ItemType.Consumable,
+            maxStack: ConsumableStackSize, description: LesserHealingPotionDescription,
+            healAmount: LesserHealingPotionHeal, useCooldownSeconds: ConsumableCooldownSeconds);
+
+        /// <summary>Adventurer's rations (#25): PLACEHOLDER item with no effect yet.</summary>
+        public static readonly Item AdventurersRations = new Item(AdventurersRationsId, "Adventurer's rations", ItemType.Misc,
+            maxStack: ConsumableStackSize, description: AdventurersRationsDescription);
+
+        public static IReadOnlyList<Item> All { get; } = new[] { PracticeSword, PracticeStaff, LesserHealingPotion, AdventurersRations };
 
         /// <summary>The item with this id, or null.</summary>
         public static Item Get(string id)

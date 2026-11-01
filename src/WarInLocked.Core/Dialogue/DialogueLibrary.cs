@@ -30,6 +30,26 @@ namespace WarInLocked.Core.Dialogue
         /// <summary>Turn-in of "Energy Ball practice". PLACEHOLDER text (Dyllan gave none).</summary>
         public const string ColonelPowersEnergyTurnInId = "colonel-powers-energy-turnin";
 
+        /// <summary>Quest 4 offer (#25): Dyllan's two lines said on turning in quest 3; repeated when "Shopping before adventure" was offered but not accepted.</summary>
+        public const string ColonelPowersShopOfferId = "colonel-powers-shop-offer";
+        /// <summary>Turn-in of "Shopping before adventure". PLACEHOLDER text (Dyllan gave none).</summary>
+        public const string ColonelPowersShopTurnInId = "colonel-powers-shop-turnin";
+        /// <summary>
+        /// The Colonel's Talk / Shop choice (#28): said from accepting quest 4 on (and after it is done). Talk gives <see cref="TalkLine"/>;
+        /// Shop ends the dialogue with the action <c>DialogueActions.OpenShop(ShopLibrary.ColonelPowersShopId)</c>.
+        /// </summary>
+        public const string ColonelPowersMenuId = "colonel-powers-menu";
+        /// <summary>PLACEHOLDER line above the Talk / Shop options (Dyllan gave none).</summary>
+        public const string MenuLine = "What do you need, {name}?";
+        public const string TalkOptionText = "Talk";
+        public const string ShopOptionText = "Shop";
+        /// <summary>Dyllan's text from issue #28, verbatim (including his spelling).</summary>
+        public const string TalkLine = "Stop waiting time and let's get moveing.";
+
+        /// <summary>Dyllan's quest 4 speech (#25), verbatim, split into two boxes after the first sentence.</summary>
+        public const string ShopSpeech1 = "you might just be a believable spell slinger.";
+        public const string ShopSpeech2 = "Now one cannot survive with out economic power, to prepare for adventure you must use your skills, or buy supplies that shall aid you. I just so happen to have a potion of healing on me. I shall sell it to you.";
+
         /// <summary>Dyllan's quest 3 speech (#21), split into three boxes at his "..." pauses; joined with spaces it is his text verbatim.</summary>
         public const string EnergySpeech1 = "You are starting to learn, you might just survive this war torn world... Congrats on getting your first spell.";
         public const string EnergySpeech2 = "Now take this and show me you can use the wonderful art that is magic...";
@@ -61,7 +81,10 @@ namespace WarInLocked.Core.Dialogue
                 case ColonelPowersPracticeTurnInId:
                 case ColonelPowersEnergyOfferId: return EnergySpeech(id == ColonelPowersPracticeTurnInId ? "practice-turnin" : "energy-offer");
                 case ColonelPowersEnergyActiveId: return Single("energy-active", "Keep at it, {name}... Energy ball {used}/{required}.");
-                case ColonelPowersEnergyTurnInId: return Single("energy-turnin", "Good, {name}. You have a feel for magic now... Take this for your trouble.");
+                case ColonelPowersEnergyTurnInId: return ShopSpeech("energy-turnin");
+                case ColonelPowersShopOfferId: return ShopSpeech("shop-offer");
+                case ColonelPowersShopTurnInId: return Single("shop-turnin", "Good, {name}. You have shopped like a true adventurer... Take this for your trouble.");
+                case ColonelPowersMenuId: return Menu();
             }
             throw new KeyNotFoundException("No dialogue with id '" + id + "'.");
         }
@@ -69,7 +92,26 @@ namespace WarInLocked.Core.Dialogue
         public static bool Exists(string id) =>
             id == ColonelPowersId || id == ColonelPowersReofferId || id == ColonelPowersActiveId || id == ColonelPowersDoneId ||
             id == ColonelPowersTurnInId || id == ColonelPowersPracticeOfferId || id == ColonelPowersPracticeActiveId || id == ColonelPowersPracticeTurnInId ||
-            id == ColonelPowersEnergyOfferId || id == ColonelPowersEnergyActiveId || id == ColonelPowersEnergyTurnInId;
+            id == ColonelPowersEnergyOfferId || id == ColonelPowersEnergyActiveId || id == ColonelPowersEnergyTurnInId ||
+            id == ColonelPowersShopOfferId || id == ColonelPowersShopTurnInId || id == ColonelPowersMenuId;
+
+        private static DialogueGraph ShopSpeech(string first) =>
+            new DialogueGraph(first, new[]
+            {
+                new DialogueNode(first, "Colonel Powers", ShopSpeech1, nextId: "shop-speech2"),
+                new DialogueNode("shop-speech2", "Colonel Powers", ShopSpeech2),
+            });
+
+        private static DialogueGraph Menu() =>
+            new DialogueGraph("menu", new[]
+            {
+                new DialogueNode("menu", "Colonel Powers", MenuLine, options: new[]
+                {
+                    new DialogueOption(TalkOptionText, "talk"),
+                    new DialogueOption(ShopOptionText, null, DialogueActions.OpenShop(Items.ShopLibrary.ColonelPowersShopId)),
+                }),
+                new DialogueNode("talk", "Colonel Powers", TalkLine),
+            });
 
         private static DialogueGraph EnergySpeech(string first) =>
             new DialogueGraph(first, new[]

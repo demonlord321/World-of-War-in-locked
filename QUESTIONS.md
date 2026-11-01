@@ -109,7 +109,7 @@ My interpretations and placeholders, please confirm:
 - **Quest 3 counts every Energy Ball cast that fires on an enemy** (a target next to you is required, like quest 2), whether or not it kills. Slash casts do not count.
 - **The Practice Staff is given when you accept quest 3** (not when you turn in quest 2), matching how the sword is given at quest 1. It goes into the inventory and is **not equipped** (the sword stays equipped). **If the inventory is full**, accepting is refused with the notice "Your inventory is full", the quest stays Offered, and talking to the Colonel again re-offers it. The staff is only ever given once.
 - **The speech is split into 3 dialogue boxes** at Dyllan's "..." pauses (the text joined is unchanged). Because quest 3 is offered straight after the speech, the same speech is repeated if you say No and talk to him again.
-- **Placeholder Colonel lines for quest 3** (Dyllan gave none): while active "Keep at it, {name}... Energy ball 2/5."; turn-in "Good, {name}. You have a feel for magic now... Take this for your trouble."; after that he says the usual "done" line. The quest 2 turn-in filler lines ("Good, {name}. Practice is how you get strong...") are no longer used: they were replaced by the speech.
+- **Placeholder Colonel lines for quest 3** (Dyllan gave none): while active "Keep at it, {name}... Energy ball 2/5."; turn-in: now Dyllan's quest 4 speech (#25, see entry 11). The quest 2 turn-in filler lines ("Good, {name}. Practice is how you get strong...") are no longer used: they were replaced by the speech.
 - **Slash with a staff** works (any weapon counts) and is (10 + 0 + n) x Strength modifier: the staff adds nothing physical. A basic attack with a staff equals an unarmed attack.
 - **Copper** is the currency (starts at 0, never negative). Nothing spends it yet; it has no UI. Is "copper" the lowest coin, and are there silver and gold?
 
@@ -122,3 +122,26 @@ Hits to kill (level 1 abilities, starting stats, 1.25x slime vulnerability, slim
 | Merchant (Str 8, Int 9) | 20 | 3 / 4 / 5 | 23 | 3 / 4 / 5 |
 
 A Warrior with the sword needs 2 basic attacks (43 each) for a level 1 slime; unarmed 29 each, also 2.
+
+## 11. Quest 4, consumables, titles and shops (#25, #26, #27, #28)
+
+Decided by Dyllan (his text is verbatim, typos included):
+- **Quest 4 "Shopping before adventure"** (turn in at the Colonel): description "Colonel Powers has a potion of lesser healing he is willing to sell to you.", progress "Potion of lesser healing baught 0/1", reward **Title Adventurer + 50 XP + Adventurer's rations**, failure none. Offered after the Colonel's two lines on turning in quest 3 ("you might just be a believable spell slinger." and "Now one cannot survive with out economic power, ...").
+- **Potion of lesser healing**: "A dull red colour. Tastes oddly like strawberries.", heals 50 HP (capped at max health), **shared 5 s use cooldown**, stackable, usable from the inventory and the hotbar.
+- **Title Adventurer**: "You have completed the tutorial. The Adventurer is one who is prepared for the upcoming adventure.", **+2 to all stats while equipped**. One title worn at a time; it can be taken off.
+- **Shop**: after accepting quest 4 the Colonel offers **Talk / Shop**. Talk says "Stop waiting time and let's get moveing.". Shop has **Buy and Sell tabs (Sell disabled)**, stock is the Potion at **25 copper**, and selecting an item offers **Buy / Haggle (Haggle disabled)**. Buying refuses with "Not enough copper" or "Inventory full" and changes nothing.
+
+My interpretations and placeholders, please confirm:
+- **Potion stack size is 10** (placeholder).
+- **Using a potion at full health is refused** ("Already at full health") and nothing is spent, so the cooldown does not start either. Other refusals: "On cooldown", "None left", "Cannot be used". Should it be allowed at full health instead?
+- **The 5 s cooldown is shared by all consumables** and is independent of the ability cooldowns. It ticks while the game updates. Every hotbar slot holding an item shows it.
+- **Hotbar:** a slot holds an ability OR an item. Nothing puts a potion on the bar by itself; the inventory/hotbar screen must call `Combat.AssignItemToHotbar`. Keys 1-5 then use it with no enemy target needed. The slot keeps the item even when the stack runs out ("None left").
+- **Adventurer's rations are a placeholder**: no effect, cannot be used, stack 10, type Misc, description "Dried meat and hard bread. Enough to keep an adventurer going." (mine). I wrote the name with the apostrophe ("Adventurer's rations") but the issue says "Adventurers rations"; which spelling do you want?
+- **The reward text** reads "Title Adventurer, 50 XP, Adventurer's rations" (the issue says "50 Exp"; the game says "XP" everywhere). The title is **earned, not worn automatically**: the player equips it (the titles screen).
+- **If the rations do not fit** in the inventory, the quest stays ready to turn in, nothing is given, and the notice is "Your inventory is full" (like accepting a quest). Make room and talk to the Colonel again.
+- **Quest 4 counts a Potion of lesser healing bought from any shop** (not only the Colonel's). Only one purchase is needed.
+- **Colonel placeholder lines** (Dyllan gave none): above Talk / Shop "What do you need, {name}?"; quest 4 turn-in "Good, {name}. You have shopped like a true adventurer... Take this for your trouble.". The speech is split into two boxes after "spell slinger." and is repeated if you say No to quest 4.
+- **The Talk / Shop choice stays after quest 4 is done** (the old "done" line is no longer used). While quest 4 is ready to turn in, talking hands it in first, then the next talk shows the choice.
+- **The shop's stock is unlimited**; it sells one at a time. The shop name "Colonel Powers" is a placeholder. Core has no screen: the Shop option ends the dialogue with the action `shop:colonel-powers-shop`, and the game has to open the shop screen (not built yet, so Shop currently does nothing in the game).
+- **Titles and stats:** `Stats` stays base + assigned points (what the I menu shows). `EffectiveStats` adds the title and is what modifiers, max HP/EN and damage use. **Milestones (10 / 25 / 50) count the effective stats** (placeholder, I asked Dyllan). Equipping or taking off a title moves current HP/EN with the maximums like assigning or taking back a point does (taking it off never drops health below 1).
+

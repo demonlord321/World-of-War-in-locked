@@ -18,6 +18,10 @@ namespace WarInLocked.Core.Combat
         NotEnoughEnergy,
         /// <summary>The hotbar slot is empty.</summary>
         EmptySlot,
+        /// <summary>A consumable in a hotbar slot was used (#26); see <see cref="CombatResult.ItemResult"/>.</summary>
+        ItemUsed,
+        /// <summary>A consumable in a hotbar slot could not be used; <see cref="CombatResult.ItemResult"/> has the reason. Nothing is spent.</summary>
+        ItemRefused,
         /// <summary>The target was hit and survived.</summary>
         Hit,
         /// <summary>The target was hit and died; quests were told (see <see cref="CombatResult.ReadyQuests"/>).</summary>
@@ -29,8 +33,9 @@ namespace WarInLocked.Core.Combat
         private static readonly Quest[] None = new Quest[0];
 
         public CombatResult(CombatOutcome outcome, Enemy target = null, int damage = 0, IReadOnlyList<Quest> readyQuests = null,
-            Ability abilityUsed = null, bool abilityLeveledUp = false)
+            Ability abilityUsed = null, bool abilityLeveledUp = false, ItemUseResult itemResult = null)
         {
+            ItemResult = itemResult;
             Outcome = outcome;
             Target = target;
             Damage = damage;
@@ -40,6 +45,8 @@ namespace WarInLocked.Core.Combat
         }
 
         public CombatOutcome Outcome { get; }
+        /// <summary>For <see cref="CombatOutcome.ItemUsed"/> / <see cref="CombatOutcome.ItemRefused"/>: what happened to the consumable.</summary>
+        public ItemUseResult ItemResult { get; }
         public Enemy Target { get; }
         public int Damage { get; }
         /// <summary>Quests whose objectives were finished by this attack. They are now ReadyToTurnIn (no reward until turned in).</summary>
@@ -111,8 +118,19 @@ namespace WarInLocked.Core.Combat
             if (seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
             if (AttackCooldownRemaining > 0) AttackCooldownRemaining = Math.Max(0, AttackCooldownRemaining - seconds);
             Hotbar.Update(seconds);
+            _owner.TickItemCooldown(seconds);
             _owner.RegenEnergy(EnergyRegenPerSecond * seconds);
             SyncHotbar();
+        }
+
+        /// <summary>Puts a consumable (by item id) on a hotbar slot, replacing what was there (#26). Keys 1-5 then use it.</summary>
+        public void AssignItemToHotbar(int slotIndex, string itemId) => Hotbar.AssignItem(slotIndex, itemId);
+
+        /// <summary>Called by <c>Character.UseItem</c>: every item slot on the bar shows the shared cooldown.</summary>
+        internal void OnItemUsed(double cooldownSeconds)
+        {
+            for (int i = 0; i < Hotbar.SlotCount; i++)
+                if (Hotbar[i].IsItem) Hotbar.StartCooldown(i, cooldownSeconds);
         }
 
         /// <summary>Puts every learned ability on the hotbar if it is not there yet (Slash lands in slot 1).</summary>
@@ -138,6 +156,11 @@ namespace WarInLocked.Core.Combat
         {
             SyncHotbar();
             var slot = Hotbar.Get(slotIndex);
+            if (slot.IsItem)
+            {
+                var used = _owner.UseItem(slot.ItemId);
+                return new CombatResult(used.Success ? CombatOutcome.ItemUsed : CombatOutcome.ItemRefused, itemResult: used);
+            }
             var state = slot.IsEmpty ? null : _owner.GetAbility(slot.AbilityId);
             var ability = state?.Definition;
             if (ability == null) return new CombatResult(CombatOutcome.EmptySlot);

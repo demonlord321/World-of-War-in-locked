@@ -11,7 +11,7 @@ namespace WarInLocked.Core.Quests
     public enum QuestState { Offered, Active, ReadyToTurnIn, Complete }
 
     /// <summary>What an objective counts: enemies of a type being defeated, or casts of an ability.</summary>
-    public enum ObjectiveKind { Kill, UseAbility }
+    public enum ObjectiveKind { Kill, UseAbility, Buy }
 
     /// <summary>"Kill N enemies of one type" (the enemy type is a plain string such as "slime") or "Use ability X N times".</summary>
     public sealed class QuestObjective
@@ -32,7 +32,13 @@ namespace WarInLocked.Core.Quests
         public static QuestObjective UseAbility(string abilityId, int required, string label) =>
             new QuestObjective(ObjectiveKind.UseAbility, null, abilityId, required, label);
 
+        /// <summary>An objective that counts purchases of an item from a shop (#25), e.g. "Potion of lesser healing baught 0/1".</summary>
+        public static QuestObjective Buy(string itemId, int required, string label) =>
+            new QuestObjective(ObjectiveKind.Buy, null, null, required, label) { ItemId = itemId };
+
         public ObjectiveKind Kind { get; }
+        /// <summary>The item id for a Buy objective, otherwise null.</summary>
+        public string ItemId { get; private set; }
         /// <summary>The enemy type for a Kill objective, otherwise null.</summary>
         public string EnemyType { get; }
         /// <summary>The ability id for a UseAbility objective, otherwise null.</summary>
@@ -49,8 +55,10 @@ namespace WarInLocked.Core.Quests
 
     public sealed class QuestReward
     {
-        public QuestReward(int xp, IEnumerable<string> abilityIds, int copper = 0)
+        public QuestReward(int xp, IEnumerable<string> abilityIds, int copper = 0, IEnumerable<string> titleIds = null, IEnumerable<string> itemIds = null)
         {
+            TitleIds = (titleIds ?? Enumerable.Empty<string>()).ToArray();
+            ItemIds = (itemIds ?? Enumerable.Empty<string>()).ToArray();
             Xp = xp;
             Copper = copper;
             AbilityIds = (abilityIds ?? Enumerable.Empty<string>()).ToArray();
@@ -60,16 +68,22 @@ namespace WarInLocked.Core.Quests
         /// <summary>Copper coins (#21), 0 if none.</summary>
         public int Copper { get; }
         public IReadOnlyList<string> AbilityIds { get; }
+        /// <summary>Titles earned (#25, #27). They are granted, not equipped.</summary>
+        public IReadOnlyList<string> TitleIds { get; }
+        /// <summary>Items put in the inventory (one each), #25.</summary>
+        public IReadOnlyList<string> ItemIds { get; }
 
-        /// <summary>For example "50 XP, Ability Slash" or "50 XP, 50 Copper".</summary>
+        /// <summary>For example "50 XP, Ability Slash", "50 XP, 50 Copper" or "Title Adventurer, 50 XP, Adventurer's rations".</summary>
         public string Text
         {
             get
             {
                 var parts = new List<string>();
+                foreach (var id in TitleIds) parts.Add("Title " + (Characters.TitleLibrary.Get(id)?.Name ?? id));
                 if (Xp > 0) parts.Add(Xp + " XP");
                 if (Copper > 0) parts.Add(Copper + " Copper");
                 foreach (var id in AbilityIds) parts.Add("Ability " + AbilityLibrary.NameOf(id));
+                foreach (var id in ItemIds) parts.Add(Items.ItemLibrary.Get(id)?.Name ?? id);
                 return string.Join(", ", parts);
             }
         }
