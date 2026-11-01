@@ -152,3 +152,13 @@ Decided 1 Nov: the route is Forest of Beginnings, then a path to the map edge, a
 Decided 1 Nov: the forest exit is locked until Colonel Powers gives Main Quest 1 (#52). Placeholder slime stats: level 4 125 HP / 18 attack, level 5 150 HP / 21 attack.
 - Path map slimes (1 Nov): Core slime levels 4 (125 HP, atk 18) and 5 (150 HP, atk 21) as placeholders; per-map range via Enemy.NewRandomSlime(rng, min, max), Path = Enemy.PathMinSlimeLevel..PathMaxSlimeLevel. Map and transitions are Mapmaker's.
 - Leave-forest rule (1 Nov): Character.CanLeaveForest (true once Adventurers start is accepted or completed) and Character.LeaveForestRefusal placeholder; the exit check is Mapmaker's.
+
+## First game milestone: "Up to the Pilgrimage" (set 1 Nov)
+Goal: everything up to the pilgrimage the Colonel mentions in #52, about 3 to 4 hours of play, as the first full test build.
+Done so far (about the first 20 to 30 minutes): creator, opening, Forest of Beginnings with tutorial quests 1 to 4, shop, titles, respawn, Main Quest 1, the Path and the Adventurers' Encampment (ca6eee7, 346 tests).
+Needed before a 3 to 4 hour build is testable:
+- Save and load (#42): a long run must survive closing the game.
+- Slime XP and copper drops (#36) and the death penalty past level 10 (#30), so levelling and money keep going between quests.
+- Defense (#34) and the unused stats (#40), so later fights scale.
+- Inns or rest spots for bind points (#43), once there are towns.
+- The story from Whiplash to the pilgrimage: quests, maps, enemies and NPCs, logged by Dyllan as issues.
