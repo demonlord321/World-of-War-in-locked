@@ -2,6 +2,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using WarInLocked.Core.Characters;
+using WarInLocked.Core.Combat;
 using WarInLocked.Core.Items;
 using WarInLocked.Game.Ui;
 
@@ -277,6 +278,17 @@ public sealed class CharacterMenuScreen : Screen
         gfx.TextCentered(sb, "Free points", new Rectangle(fp.X, fp.Y + 6, fp.Width, 24), Theme.TextDim, 16f);
         gfx.TextCentered(sb, _character.FreeStatPoints.ToString(), new Rectangle(fp.X, fp.Y + 28, fp.Width, 40), any ? Theme.Accent : Theme.TextDim, 34f);
         gfx.TextCentered(sb, any ? "Spend with + (Right / Enter)" : "Level up to earn more", new Rectangle(fp.X, fp.Y + 70, fp.Width, 22), Theme.TextDim, 14f);
+
+        // Combat box (below Free points): recomputed every draw so stats and weapons update live.
+        var cb = new Rectangle(fp.X, fp.Bottom + 10, fp.Width, 84);
+        gfx.Rect(sb, cb, Color.Black * 0.35f);
+        gfx.Border(sb, cb, Theme.PanelBorder, 2);
+        gfx.TextCentered(sb, "Combat", new Rectangle(cb.X, cb.Y + 4, cb.Width, 22), Theme.TextDim, 16f);
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        string phys = $"Physical Attack: {DamageCalculator.PhysicalDamage(_character)} (x{DamageCalculator.StrengthModifier(_character).ToString("0.0", inv)} Str)";
+        string mag = $"Magic Attack: {DamageCalculator.MagicDamage(_character)} (x{DamageCalculator.IntelligenceModifier(_character).ToString("0.0", inv)} Int)";
+        gfx.TextLeft(sb, phys, new Rectangle(cb.X, cb.Y + 28, cb.Width, 24), Theme.Text, 15f, 12);
+        gfx.TextLeft(sb, mag, new Rectangle(cb.X, cb.Y + 54, cb.Width, 24), Theme.Text, 15f, 12);
 
         gfx.Text(sb, "Inventory", new Vector2(panel.X + 24, _slots[EquipCount].Y - 36), Theme.Accent, 22f);
     }
