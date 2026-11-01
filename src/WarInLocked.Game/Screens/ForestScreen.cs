@@ -51,6 +51,8 @@ public sealed class ForestScreen : Screen
     private const float HitFlashSeconds = 0.4f, FloatSeconds = 1.0f;
     private readonly List<FloatText> _floats = new();
     private float _hitFlash;
+    private const float FadeInSeconds = 0.5f;
+    private float _fadeIn;   // seconds of black fade-in left after a respawn
 
     private void OnDamaged(int amount)
     {
@@ -59,7 +61,23 @@ public sealed class ForestScreen : Screen
     }
 
     /// <summary>Unsubscribes from the character's events; called when this forest is left for good (back to the main menu).</summary>
-    private void Detach() => _character.Damaged -= OnDamaged;
+    private void Detach()
+    {
+        _character.Damaged -= OnDamaged;
+        _character.Respawned -= OnRespawned;
+    }
+
+    /// <summary>#29: the goddess grants another chance. Moves the player to the bind point, calms the slimes and clears the combat feedback.</summary>
+    private void OnRespawned(WarInLocked.Core.World.BindPoint bp)
+    {
+        if (bp.MapId == WarInLocked.Core.World.BindPoint.ForestOfBeginningsMapId)
+            _player = new Vector2(bp.TileX * TileSize + (TileSize - PlayerSize) / 2f, bp.TileY * TileSize + (TileSize - PlayerSize) / 2f);
+        // (A bind point on another map would need a map switch; there is only this map today.) The camera follows _player every frame.
+        CombatController.CalmEnemies(_enemies.Values);
+        _floats.Clear();
+        _hitFlash = 0;
+        _fadeIn = FadeInSeconds;
+    }
 
     /// <summary>NPC tiles by id; "colonel-powers" is the first one on the map.</summary>
     public Dictionary<string, Point> NpcPositions { get; } = new();
@@ -71,6 +89,7 @@ public sealed class ForestScreen : Screen
     {
         _character = character;
         _character.Damaged += OnDamaged;
+        _character.Respawned += OnRespawned;
         string path = Path.Combine(AppContext.BaseDirectory, "Assets", "Maps", "forest-of-beginnings.txt");
         _map = TileMap.Parse(File.ReadAllText(path));
 
@@ -143,7 +162,7 @@ public sealed class ForestScreen : Screen
         if (k.IsKeyDown(Keys.Right) || k.IsKeyDown(Keys.D)) dir.X += 1;
         if (k.IsKeyDown(Keys.Up) || k.IsKeyDown(Keys.W)) dir.Y -= 1;
         if (k.IsKeyDown(Keys.Down) || k.IsKeyDown(Keys.S)) dir.Y += 1;
-        if (_character.IsDead) dir = Vector2.Zero;   // PLACEHOLDER: a fallen player just stands there
+        if (_character.IsDead) dir = Vector2.Zero;   // a fallen player cannot move; the respawn countdown runs in Combat.Update
         if (dir != Vector2.Zero) dir.Normalize();
 
         // Move one axis at a time so the player slides along walls.
@@ -168,6 +187,7 @@ public sealed class ForestScreen : Screen
         _character.Combat.UpdateEnemies(_enemies.Values.ToList(), dt, playerTile.X, playerTile.Y);
 
         if (_hitFlash > 0) _hitFlash = Math.Max(0, _hitFlash - dt);
+        if (_fadeIn > 0) _fadeIn = Math.Max(0, _fadeIn - dt);
         foreach (var ft in _floats) ft.Age += dt;
         _floats.RemoveAll(ft => ft.Age >= FloatSeconds);
 
@@ -185,7 +205,7 @@ public sealed class ForestScreen : Screen
         _camera.X = MathHelper.Clamp(_player.X + PlayerSize / 2f - w / 2f, 0, Math.Max(0, _map.Width * TileSize - w));
         _camera.Y = MathHelper.Clamp(_player.Y + PlayerSize / 2f - h / 2f, 0, Math.Max(0, _map.Height * TileSize - h));
 
-        _talkTarget = TalkTarget.Find(playerTile.X, playerTile.Y, NpcSpots());
+        _talkTarget = _character.IsDead ? null : TalkTarget.Find(playerTile.X, playerTile.Y, NpcSpots());
         if (_talkTarget != null && (input.Pressed(Keys.E) || input.Pressed(Keys.Enter)))
         {
             _dialogueNpc = _talkTarget.Id;
@@ -200,10 +220,10 @@ public sealed class ForestScreen : Screen
             if (input.Pressed(Keys.D1 + slot) || input.Pressed(Keys.NumPad1 + slot)) Attack(playerTile, slot);
 
         // I opens the character menu; it gets this same screen back on close, so the position is kept.
-        if (input.Pressed(Keys.I)) { Screens.Replace(new CharacterMenuScreen(this, _character)); return; }
+        if (!_character.IsDead && input.Pressed(Keys.I)) { Screens.Replace(new CharacterMenuScreen(this, _character)); return; }
 
         // K opens the abilities screen (#20); it also gets this same screen back on close.
-        if (input.Pressed(Keys.K)) { Screens.Replace(new AbilitiesScreen(this, _character)); return; }
+        if (!_character.IsDead && input.Pressed(Keys.K)) { Screens.Replace(new AbilitiesScreen(this, _character)); return; }
 
         if (input.Pressed(Keys.Escape)) { Detach(); Screens.Replace(new MainMenuScreen()); }
     }
@@ -357,12 +377,17 @@ public sealed class ForestScreen : Screen
 
         Hud.Draw(sb, gfx, _character);   // player panel top-right, hotbar bottom-centre (#11, #12)
 
-        // PLACEHOLDER death overlay (no respawn yet): the world just stops reacting.
+        // #29: while fallen, a dimmed overlay with Dyllan's text and a countdown to the automatic respawn at the bind point.
         if (_character.IsDead)
         {
-            gfx.Rect(sb, new Rectangle(0, 0, w, h), Color.Black * 0.45f);
-            gfx.TextCentered(sb, "You have fallen", new Rectangle(0, h / 2 - 60, w, 70), new Color(220, 60, 60), 56f);
-            gfx.TextCentered(sb, "(placeholder - no respawn yet)  -  Esc: menu", new Rectangle(0, h / 2 + 8, w, 30), Theme.TextDim, 18f);
+            gfx.Rect(sb, new Rectangle(0, 0, w, h), Color.Black * 0.6f);
+            gfx.TextCentered(sb, Character.FallenTitle, new Rectangle(0, h / 2 - 90, w, 70), new Color(220, 60, 60), 56f);
+            gfx.TextCentered(sb, Character.FallenSubtitle, new Rectangle(0, h / 2 - 12, w, 36), Theme.Text, 24f);
+            var bar = new Rectangle((w - 420) / 2, h / 2 + 46, 420, 16);
+            gfx.Rect(sb, bar, new Color(30, 30, 40));
+            gfx.Rect(sb, new Rectangle(bar.X, bar.Y, (int)(bar.Width * Math.Clamp(_character.RespawnProgress, 0, 1)), bar.Height), Theme.Accent);
+            gfx.Border(sb, bar, Theme.PanelBorder, 2);
+            gfx.TextCentered(sb, $"Respawning in {(int)Math.Ceiling(_character.RespawnRemaining)}s", new Rectangle(0, bar.Bottom + 8, w, 30), Theme.TextDim, 20f);
         }
 
         // Quest tracker while a quest is active, e.g. "Slice and slime 0/5".
@@ -405,5 +430,8 @@ public sealed class ForestScreen : Screen
             gfx.Border(sb, prompt, Theme.Accent, 2);
             gfx.TextCentered(sb, "Talk (E)", prompt, Theme.Accent, 18f);
         }
+
+        // Fade in from black just after a respawn.
+        if (_fadeIn > 0) gfx.Rect(sb, new Rectangle(0, 0, w, h), Color.Black * (_fadeIn / FadeInSeconds));
     }
 }
