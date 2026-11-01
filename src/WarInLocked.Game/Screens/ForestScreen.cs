@@ -56,7 +56,7 @@ public sealed class ForestScreen : Screen
     private float _toastLeft;
 
     // #29 combat feedback: a red screen-edge flash, a player flash and floating "-N" numbers when the player is hit.
-    private sealed class FloatText { public string Text = ""; public float X, Y, Age; }
+    private sealed class FloatText { public string Text = ""; public float X, Y, Age; public Color Color = new(255, 80, 80); public bool JellyIcon; public float Life = FloatSeconds; }
     private const float HitFlashSeconds = 0.4f, FloatSeconds = 1.0f;
     private readonly List<FloatText> _floats = new();
     private const float XpFloatSeconds = 2.0f;
@@ -340,7 +340,7 @@ public sealed class ForestScreen : Screen
         if (_fadeIn > 0) _fadeIn = Math.Max(0, _fadeIn - dt);
         if (_xpLostAge < XpFloatSeconds) _xpLostAge += dt;
         foreach (var ft in _floats) ft.Age += dt;
-        _floats.RemoveAll(ft => ft.Age >= FloatSeconds);
+        _floats.RemoveAll(ft => ft.Age >= ft.Life);
 
         // Defeated slimes come back at their spawn tile once it is free.
         foreach (var due in _respawns.Update(dt))
@@ -434,6 +434,12 @@ public sealed class ForestScreen : Screen
                 _slimes.Remove(dead);
                 _enemies.Remove(dead);
                 if (_spawnOf.Remove(dead, out var spawn)) _respawns.Schedule(spawn.X, spawn.Y);
+                float kx = dead.X * TileSize + TileSize / 2f, ky = dead.Y * TileSize;
+                if (result.XpGained > 0)
+                    _floats.Add(new FloatText { Text = $"+{result.XpGained} XP", X = kx, Y = ky - 6, Color = new Color(255, 214, 40), Life = 1.8f });
+                if (result.DroppedItem != null && !result.DropLost)
+                    _floats.Add(new FloatText { Text = $"+1 {result.DroppedItem.Name}", X = kx, Y = ky + 18, Color = new Color(120, 230, 120), JellyIcon = true, Life = 2.2f });
+                if (result.DropLost) Toast(CombatController.DropLostText, 3f);
                 break;
         }
 
@@ -640,10 +646,18 @@ public sealed class ForestScreen : Screen
         // Floating damage numbers rise from the player and fade.
         foreach (var ft in _floats)
         {
-            float t = ft.Age / FloatSeconds;
-            var box = Screen(ft.X - 40, ft.Y - 22 - t * 28, 80, 24);
+            float t = ft.Age / ft.Life;
+            var box = Screen(ft.X - 80, ft.Y - 22 - t * 28, 160, 24);
             gfx.TextCentered(sb, ft.Text, new Rectangle(box.X + 1, box.Y + 1, box.Width, box.Height), Color.Black * (1 - t), 22f);
-            gfx.TextCentered(sb, ft.Text, box, new Color(255, 80, 80) * (1 - t), 22f);
+            gfx.TextCentered(sb, ft.Text, box, ft.Color * (1 - t), 22f);
+            if (ft.JellyIcon)   // a little green blob left of the text (#36)
+            {
+                float tw = gfx.Measure(ft.Text, 22f).X;
+                int ix = box.X + (int)(box.Width / 2f - tw / 2f) - 20, iy = box.Y + 5;
+                gfx.Rect(sb, new Rectangle(ix + 2, iy, 12, 14), new Color(90, 200, 90) * (1 - t));
+                gfx.Rect(sb, new Rectangle(ix, iy + 4, 16, 10), new Color(90, 200, 90) * (1 - t));
+                gfx.Rect(sb, new Rectangle(ix + 4, iy + 3, 3, 3), Color.White * (1 - t));
+            }
         }
 
         gfx.Rect(sb, new Rectangle(0, 0, w, 36), Color.Black * 0.55f);

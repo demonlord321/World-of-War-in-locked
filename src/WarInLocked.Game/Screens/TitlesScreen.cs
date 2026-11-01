@@ -138,9 +138,9 @@ public sealed class TitlesScreen : Screen
         foreach (var line in gfx.Wrap(desc, p.Width - 48, 19f))
         {
             gfx.Text(sb, line, new Vector2(x, y), Theme.TextDim, 19f);
-            y += 27;
+            y += 24;
         }
-        y += 14;
+        y += 8;
         foreach (var line in title.BonusLines)
         {
             gfx.Text(sb, line, new Vector2(x, y), Theme.Accent, 21f);
@@ -157,7 +157,7 @@ public sealed class TitlesScreen : Screen
             foreach (var stat in StatTypes.All)
             {
                 int baseValue = _character.Stats[stat];
-                int shown = baseValue + title.AllStatsBonus;
+                int shown = baseValue + _character.TitleBonusFor(title, stat);   // capped below the next milestone (#33)
                 var pos = new Vector2(x + (col % 2) * 300, y + (col / 2) * 26);
                 gfx.Text(sb, $"{stat}  {baseValue} -> {shown}", pos, Theme.Text, 17f);
                 col++;
