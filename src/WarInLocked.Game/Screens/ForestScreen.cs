@@ -50,6 +50,7 @@ public sealed class ForestScreen : Screen
     private NpcSpot? _talkTarget;
     private Point? _savePointTile;   // the save point the player can use right now (#54)
     private string? _dialogueNpc;
+    private float _markerTime;
     private QuestPrompt? _questPrompt;
     private string? _toast;
     private float _toastLeft;
@@ -327,6 +328,7 @@ public sealed class ForestScreen : Screen
         // Provoked slimes hit the player when next to them (they do not chase); Damaged fires from inside this call.
         _character.Combat.UpdateEnemies(_enemies.Values.ToList(), dt, playerTile.X, playerTile.Y);
 
+        _markerTime += dt;
         if (_hitFlash > 0) _hitFlash = Math.Max(0, _hitFlash - dt);
         if (_fadeIn > 0) _fadeIn = Math.Max(0, _fadeIn - dt);
         if (_xpLostAge < XpFloatSeconds) _xpLostAge += dt;
@@ -451,6 +453,22 @@ public sealed class ForestScreen : Screen
         foreach (var (id, p) in NpcPositions)
             if (MapDefs.HasDialogue(id))
                 yield return new NpcSpot(id, id, p.X, p.Y); // the NPC id doubles as its dialogue id
+    }
+
+    private static readonly Color MarkerYellow = new(255, 214, 40), MarkerGrey = new(170, 170, 170);
+
+    /// <summary>Quest marker over a quest giver: yellow ! available, grey ? in progress, yellow ? ready to hand in (Core QuestMarkers).</summary>
+    private void DrawQuestMarker(SpriteBatch sb, Gfx gfx, string npcId, Point p)
+    {
+        var m = QuestMarkers.MarkerFor(npcId, _character);
+        if (m == QuestMarker.None) return;
+        string glyph = m == QuestMarker.Available ? "!" : "?";
+        var color = m == QuestMarker.InProgress ? MarkerGrey : MarkerYellow;
+        float bob = m == QuestMarker.InProgress ? 0 : (float)Math.Sin(_markerTime * 4) * 2f;
+        var box = Screen(p.X * TileSize - 4, p.Y * TileSize - 50 + bob, 40, 28);
+        for (int dx = -1; dx <= 1; dx++) for (int dy = -1; dy <= 1; dy++)
+            if (dx != 0 || dy != 0) gfx.TextCentered(sb, glyph, new Rectangle(box.X + dx * 2, box.Y + dy * 2, box.Width, box.Height), Color.Black, 28f);
+        gfx.TextCentered(sb, glyph, box, color, 28f);
     }
 
     private bool IsNpc(int x, int y)
@@ -600,6 +618,7 @@ public sealed class ForestScreen : Screen
             gfx.Rect(sb, r, id == "whiplash" ? new Color(130, 60, 60) : id == "barracks-master" ? new Color(70, 85, 120) : new Color(90, 100, 60));
             gfx.Border(sb, r, Color.Black, 2);
             gfx.TextCentered(sb, MapDefs.NpcName(id), Screen(p.X * TileSize - 60, p.Y * TileSize - 22, 152, 20), Theme.Text, 14f);
+            DrawQuestMarker(sb, gfx, id, p);
         }
 
         var pr = Screen(_player.X, _player.Y, PlayerSize, PlayerSize);
