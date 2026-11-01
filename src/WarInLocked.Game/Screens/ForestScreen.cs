@@ -107,6 +107,7 @@ public sealed class ForestScreen : Screen
         _fadeIn = FadeInSeconds;
         _xpLost = _character.LastRespawnXpLost;   // set by Core before the event
         _xpLostAge = _xpLost > 0 ? 0 : XpFloatSeconds;
+        if (_character.DeathDebuffText is { } debuff) Toast(debuff, 4f);   // #35
     }
 
     /// <summary>NPC tiles by id; "colonel-powers" is the first one on the map.</summary>
@@ -435,7 +436,9 @@ public sealed class ForestScreen : Screen
                 _enemies.Remove(dead);
                 if (_spawnOf.Remove(dead, out var spawn)) _respawns.Schedule(spawn.X, spawn.Y);
                 float kx = dead.X * TileSize + TileSize / 2f, ky = dead.Y * TileSize;
-                if (result.XpGained > 0)
+                if (result.XpBlocked)
+                    _floats.Add(new FloatText { Text = "No XP while Death debuff 3", X = kx, Y = ky - 6, Color = new Color(200, 150, 255), Life = 2f });
+                else if (result.XpGained > 0)
                     _floats.Add(new FloatText { Text = $"+{result.XpGained} XP", X = kx, Y = ky - 6, Color = new Color(255, 214, 40), Life = 1.8f });
                 if (result.DroppedItem != null && !result.DropLost)
                     _floats.Add(new FloatText { Text = $"+1 {result.DroppedItem.Name}", X = kx, Y = ky + 18, Color = new Color(120, 230, 120), JellyIcon = true, Life = 2.2f });
@@ -647,7 +650,7 @@ public sealed class ForestScreen : Screen
         foreach (var ft in _floats)
         {
             float t = ft.Age / ft.Life;
-            var box = Screen(ft.X - 80, ft.Y - 22 - t * 28, 160, 24);
+            var box = Screen(ft.X - 140, ft.Y - 22 - t * 28, 280, 24);
             gfx.TextCentered(sb, ft.Text, new Rectangle(box.X + 1, box.Y + 1, box.Width, box.Height), Color.Black * (1 - t), 22f);
             gfx.TextCentered(sb, ft.Text, box, ft.Color * (1 - t), 22f);
             if (ft.JellyIcon)   // a little green blob left of the text (#36)

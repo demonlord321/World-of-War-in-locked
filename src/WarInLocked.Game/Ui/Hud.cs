@@ -94,6 +94,15 @@ public static class Hud
             gfx.TextCentered(sb, $"In combat {(int)Math.Ceiling(c.CombatCooldownRemaining)}s", cr, new Color(255, 110, 100), 16f);
             below += 28;
         }
+        // #35: Death debuff box (level, effect and time left come from Core's DeathDebuffText).
+        if (c.HasDeathDebuff && c.DeathDebuffText is { } dd)
+        {
+            var dr = new Rectangle(panel.X, below, panel.Width, 24);
+            gfx.Rect(sb, dr, new Color(40, 10, 50) * 0.8f);
+            gfx.Border(sb, dr, new Color(170, 90, 220), 1);
+            gfx.TextCentered(sb, dd, dr, new Color(215, 170, 255), 15f);
+            below += 28;
+        }
 
         if (c.FreeStatPoints > 0)
         {
