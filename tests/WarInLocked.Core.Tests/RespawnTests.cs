@@ -143,6 +143,39 @@ public class RespawnTests
     }
 
     [Fact]
+    public void CalmEnemiesAlsoHealsLivingSlimesToFullAndLeavesDeadOnesDead()
+    {
+        var slimes = new List<Enemy> { Enemy.NewSlime(2), Enemy.NewSlime(3), Enemy.NewSlime(1) };
+        slimes[0].TakeDamage(60);
+        slimes[1].TakeDamage(1);
+        slimes[2].TakeDamage(1000);
+        Assert.True(slimes[0].IsDamaged);
+        CombatController.CalmEnemies(slimes);
+        Assert.Equal(slimes[0].MaxHp, slimes[0].Hp);
+        Assert.Equal(slimes[1].MaxHp, slimes[1].Hp);
+        Assert.False(slimes[0].IsDamaged);
+        Assert.False(slimes[0].IsAggro);
+        Assert.True(slimes[2].IsDead);
+        Assert.Equal(0, slimes[2].Hp);
+    }
+
+    [Fact]
+    public void DyingRepeatedlyCannotWearASlimeDown()
+    {
+        var c = Hero();
+        var slime = Enemy.NewSlime(3);
+        slime.TileX = slime.TileY = 5;
+        c.Respawned += _ => CombatController.CalmEnemies(new[] { slime });
+        for (int i = 0; i < 3; i++)
+        {
+            slime.TakeDamage(10);
+            Fall(c);
+            c.UpdateRespawn(5);
+            Assert.Equal(slime.MaxHp, slime.Hp);
+        }
+    }
+
+    [Fact]
     public void ADeadCharacterCannotUseItemsAndFallsOnlyOnce()
     {
         var c = Hero();

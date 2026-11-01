@@ -122,11 +122,15 @@ namespace WarInLocked.Core.Combat
             AttackCooldownRemaining = AttackIntervalSeconds;
         }
 
-        /// <summary>Back to passive (used when the player respawns, #29): no aggro, no attack timer.</summary>
+        /// <summary>
+        /// Back to passive and fully healed (used when the player respawns, #29): no aggro, no attack timer, full HP, so dying
+        /// again and again cannot wear a slime down. A dead enemy stays dead (the respawn queue brings it back as a new one).
+        /// </summary>
         public void Calm()
         {
             IsAggro = false;
             AttackCooldownRemaining = 0;
+            if (!IsDead) Hp = MaxHp;
         }
 
         /// <summary>Counts down the attack timer; returns true when an attack lands now. The timer waits (at 0) while the target is out of reach.</summary>
