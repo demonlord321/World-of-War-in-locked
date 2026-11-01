@@ -98,3 +98,4 @@ Decided 1 Nov (#15): max health = 100 x Constitution modifier (Mystic 50, Mercha
 - #17: max energy = base x Wisdom modifier. Base not given yet (Warrior Wis 7, Merchant 9, Mystic 13 give 0.7 / 0.9 / 2.3).
 - #18: the I menu shows each stat with its modifier in brackets, e.g. "Str 10 (2)", for all 8 stats, all on the same curve. Mapmaker's screen, using Core's modifier.
 Decided 1 Nov (#17): energy base 50 (Warrior 35, Merchant 45, Mystic 115). Note: Mystic energy 115 is above Mystic health 50.
+Decided 1 Nov: Mystics having more energy than health is intended (casters don't tank). Energy built in 0dc13a7 (201 tests).
