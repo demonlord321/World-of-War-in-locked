@@ -296,11 +296,8 @@ public sealed class CharacterMenuScreen : Screen
     private void DrawRightPanel(SpriteBatch sb, Gfx gfx, InputState input, Rectangle panel)
     {
         gfx.Text(sb, _character.Name, new Vector2(panel.X + 24, panel.Y + 12), Theme.Text, 28f);
-        // #21: copper at the top right of the header, with a small coin dot.
-        string copper = $"Copper: {_character.Copper}";
-        var cm = gfx.Measure(copper, 20f);
-        gfx.Text(sb, copper, new Vector2(panel.Right - 24 - cm.X, panel.Y + 14), Hud.CopperLight, 20f);
-        Hud.CoinDot(sb, gfx, panel.Right - 24 - (int)cm.X - 18, panel.Y + 20);
+        // #21: money at the top right of the header, as gold / silver / copper coins.
+        Hud.DrawMoney(sb, gfx, _character.Copper, panel.Right - 24, panel.Y + 14, 20f, Theme.Text);
         gfx.Text(sb, $"{_character.Race}  -  {_character.Distribution}", new Vector2(panel.X + 24, panel.Y + 50), Theme.Accent, 18f);
 
         gfx.Text(sb, $"Level {_character.Level}  -  XP {_character.XpIntoLevel}/{_character.XpForNextLevel}", new Vector2(panel.Right - 24 - gfx.Measure($"Level {_character.Level}  -  XP {_character.XpIntoLevel}/{_character.XpForNextLevel}", 18f).X, panel.Y + 50), Theme.Text, 18f);

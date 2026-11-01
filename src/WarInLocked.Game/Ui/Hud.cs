@@ -78,10 +78,8 @@ public static class Hud
         XpBar(sb, gfx, new Rectangle(panel.X + 12, panel.Y + 90, panel.Width - 24, 18), c);
 
         // #21: copper under the XP bar, small and right-aligned.
-        string copper = $"{c.Copper} copper";
-        var cm = gfx.Measure(copper, 14f);
-        gfx.Text(sb, copper, new Vector2(panel.Right - 12 - cm.X, panel.Y + 113), Theme.TextDim, 14f);
-        CoinDot(sb, gfx, panel.Right - 12 - (int)cm.X - 16, panel.Y + 116);
+        // Money as gold / silver / copper coins, right-aligned.
+        DrawMoney(sb, gfx, c.Copper, panel.Right - 12, panel.Y + 113, 14f, Theme.TextDim);
 
         if (c.FreeStatPoints > 0)
         {
@@ -98,13 +96,61 @@ public static class Hud
     /// <summary>The copper colour, shared by the coin dots.</summary>
     public static readonly Color CopperColor = new(205, 127, 50), CopperLight = new(240, 176, 110);
 
+    public static readonly Color GoldColor = new(230, 190, 60), GoldLight = new(255, 235, 150);
+    public static readonly Color SilverColor = new(192, 196, 204), SilverLight = new(240, 242, 246);
+
     /// <summary>A small round copper coin (10x10) drawn from rectangles, top-left at (x, y).</summary>
-    public static void CoinDot(SpriteBatch sb, Gfx gfx, int x, int y)
+    public static void CoinDot(SpriteBatch sb, Gfx gfx, int x, int y) => CoinDot(sb, gfx, x, y, CopperColor, CopperLight);
+
+    /// <summary>A small round coin (10x10) in the given colours, top-left at (x, y).</summary>
+    public static void CoinDot(SpriteBatch sb, Gfx gfx, int x, int y, Color body, Color shine)
     {
-        gfx.Rect(sb, new Rectangle(x + 2, y, 6, 10), CopperColor);
-        gfx.Rect(sb, new Rectangle(x, y + 2, 10, 6), CopperColor);
-        gfx.Rect(sb, new Rectangle(x + 1, y + 1, 8, 8), CopperColor);
-        gfx.Rect(sb, new Rectangle(x + 3, y + 2, 3, 2), CopperLight);
+        gfx.Rect(sb, new Rectangle(x + 2, y, 6, 10), body);
+        gfx.Rect(sb, new Rectangle(x, y + 2, 10, 6), body);
+        gfx.Rect(sb, new Rectangle(x + 1, y + 1, 8, 8), body);
+        gfx.Rect(sb, new Rectangle(x + 3, y + 2, 3, 2), shine);
+    }
+
+    // TODO: switch to Core Money once it lands (Money.GoldPart/SilverPart/CopperPart).
+    // 100 copper = 1 silver, 100 silver = 1 gold.
+    private static (int Gold, int Silver, int Copper) CoinParts(int total)
+    {
+        total = Math.Max(0, total);
+        return (total / 10000, total / 100 % 100, total % 100);
+    }
+
+    /// <summary>
+    /// Draws a copper total as coin dots + amounts ("1g 23s 45c"), hiding leading zero
+    /// denominations, right-aligned so the last character ends at <paramref name="right"/>.
+    /// Returns the drawn width.
+    /// </summary>
+    public static int DrawMoney(SpriteBatch sb, Gfx gfx, int total, int right, int y, float size, Color textColor)
+    {
+        var (g, s, c) = CoinParts(total);
+        var parts = new System.Collections.Generic.List<(string Text, Color Body, Color Shine)>();
+        if (g > 0) parts.Add(($"{g}g", GoldColor, GoldLight));
+        if (g > 0 || s > 0) parts.Add(($"{s}s", SilverColor, SilverLight));
+        parts.Add(($"{c}c", CopperColor, CopperLight));
+
+        const int dot = 10, dotGap = 3, partGap = 8;
+        int width = 0;
+        var widths = new int[parts.Count];
+        for (int i = 0; i < parts.Count; i++)
+        {
+            widths[i] = (int)Math.Ceiling(gfx.Measure(parts[i].Text, size).X);
+            width += dot + dotGap + widths[i] + (i > 0 ? partGap : 0);
+        }
+        int x = right - width;
+        int dotY = y + (int)(size * 0.6f) - dot / 2 + 1;
+        for (int i = 0; i < parts.Count; i++)
+        {
+            if (i > 0) x += partGap;
+            CoinDot(sb, gfx, x, dotY, parts[i].Body, parts[i].Shine);
+            x += dot + dotGap;
+            gfx.Text(sb, parts[i].Text, new Vector2(x, y), textColor, size);
+            x += widths[i];
+        }
+        return width;
     }
 
     private static void XpBar(SpriteBatch sb, Gfx gfx, Rectangle r, Character c)
