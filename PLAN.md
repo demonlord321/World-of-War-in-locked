@@ -108,3 +108,4 @@ Open questions: Does Slash add the weapon bonus? Does its arc hit every enemy in
 Decided 1 Nov (#20): Slash = (base attack + n) x Strength modifier, where base attack = 10 + weapon bonus (Practice Sword +5, so 15), and n = 5 at level 1. At 10 Strength, a sword hit is 30 and Slash is 40.
 Decided 1 Nov: Slash needs a weapon in the main hand and can't be used unarmed.
 Status 1 Nov, 08:53: #19 and #20 rules in b919b0d (225 tests), not run in game yet. Slimes respawn after 10 s. Placeholders: Energy Ball (10 + n) x Int modifier, 15 energy, 5 s cooldown; Colonel's quest 2 hand-in lines are filler. Ability screen: Mapmaker.
+Status 1 Nov, 08:57: abilities screen on K in 3ab52ec. #8 to #20 (except #15 defense beyond health) are all on main and await Dyllan's test. Known nit: the Energy Ball label spills past its hotbar slot.
