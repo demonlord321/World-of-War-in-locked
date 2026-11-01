@@ -163,3 +163,4 @@ Needed before a 3 to 4 hour build is testable:
 - Defense (#34) and the unused stats (#40), so later fights scale.
 - Inns or rest spots for bind points (#43), once there are towns.
 - The story from Whiplash to the pilgrimage: quests, maps, enemies and NPCs, logged by Dyllan as issues.
+- #56 Core (1 Nov): GameClock, Character.Clock, ticked from Combat.Update. HUD display is Mapmaker's.

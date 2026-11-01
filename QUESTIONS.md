@@ -169,3 +169,9 @@ A filler "Path map" between the forest and the encampment is filled with passive
 - **The level range is per map**: `Enemy.NewRandomSlime(rng)` stays forest 1-3; `Enemy.NewRandomSlime(rng, minLevel, maxLevel)` takes a range (Path: `Enemy.PathMinSlimeLevel`..`PathMaxSlimeLevel` = 4..5). Uniform over the range, as in the forest.
 - The level tag colour (`Hud.SlimeLevelColor`) has only green/yellow/orange, so level 4 and 5 show orange like level 3 until Mapmaker picks colours.
 - **Leaving the starting forest (Dyllan, 1 Nov):** the player cannot leave the Forest of Beginnings until Colonel Powers has given "Adventurers start" (**accepted or completed counts**; offered but not yet accepted does not). `Character.CanLeaveForest`. **PLACEHOLDER refusal text** (Dyllan gave none): "Colonel Powers isn't finished with you yet." (`Character.LeaveForestRefusal`). The forest exit (Mapmaker) must check it and show the text; Core does not block movement itself.
+
+### Game clock (#56)
+Dyllan: "Starts at 8 am and runs 5 times faster then normal time."
+- **Day 1 starts at 8:00 am. 1 real second = 5 game seconds** (so a game hour is 12 real minutes and a day is 4 h 48 min of real time). `Character.Clock` (`GameClock`): `Day`, `Hour` (0-23), `Minute`, `TimeText` ("8:00 am"), `Text` ("Day 1, 8:00 am"), `Advance(hours)`, `AdvanceToMorning()`, `Update(realSeconds)`.
+- **It is ticked from `Combat.Update`**, which the Game already calls every frame, so it **pauses whenever the Game stops calling update** (menus, dialogue, shop). **Placeholder question: should the clock also stop during dialogue/shop?** (that depends on whether the screen keeps calling `Combat.Update` there.) It keeps running while the character is fallen.
+- **The time format ("8:00 am", "Day 1, 8:00 am") is a placeholder.**

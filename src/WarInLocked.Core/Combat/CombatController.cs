@@ -118,6 +118,7 @@ namespace WarInLocked.Core.Combat
             if (seconds < 0) throw new ArgumentOutOfRangeException(nameof(seconds));
             if (AttackCooldownRemaining > 0) AttackCooldownRemaining = Math.Max(0, AttackCooldownRemaining - seconds);
             if (CombatCooldownRemaining > 0) CombatCooldownRemaining = Math.Max(0, CombatCooldownRemaining - seconds);
+            _owner.Clock.Update(seconds);    // #56: the game clock only runs while the Game keeps calling Update (it pauses in menus)
             _owner.UpdateRespawn(seconds);   // #29: counts down while fallen, then respawns
             Hotbar.Update(seconds);
             _owner.TickItemCooldown(seconds);
