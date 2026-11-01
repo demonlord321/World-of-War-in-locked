@@ -33,8 +33,70 @@ namespace WarInLocked.Core.Characters
         /// <summary>Real-time combat rules, hotbar and cooldowns (#11). Call <c>Combat.Update(seconds)</c> every frame.</summary>
         public CombatController Combat { get; }
 
-        /// <summary>Always 1 for now: levelling is on hold (#12). XP just accumulates in <see cref="Xp"/>.</summary>
-        public int Level => 1;
+        /// <summary>Starts at 1 and rises as <see cref="Xp"/> grows (#13); see <see cref="Leveling"/>.</summary>
+        public int Level { get; private set; } = 1;
+
+        /// <summary>XP gathered inside the current level (0 up to <see cref="XpForNextLevel"/> - 1).</summary>
+        public int XpIntoLevel => (int)(Xp - Leveling.TotalXpFor(Level));
+        /// <summary>XP that the current level needs in total before the next one.</summary>
+        public int XpForNextLevel => Leveling.CostToNext(Level);
+        /// <summary>0..1 for the XP bar.</summary>
+        public float XpFraction => (float)XpIntoLevel / XpForNextLevel;
+
+        /// <summary>Stat points earned and not yet spent.</summary>
+        public int FreeStatPoints { get; private set; }
+        private readonly int[] _assigned = new int[StatTypes.Count];
+        /// <summary>How many points have been put into a stat so far (what <see cref="UnassignPoint"/> can take back).</summary>
+        public int AssignedPoints(StatType stat) => _assigned[(int)stat];
+
+        /// <summary>Raised once for every level gained, with the new level. Handy for a "Level up!" notice.</summary>
+        public event Action<int> LeveledUp;
+        /// <summary>Bumps on every level-up and every stat point change; poll it to refresh a UI.</summary>
+        public int Version { get; private set; }
+
+        /// <summary>
+        /// Puts one free point into a stat. Returns false if there are none left.
+        /// Constitution and Wisdom raise the maximum health/energy, and the current value rises by the same amount.
+        /// </summary>
+        public bool AssignPoint(StatType stat)
+        {
+            if (FreeStatPoints <= 0) return false;
+            ChangeStat(stat, +1);
+            FreeStatPoints--;
+            Version++;
+            return true;
+        }
+
+        /// <summary>Takes a previously assigned point back (never below the stat's creation value). Returns false if none was assigned there.</summary>
+        public bool UnassignPoint(StatType stat)
+        {
+            if (_assigned[(int)stat] <= 0) return false;
+            ChangeStat(stat, -1);
+            FreeStatPoints++;
+            Version++;
+            return true;
+        }
+
+        private void ChangeStat(StatType stat, int delta)
+        {
+            int oldHealth = MaxHealth, oldEnergy = MaxEnergy;
+            Stats = Stats.WithAdded(stat, delta);
+            _assigned[(int)stat] += delta;
+            int dh = MaxHealth - oldHealth, de = MaxEnergy - oldEnergy;
+            if (delta > 0)
+            {
+                if (dh != 0 && Health > 0) Health += dh;
+                _energy += de;
+            }
+            else
+            {
+                // Giving a point back lowers the current value too, but never kills and never drops below 1 health.
+                if (dh != 0 && Health > 0) Health = Math.Max(1, Health + dh);
+                _energy = Math.Max(0, _energy + de);
+            }
+            Health = Math.Min(Health, MaxHealth);
+            _energy = Math.Min(_energy, MaxEnergy);
+        }
 
         /// <summary>Health per point of Constitution. Warrior (Con 13) = 260, Merchant (Con 9) = 180, Mystic (Con 5) = 100.</summary>
         public const int HealthPerCon = 20;
@@ -93,10 +155,21 @@ namespace WarInLocked.Core.Characters
         public bool HasFlag(string flag) => _flags.Contains(flag);
         public void SetFlag(string flag) => _flags.Add(flag);
 
-        public void GainXp(int amount)
+        /// <summary>Adds XP (total). Can level up several times at once. Returns how many levels were gained; each one grants free stat points.</summary>
+        public int GainXp(int amount)
         {
             if (amount < 0) throw new ArgumentOutOfRangeException(nameof(amount));
             Xp += amount;
+            int gained = 0;
+            while (Xp >= Leveling.TotalXpFor(Level + 1))
+            {
+                Level++;
+                gained++;
+                FreeStatPoints += Leveling.StatPointsForReaching(Level);
+                Version++;
+                LeveledUp?.Invoke(Level);
+            }
+            return gained;
         }
 
         /// <summary>Learns an ability. Returns false if it was already known.</summary>
@@ -110,6 +183,7 @@ namespace WarInLocked.Core.Characters
         public string Name { get; }
         public Race Race { get; }
         public StatDistribution Distribution { get; }
-        public StatBlock Stats { get; }
+        /// <summary>Current stats: the creation values plus any assigned points.</summary>
+        public StatBlock Stats { get; private set; }
     }
 }

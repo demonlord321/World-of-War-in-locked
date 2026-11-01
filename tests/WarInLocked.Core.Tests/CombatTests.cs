@@ -74,7 +74,7 @@ public class CombatTests
     }
 
     [Fact]
-    public void HealthAndEnergyStartFullAndLevelIsOne()
+    public void HealthAndEnergyStartFullAndLevelStartsAtOne()
     {
         var c = Warrior();
         Assert.Equal(c.MaxHealth, c.Health);
@@ -269,6 +269,8 @@ public class CombatTests
         Assert.Single(completed);
         Assert.Equal(QuestState.Complete, c.Quests.Get(QuestLibrary.SliceAndSlimeId).State);
         Assert.Equal(50, c.Xp);
+        Assert.Equal(2, c.Level);          // the quest's 50 XP is exactly the cost of level 1 -> 2
+        Assert.Equal(3, c.FreeStatPoints);
         Assert.Contains("slash", c.Abilities);
     }
 

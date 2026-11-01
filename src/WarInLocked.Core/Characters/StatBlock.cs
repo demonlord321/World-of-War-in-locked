@@ -58,6 +58,14 @@ namespace WarInLocked.Core.Characters
             return new StatBlock(values);
         }
 
+        /// <summary>A copy with <paramref name="amount"/> added to one stat.</summary>
+        public StatBlock WithAdded(StatType stat, int amount)
+        {
+            var values = (int[])_values.Clone();
+            values[(int)stat] += amount;
+            return new StatBlock(values);
+        }
+
         public override string ToString()
         {
             var parts = new string[_values.Length];
