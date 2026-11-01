@@ -259,18 +259,50 @@ public class GroundItemsTests
     // ---- per map
 
     [Fact]
-    public void EachMapHasItsOwnGroundAndItIsKeptForTheSession()
+    public void EachMapHasItsOwnGround()
     {
         var c = Hero();
-        c.Combat.Ground.Add(ItemLibrary.SlimeJelly, 1, 5, 5);
         var forest = c.Combat.Ground;
         c.EnterMap("path");
         Assert.NotSame(forest, c.Combat.Ground);
+        Assert.Equal("path", c.CurrentMapId);
+    }
+
+    [Fact]
+    public void LeavingAMapWipesItsGroundItemsEvenIfYouComeBack()
+    {
+        var c = Hero();
+        c.Combat.Ground.Add(ItemLibrary.SlimeJelly, 1, 5, 5);
+        c.EnterMap("path");
         Assert.Empty(c.Combat.Ground.Items);
-        c.EnterMap("forest");
-        Assert.Same(forest, c.Combat.Ground);
+        c.EnterMap("forest");                       // back again: the map refreshed, the jelly is gone
+        Assert.Equal(0, c.Combat.Ground.Count);
+        Assert.Equal(PickUpOutcome.NothingThere, c.PickUp(5, 5).Outcome);
+    }
+
+    [Fact]
+    public void ItemsDroppedOnTheNewMapSurviveTheTripBackOnlyWhileYouStay()
+    {
+        var c = Hero();
+        c.EnterMap("path");
+        c.Combat.Ground.Add(ItemLibrary.SlimeJelly, 2, 3, 3);
+        Assert.Equal(1, c.Combat.Ground.Count);     // still there while you stay
+        c.EnterMap("path");                         // the same map reloaded (e.g. respawn at a bind point on this map): kept
         Assert.Equal(1, c.Combat.Ground.Count);
-        Assert.Equal("forest", c.CurrentMapId);
+        c.EnterMap("forest");
+        c.EnterMap("path");
+        Assert.Equal(0, c.Combat.Ground.Count);
+    }
+
+    [Fact]
+    public void RespawningOnTheSameMapKeepsTheGroundItems()
+    {
+        var c = Hero();
+        c.Combat.Ground.Add(ItemLibrary.SlimeJelly, 1, 5, 5);
+        c.TakeDamage(10000);
+        c.UpdateRespawn(1000);                      // Core respawn never touches the ground; the Game only calls EnterMap on a respawn if the bind point is on another map
+        Assert.False(c.IsDead);
+        Assert.Equal(1, c.Combat.Ground.Count);
     }
 
     [Fact]

@@ -27,11 +27,17 @@ namespace WarInLocked.Core.Characters
         private readonly GroundItemsByMap _ground = new GroundItemsByMap();
         /// <summary>The map the player is on, as told by <see cref="EnterMap"/> (null before the first call).</summary>
         public string CurrentMapId { get; private set; }
-        /// <summary>The ground items of every map visited this session (not saved). <see cref="CombatController.Ground"/> is the current map's.</summary>
+        /// <summary>The ground items by map id (not saved). Only the current map's can hold anything: <see cref="EnterMap"/> wipes the rest. <see cref="CombatController.Ground"/> is the current map's.</summary>
         public GroundItemsByMap GroundByMap => _ground;
-        /// <summary>The Game calls this whenever a map is loaded: kills and drops now land on that map's ground.</summary>
+        /// <summary>
+        /// The Game calls this whenever a map is loaded: kills and drops now land on that map's ground. Dyllan: "items vanish when map refreshes.
+        /// Leaving then returning. They remain so long as you do." So entering a different map (or coming back to one you left) starts with an
+        /// empty ground; calling it again for the map the player is already on (same id) keeps the items. The Game only loads a map on a respawn
+        /// when the bind point is on another map, so respawning on the same map keeps them.
+        /// </summary>
         public void EnterMap(string mapId)
         {
+            if (mapId != CurrentMapId) _ground.Clear();
             CurrentMapId = mapId;
             Combat.Ground = _ground.ForMap(mapId);
         }

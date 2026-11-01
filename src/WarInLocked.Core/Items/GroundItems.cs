@@ -59,7 +59,7 @@ namespace WarInLocked.Core.Items
     /// <summary>
     /// The items lying on one map (#36, #62). Dyllan: "enemies slain leave the items where they are dropped, player choses to pick them up or not.
     /// If players inventory slots are all filled a message pops up. 'Inventory currently at capacity.' With this also add a drop functionality
-    /// to inventory items, players can drop items to pick up new ones." Not saved; no despawn timer.
+    /// to inventory items, players can drop items to pick up new ones." Not saved; no despawn timer; they vanish when the player leaves the map.
     /// </summary>
     public sealed class GroundItems
     {
@@ -166,7 +166,7 @@ namespace WarInLocked.Core.Items
         }
     }
 
-    /// <summary>One <see cref="GroundItems"/> per map id, kept for the session so leaving a map and coming back finds the items still there.</summary>
+    /// <summary>One <see cref="GroundItems"/> per map id. <see cref="WarInLocked.Core.Characters.Character.EnterMap"/> empties them all when the player changes map, so only the current map ever holds items.</summary>
     public sealed class GroundItemsByMap
     {
         private readonly Dictionary<string, GroundItems> _maps = new Dictionary<string, GroundItems>();

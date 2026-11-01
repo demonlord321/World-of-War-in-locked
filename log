@@ -1,6 +1,21 @@
   Determining projects to restore...
   All projects are up-to-date for restore.
+/workspace/World-of-War-in-locked/src/WarInLocked.Core/World/Wanderer.cs(55,76): warning CS8632: The annotation for nullable reference types should only be used in code within a '#nullable' annotations context. [/workspace/World-of-War-in-locked/src/WarInLocked.Core/WarInLocked.Core.csproj]
   WarInLocked.Core -> /workspace/World-of-War-in-locked/src/WarInLocked.Core/bin/Debug/netstandard2.1/WarInLocked.Core.dll
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/BarracksMasterTests.cs(44,103): warning CS8625: Cannot convert null literal to non-nullable reference type. [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/AbilityTests.cs(100,29): warning CS8600: Converting null literal or possible null value to non-nullable type. [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/AbilityTests.cs(106,21): warning CS8602: Dereference of a possibly null reference. [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/DeathDebuffTests.cs(173,26): warning CS8600: Converting null literal or possible null value to non-nullable type. [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/DeathDebuffTests.cs(179,44): warning CS8602: Dereference of a possibly null reference. [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/AbilityTests.cs(215,26): warning CS8600: Converting null literal or possible null value to non-nullable type. [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/AbilityTests.cs(218,22): warning CS8602: Dereference of a possibly null reference. [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/DeathDebuffTests.cs(197,26): warning CS8600: Converting null literal or possible null value to non-nullable type. [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/DeathDebuffTests.cs(203,25): warning CS8602: Dereference of a possibly null reference. [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/QuestTests.cs(203,23): warning CS8600: Converting null literal or possible null value to non-nullable type. [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/QuestTests.cs(210,73): warning CS8604: Possible null reference argument for parameter 'path' in 'string File.ReadAllText(string path)'. [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/DeathDebuffTests.cs(76,9): warning xUnit2000: The literal or constant value true should be passed as the 'expected' argument in the call to 'Assert.Equal(expected, actual)' in method 'AttackPowerIsCutToo' on type 'DeathDebuffTests'. Swap the parameter values. (https://xunit.net/xunit.analyzers/rules/xUnit2000) [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/DamageTests.cs(264,78): warning xUnit1026: Theory method 'BasicAttackHitsAgainstALevelOneSlime' on test class 'DamageTests' does not use parameter 'unusedA'. Use the parameter, or remove the parameter and associated data. (https://xunit.net/xunit.analyzers/rules/xUnit1026) [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
+/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/DamageTests.cs(264,91): warning xUnit1026: Theory method 'BasicAttackHitsAgainstALevelOneSlime' on test class 'DamageTests' does not use parameter 'unusedB'. Use the parameter, or remove the parameter and associated data. (https://xunit.net/xunit.analyzers/rules/xUnit1026) [/workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/WarInLocked.Core.Tests.csproj]
   WarInLocked.Core.Tests -> /workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/bin/Debug/net8.0/WarInLocked.Core.Tests.dll
 Test run for /workspace/World-of-War-in-locked/tests/WarInLocked.Core.Tests/bin/Debug/net8.0/WarInLocked.Core.Tests.dll (.NETCoreApp,Version=v8.0)
 VSTest version 17.11.1 (x64)
@@ -8,4 +23,4 @@ VSTest version 17.11.1 (x64)
 Starting test execution, please wait...
 A total of 1 test files matched the specified pattern.
 
-Passed!  - Failed:     0, Passed:   556, Skipped:     0, Total:   556, Duration: 106 ms - WarInLocked.Core.Tests.dll (net8.0)
+Passed!  - Failed:     0, Passed:   559, Skipped:     0, Total:   559, Duration: 156 ms - WarInLocked.Core.Tests.dll (net8.0)
