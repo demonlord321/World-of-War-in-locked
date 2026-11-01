@@ -313,7 +313,8 @@ public sealed class ForestScreen : Screen
         }
 
         foreach (var slime in _slimes)
-            slime.Update(dt, _map, (x, y) =>
+            if (_enemies[slime].IsAggro) slime.Glide(dt);   // angry slimes are stepped by Core's chase (#31)
+            else slime.Update(dt, _map, (x, y) =>
                 OverlapsTile(_player, x, y) || IsNpc(x, y) || _map.DoorAt(x, y) != null ||
                 _slimes.Exists(o => o != slime && o.TileX == x && o.TileY == y));
 
@@ -325,8 +326,14 @@ public sealed class ForestScreen : Screen
             enemy.Update(dt);
         }
         _character.Combat.Update(dt);   // cooldowns, energy regen, Slash onto the hotbar
-        // Provoked slimes hit the player when next to them (they do not chase); Damaged fires from inside this call.
-        _character.Combat.UpdateEnemies(_enemies.Values.ToList(), dt, playerTile.X, playerTile.Y);
+        // Provoked slimes chase one tile at a time and hit when next to the player (#31); Damaged fires from inside this call.
+        _character.Combat.UpdateEnemies(_enemies.Values.ToList(), dt, playerTile.X, playerTile.Y,
+            (x, y) => _map.IsWalkable(x, y) && !IsNpc(x, y) && _map.DoorAt(x, y) == null && !OverlapsTile(_player, x, y));
+        foreach (var slime in _slimes)
+        {
+            var enemy = _enemies[slime];
+            if (enemy.IsAggro && (enemy.TileX != slime.TileX || enemy.TileY != slime.TileY)) slime.GlideTo(enemy.TileX, enemy.TileY);
+        }
 
         _markerTime += dt;
         if (_hitFlash > 0) _hitFlash = Math.Max(0, _hitFlash - dt);
