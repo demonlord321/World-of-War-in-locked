@@ -111,14 +111,6 @@ public static class Hud
         gfx.Rect(sb, new Rectangle(x + 3, y + 2, 3, 2), shine);
     }
 
-    // TODO: switch to Core Money once it lands (Money.GoldPart/SilverPart/CopperPart).
-    // 100 copper = 1 silver, 100 silver = 1 gold.
-    private static (int Gold, int Silver, int Copper) CoinParts(int total)
-    {
-        total = Math.Max(0, total);
-        return (total / 10000, total / 100 % 100, total % 100);
-    }
-
     /// <summary>
     /// Draws a copper total as coin dots + amounts ("1g 23s 45c"), hiding leading zero
     /// denominations, right-aligned so the last character ends at <paramref name="right"/>.
@@ -126,7 +118,8 @@ public static class Hud
     /// </summary>
     public static int DrawMoney(SpriteBatch sb, Gfx gfx, int total, int right, int y, float size, Color textColor)
     {
-        var (g, s, c) = CoinParts(total);
+        long g = Money.Gold(total);
+        int s = Money.Silver(total), c = Money.CopperPart(total);
         var parts = new System.Collections.Generic.List<(string Text, Color Body, Color Shine)>();
         if (g > 0) parts.Add(($"{g}g", GoldColor, GoldLight));
         if (g > 0 || s > 0) parts.Add(($"{s}s", SilverColor, SilverLight));
