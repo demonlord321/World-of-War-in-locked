@@ -15,12 +15,12 @@ namespace WarInLocked.Core.World
         public const int StartHour = 8;
         public const int MinutesPerDay = 24 * 60;
 
-        /// <summary>Night begins at 7 pm (19:00) and lasts until 7 am (Dyllan, #57).</summary>
+        /// <summary>Night begins at 7 pm (19:00) and lasts until 8 am; day is 8 am to 7 pm, with no gaps (Dyllan, #57).</summary>
         public const int NightStartHour = 19;
-        /// <summary>Night ends at 7 am. PLACEHOLDER: Dyllan's day is 8 am to 6 pm, so 6-7 pm and 7-8 am are undefined and count as day.</summary>
-        public const int NightEndHour = 7;
-        /// <summary>The hour a night's sleep ends: 8 am (#55).</summary>
-        public const int WakeHour = 8;
+        /// <summary>Night ends, and day begins, at 8 am (Dyllan, #57).</summary>
+        public const int NightEndHour = 8;
+        /// <summary>The hour a night's sleep ends: 8 am (#55), the start of the day.</summary>
+        public const int WakeHour = NightEndHour;
 
         private double _totalMinutes = StartHour * 60;   // game minutes since midnight of day 1
 
@@ -41,7 +41,7 @@ namespace WarInLocked.Core.World
         /// <summary>The minute, 0-59.</summary>
         public int Minute => (int)(MinutesIntoDay % 60);
 
-        /// <summary>True from 7 pm to 7 am. PLACEHOLDER: 6-7 pm and 7-8 am are undefined in the issue and count as day (7-8 am simply because night ends at 7).</summary>
+        /// <summary>True from 7 pm (19:00) up to 8 am (07:59 is still night); <see cref="IsDay"/> is 8 am to 7 pm (Dyllan, #57).</summary>
         public bool IsNight => Hour >= NightStartHour || Hour < NightEndHour;
         public bool IsDay => !IsNight;
 

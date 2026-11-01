@@ -73,7 +73,7 @@ public class DayNightTests
     [Fact]
     public void ALiveSlimeKeepsItsLevelWhenNightFalls_OnlyNewSpawnsUseTheTime()
     {
-        var clock = At(10);                            // 6 pm: day (placeholder gap)
+        var clock = At(10);                            // 6 pm: day
         var live = Enemy.NewSlime(3, clock);
         clock.Advance(2);                              // 8 pm: night
         Assert.True(clock.IsNight);

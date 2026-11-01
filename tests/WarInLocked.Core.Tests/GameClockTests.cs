@@ -62,17 +62,16 @@ public class GameClockTests
     }
 
     [Theory]
-    [InlineData(0, false)]   // placeholder gap hours count as day
+    [InlineData(0, true)]
     [InlineData(6, true)]
-    [InlineData(7, false)]   // night ends at 7 am
-    [InlineData(8, false)]
+    [InlineData(7, true)]    // 7-8 am is still night (no gap)
+    [InlineData(8, false)]   // day starts at 8 am
     [InlineData(12, false)]
-    [InlineData(18, false)]  // 6-7 pm: undefined, day (placeholder)
-    [InlineData(19, true)]
+    [InlineData(18, false)]  // 6-7 pm is day (no gap)
+    [InlineData(19, true)]   // night starts at 7 pm
     [InlineData(23, true)]
-    public void NightIsSevenPmToSevenAm(int hour, bool night)
+    public void NightIsSevenPmToEightAm(int hour, bool night)
     {
-        if (hour == 0) { Assert.True(new GameClock().IsDay); return; }   // start is 8 am: day
         var c = new GameClock();
         c.Advance((hour - 8 + 24) % 24);
         Assert.Equal(hour, c.Hour);
@@ -116,6 +115,20 @@ public class GameClockTests
         late.AdvanceToMorning();
         Assert.Equal(2, late.Day);
         Assert.Equal(8, late.Hour);
+    }
+
+    [Fact]
+    public void SevenFiftyNineAmIsStillNightAndSleepWakesAtEightTheSameDay()
+    {
+        var c = new GameClock();
+        c.Advance(23.99);                                      // 7:59 am day 2
+        Assert.Equal(2, c.Day);
+        Assert.Equal(7, c.Hour);
+        Assert.True(c.IsNight);
+        c.AdvanceToMorning();
+        Assert.Equal(2, c.Day);
+        Assert.Equal("8:00 am", c.TimeText);
+        Assert.True(c.IsDay);
     }
 
     [Fact]
