@@ -182,3 +182,7 @@ Needed before a 3 to 4 hour build is testable:
 - Decided (#36): slimes give 5 × level XP (levels 1-3) and one Slime Jelly (sell-only), no copper. Open: XP above level 3 and at night, jelly price and seller, full-inventory drops.
 - #35 (1 Nov): stacking Death debuff in Core (-25/50/75% max health, energy and damage; 30 s then 60 s; level 3 no kill XP; saved); #36: Slime Jelly base price 2 copper, night XP moved to #60.
 - Item stacking (1 Nov): all non-equipment items of the same id stack to 99 in one slot (confirmed by Dyllan), equipment never stacks; saves keep counts. Mapmaker shows the count on the slot.
+- Decided (#35): Death debuff stacks to 3 (-25% 30 s, -50% 60 s, -75% 60 s and no kill XP); whole stack clears when the timer ends.
+- Decided: Slime Jelly base price 2 copper; night XP moves to #60.
+- Decided: all non-equipment items stack to 99 per slot; equipment never stacks.
+- Idea (#61): carry weight; over the limit cuts movement 75% (intended punishment for hoarding, even though slimes then outrun you).
