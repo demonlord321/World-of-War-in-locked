@@ -63,12 +63,13 @@ public class SlimeAggroTests
         var list = new[] { s };
         c.Combat.BasicAttack(5, 5, list);
         Assert.True(s.IsAggro);
-        Assert.Equal(3.0, s.AttackCooldownRemaining);
+        Assert.Equal(6.0, Enemy.AttackIntervalSeconds);
+        Assert.Equal(Enemy.AttackIntervalSeconds, s.AttackCooldownRemaining);
 
-        Assert.Equal(0, c.Combat.UpdateEnemies(list, 2.9, 5, 5));
+        Assert.Equal(0, c.Combat.UpdateEnemies(list, Enemy.AttackIntervalSeconds - 0.1, 5, 5));
         Assert.Equal(12, c.Combat.UpdateEnemies(list, 0.2, 5, 5));
         Assert.Equal(c.MaxHealth - 12, c.Health);
-        Assert.Equal(0, c.Combat.UpdateEnemies(list, 2.9, 5, 5));
+        Assert.Equal(0, c.Combat.UpdateEnemies(list, Enemy.AttackIntervalSeconds - 0.1, 5, 5));
         Assert.Equal(12, c.Combat.UpdateEnemies(list, 0.2, 5, 5));
         Assert.Equal(c.MaxHealth - 24, c.Health);
     }
@@ -81,7 +82,7 @@ public class SlimeAggroTests
             var c = Hero();
             var s = Slime(level);
             s.Provoke();
-            Assert.Equal(atk, c.Combat.UpdateEnemies(new[] { s }, 3, 5, 5));
+            Assert.Equal(atk, c.Combat.UpdateEnemies(new[] { s }, Enemy.AttackIntervalSeconds, 5, 5));
         }
     }
 
@@ -93,7 +94,7 @@ public class SlimeAggroTests
         c.Damaged += n => seen.Add(n);
         var s = Slime(3);
         s.Provoke();
-        c.Combat.UpdateEnemies(new[] { s }, 3, 5, 5);
+        c.Combat.UpdateEnemies(new[] { s }, Enemy.AttackIntervalSeconds, 5, 5);
         Assert.Equal(new[] { 15 }, seen);
         Assert.True(c.InCombat);
         Assert.Equal(15.0, c.CombatCooldownRemaining, 3);
@@ -144,7 +145,7 @@ public class SlimeAggroTests
         s.Provoke();
         var list = new[] { s };
         int hits = 0;
-        while (!c.IsDead && hits++ < 100) c.Combat.UpdateEnemies(list, 3, 5, 5);
+        while (!c.IsDead && hits++ < 100) c.Combat.UpdateEnemies(list, Enemy.AttackIntervalSeconds, 5, 5);
         Assert.True(c.IsDead);
         Assert.Equal(0, c.Health);
         Assert.Equal(1, died);

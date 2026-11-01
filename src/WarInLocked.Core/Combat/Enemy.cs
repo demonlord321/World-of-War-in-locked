@@ -16,15 +16,15 @@ namespace WarInLocked.Core.Combat
         public const int MinSlimeLevel = 1, MaxSlimeLevel = 3;
         /// <summary>PLACEHOLDER: slimes take 1.25x from both physical and magical damage ("vulnerable to both", #24).</summary>
         public const double SlimeVulnerability = 1.25;
-        /// <summary>Aggro'd enemies attack the player this often (Dyllan: every 3 s).</summary>
-        public const double AttackIntervalSeconds = 3.0;
+        /// <summary>Aggro'd enemies attack the player this often (Dyllan: every 6 s, was 3).</summary>
+        public const double AttackIntervalSeconds = 6.0;
         /// <summary>How long <see cref="AttackFlash"/> lasts after an attack, in seconds.</summary>
         public const double AttackFlashDuration = 0.25;
         /// <summary>How long the hit flicker lasts, in seconds.</summary>
         public const double FlashDuration = 0.25;
 
         /// <param name="level">Shown level (slimes 1-3).</param>
-        /// <param name="attack">Attack value (slimes: damage dealt to the player every 3 s once aggro'd).</param>
+        /// <param name="attack">Attack value (slimes: damage dealt to the player every 6 s once aggro'd).</param>
         /// <param name="physicalMultiplier">Multiplier on physical damage taken: 1 normal, below 1 resistant, above 1 vulnerable.</param>
         /// <param name="magicalMultiplier">Multiplier on magical damage taken.</param>
         public Enemy(string type, int maxHp, int level = 1, int attack = 0, double physicalMultiplier = 1.0, double magicalMultiplier = 1.0)
