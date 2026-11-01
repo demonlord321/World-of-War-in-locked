@@ -167,3 +167,4 @@ Needed before a 3 to 4 hour build is testable:
 - #57 Core (1 Nov): night = +10 monster levels (Enemy.LevelFor / NewSlime(base, clock)), slime stats to level 15 (placeholder), MapIds.IsSafeZone. Night is 7 pm to 8 am, day 8 am to 7 pm (confirmed by Dyllan).
 - #55 Core (1 Nov): Barracks Master dialogue + BarracksMaster.Apply (Rest +3 h, Sleep until morning at night, Set as home). Mapmaker wires the NPC menu and the notices.
 - #54 Core (1 Nov): SaveGame (JSON, version 1) capture/restore/Save/Load, SavePoints (save-colonel, save-whiplash). Mapmaker wires Load game, the save point interaction and a clock HUD.
+- #54 to #57 Game wiring done (1 Nov, 532d4e5): clock HUD, night overlay and night slimes, Barracks Master menu, save point interaction and Load game on the main menu. Issues #54 to #57 are still open on GitHub for Dyllan to test and close.
