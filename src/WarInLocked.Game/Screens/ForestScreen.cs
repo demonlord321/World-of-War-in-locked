@@ -431,7 +431,7 @@ public sealed class ForestScreen : Screen
                 Toast("Not enough energy", 2f);
                 break;
             case CombatOutcome.NeedsWeapon:
-                Toast(AbilityDefinition.NeedsWeaponText, 2f);
+                Toast(result.Reason ?? AbilityDefinition.NeedsWeaponText, 2f);
                 break;
             case CombatOutcome.ItemUsed:
                 Toast($"{result.ItemResult!.Item.Name}: healed {result.ItemResult.Healed} HP", 2f);

@@ -54,6 +54,16 @@ namespace WarInLocked.Core.Saving
             return null;
         }
 
+        /// <summary>
+        /// Saves at a save point into a manual slot (#42: the player picks Save 1, 2 or 3; the autosave slot is not for manual saves). Same refusals and
+        /// notices as the single-file <see cref="Interact(Character,string,int,int,out string,string)"/>.
+        /// </summary>
+        public static bool Interact(Character c, string mapId, int playerX, int playerY, SaveSlot slot, out string notice, string directory = null)
+        {
+            if (!SaveSlots.IsManual(slot)) throw new ArgumentException("A save point writes a manual slot.", nameof(slot));
+            return Interact(c, mapId, playerX, playerY, out notice, SaveSlots.PathOf(slot, directory));
+        }
+
         /// <summary>Why the game cannot be saved right now (fallen, in combat), or null.</summary>
         public static string CannotSaveReason(Character c) => c.IsDead ? FallenNotice : c.InCombat ? CombatNotice : null;
 

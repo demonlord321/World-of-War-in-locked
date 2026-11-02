@@ -175,7 +175,8 @@ public sealed class AbilitiesScreen : Screen
         Row("Energy cost", d.EnergyCost.ToString());
         Row("Cooldown", $"{d.CooldownSeconds:0.#} s");
         Row("Hotbar", SlotText(a));
-        if (d.RequiresWeapon) Row("Requires", "a weapon", Theme.Accent);
+        if (d.RequiresStaff) Row("Requires", "a staff", Theme.Accent);
+        else if (d.RequiresWeapon) Row("Requires", "a weapon", Theme.Accent);
 
         string? reason = CombatController.CannotCastReason(_character, d);
         if (reason != null)

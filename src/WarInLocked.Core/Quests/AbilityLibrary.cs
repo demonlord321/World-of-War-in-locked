@@ -8,9 +8,10 @@ namespace WarInLocked.Core.Quests
     /// <summary>What an ability is and costs (#11, #20). Numbers are placeholders, see QUESTIONS.md.</summary>
     public sealed class AbilityDefinition
     {
-        public AbilityDefinition(string id, string name, AbilityKind kind, string description, int basePower, int energyCost, double cooldownSeconds, bool requiresWeapon = false)
+        public AbilityDefinition(string id, string name, AbilityKind kind, string description, int basePower, int energyCost, double cooldownSeconds, bool requiresWeapon = false, bool requiresStaff = false)
         {
             RequiresWeapon = requiresWeapon;
+            RequiresStaff = requiresStaff;
             Id = id;
             Name = name;
             Kind = kind;
@@ -31,8 +32,12 @@ namespace WarInLocked.Core.Quests
         public double CooldownSeconds { get; }
         /// <summary>True if a weapon must be in the main hand to cast it (Slash). Unarmed casts are refused and cost nothing.</summary>
         public bool RequiresWeapon { get; }
+        /// <summary>True if a staff must be in the main hand (Energy Ball, #39: Dyllan "Yes it does..."). A staff is a main-hand weapon with Magical Attack (see <c>DamageCalculator.HasStaff</c>).</summary>
+        public bool RequiresStaff { get; }
         /// <summary>The reason shown when a weapon is missing.</summary>
         public const string NeedsWeaponText = "Needs a weapon";
+        /// <summary>The reason shown when a staff is missing (PLACEHOLDER text).</summary>
+        public const string NeedsStaffText = "Needs a staff";
 
         /// <summary>The power n at an ability level: BasePower + (level - 1). Slash: 5, 6, 7, ...</summary>
         public int PowerAt(int level) => BasePower + (level < 1 ? 0 : level - 1);
@@ -49,9 +54,9 @@ namespace WarInLocked.Core.Quests
             Slash, "Slash", AbilityKind.Physical, "Cut an arc with your blade.", 5, 10, 5.0, requiresWeapon: true);
 
         /// <summary>Energy Ball (#23): magic, (magic base + n) x Intelligence modifier with n = 5 + (level - 1), 5 energy, 5 s cooldown.
-        /// Magic base = 10 + main-hand Magical Attack (a staff adds to it). It does NOT require a staff (placeholder, see QUESTIONS.md).</summary>
+        /// Magic base = 10 + main-hand Magical Attack (a staff adds to it). It REQUIRES a staff in the main hand (#39, Dyllan: "Yes it does...").</summary>
         public static readonly AbilityDefinition EnergyBallDefinition = new AbilityDefinition(
-            EnergyBall, "Energy Ball", AbilityKind.Magic, "Conjure an orb of pure energy.", 5, 5, 5.0);
+            EnergyBall, "Energy Ball", AbilityKind.Magic, "Conjure an orb of pure energy.", 5, 5, 5.0, requiresStaff: true);
 
         public static IReadOnlyList<AbilityDefinition> All { get; } = new[] { SlashDefinition, EnergyBallDefinition };
 

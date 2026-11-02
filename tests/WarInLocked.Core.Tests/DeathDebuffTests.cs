@@ -1,5 +1,7 @@
 using WarInLocked.Core.Characters;
 using WarInLocked.Core.Combat;
+using WarInLocked.Core.Dialogue;
+using WarInLocked.Core.Interaction;
 using WarInLocked.Core.Items;
 using WarInLocked.Core.Saving;
 using WarInLocked.Core.World;
@@ -100,6 +102,43 @@ public class DeathDebuffTests
         Die(c);
         Assert.Equal(3, c.DeathDebuffLevel);                 // level 3 is the maximum
         Assert.Equal(60.0, c.DeathDebuffRemaining);          // guess: the timer restarts
+    }
+
+    [Fact]
+    public void ADeathAtLevelThreeJustResetsTheTimer()   // #35 Dyllan confirmed: "If you die at 3, timer resets"
+    {
+        var c = Hero();
+        Die(c); Die(c); Die(c);
+        Assert.Equal(3, c.DeathDebuffLevel);
+        c.Combat.Update(40);
+        Assert.Equal(20.0, c.DeathDebuffRemaining, 3);
+        Die(c);
+        Assert.Equal(3, c.DeathDebuffLevel);
+        Assert.Equal(60.0, c.DeathDebuffRemaining, 3);
+    }
+
+    [Fact]
+    public void ARestInTheBarracksDoesNotClearTheDebuff()   // #35 Dyllan confirmed: resting does not remove it
+    {
+        var c = Hero();
+        Die(c); Die(c);
+        c.Combat.Update(10);
+        double left = c.DeathDebuffRemaining;
+        Assert.True(BarracksMaster.Apply(c, BarracksActions.Rest, BindPoint.Tutorial, out _));
+        Assert.Equal(2, c.DeathDebuffLevel);
+        Assert.True(c.DeathDebuffRemaining <= left);
+        Assert.True(c.DeathDebuffRemaining > 0);
+        Assert.Equal(c.MaxHealth, c.Health);
+        Assert.Equal(2, c.DeathDebuffLevel);
+    }
+
+    [Fact]
+    public void TheTimerKeepsRunningThroughCombatUpdatesWithNothingElseGoingOn()   // #35: "menus never pause" is the Game calling Update every frame
+    {
+        var c = Hero();
+        Die(c);
+        for (int i = 0; i < 100; i++) c.Combat.Update(0.1);
+        Assert.Equal(20.0, c.DeathDebuffRemaining, 2);
     }
 
     [Fact]

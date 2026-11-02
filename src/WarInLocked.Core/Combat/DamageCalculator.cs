@@ -32,6 +32,16 @@ namespace WarInLocked.Core.Combat
             return weapon != null && weapon.Type == ItemType.Weapon;
         }
 
+        /// <summary>
+        /// True if the main hand holds a staff: a weapon with Magical Attack (the Practice Staff). PLACEHOLDER definition, there is no separate staff
+        /// item type. Whether a staff also counts as a weapon for Slash is still open (it does today: <see cref="HasWeapon"/> accepts any weapon).
+        /// </summary>
+        public static bool HasStaff(Character c)
+        {
+            var weapon = c.Equipment.Get(EquipmentSlot.MainHand);
+            return weapon != null && weapon.Type == ItemType.Weapon && weapon.MagicalAttack > 0;
+        }
+
         /// <summary>The Physical Attack bonus of the weapon in the main hand (0 when unarmed or holding a non-weapon).</summary>
         public static int PhysicalAttackBonus(Character c)
         {

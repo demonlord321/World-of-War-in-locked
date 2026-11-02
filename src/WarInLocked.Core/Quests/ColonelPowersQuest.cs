@@ -14,7 +14,7 @@ namespace WarInLocked.Core.Quests
         public const string SwordGivenFlag = "practice-sword-given";
         public const string SwordNotice = "Practice sword given";
         public const string StaffGivenFlag = "practice-staff-given";
-        public const string StaffNotice = "Practice staff given";
+        public const string StaffNotice = "Press I to open your character sheet and equip the staff.";   // Dyllan: "Select I to open up character sheet, equip the staff..."
         public const string InventoryFullNotice = "Your inventory is full";
 
         // The Colonel's quests in order: quest id, dialogue when offered-but-not-accepted, while active, and when ready to turn in.

@@ -34,8 +34,9 @@ namespace WarInLocked.Core.Combat
 
         public CombatResult(CombatOutcome outcome, Enemy target = null, int damage = 0, IReadOnlyList<Quest> readyQuests = null,
             Ability abilityUsed = null, bool abilityLeveledUp = false, ItemUseResult itemResult = null,
-            int xpGained = 0, int levelsGained = 0, Item dropped = null, GroundItem groundItem = null, bool xpBlocked = false)
+            int xpGained = 0, int levelsGained = 0, Item dropped = null, GroundItem groundItem = null, bool xpBlocked = false, string reason = null)
         {
+            Reason = reason;
             XpBlocked = xpBlocked;
             XpGained = xpGained;
             LevelsGained = levelsGained;
@@ -50,6 +51,8 @@ namespace WarInLocked.Core.Combat
             AbilityLeveledUp = abilityLeveledUp;
         }
 
+        /// <summary>For <see cref="CombatOutcome.NeedsWeapon"/>: the text to show, "Needs a weapon" (Slash) or "Needs a staff" (Energy Ball).</summary>
+        public string Reason { get; }
         public CombatOutcome Outcome { get; }
         /// <summary>For <see cref="CombatOutcome.ItemUsed"/> / <see cref="CombatOutcome.ItemRefused"/>: what happened to the consumable.</summary>
         public ItemUseResult ItemResult { get; }
@@ -123,7 +126,8 @@ namespace WarInLocked.Core.Combat
         /// <summary>Why the character cannot cast the ability right now for a reason the UI can show ("Needs a weapon"), or null if nothing blocks it.
         /// Cooldown, energy and target are checked at cast time and are not part of this.</summary>
         public static string CannotCastReason(Character character, AbilityDefinition ability) =>
-            ability.RequiresWeapon && !DamageCalculator.HasWeapon(character) ? AbilityDefinition.NeedsWeaponText : null;
+            ability.RequiresWeapon && !DamageCalculator.HasWeapon(character) ? AbilityDefinition.NeedsWeaponText
+            : ability.RequiresStaff && !DamageCalculator.HasStaff(character) ? AbilityDefinition.NeedsStaffText : null;
 
         /// <summary>Damage of a learned ability at its current level.</summary>
         public static int AbilityDamage(Character character, Ability ability, Enemy target = null) => AbilityDamage(character, ability.Definition, ability.Level, target);
@@ -207,7 +211,8 @@ namespace WarInLocked.Core.Combat
             var state = slot.IsEmpty ? null : _owner.GetAbility(slot.AbilityId);
             var ability = state?.Definition;
             if (ability == null) return new CombatResult(CombatOutcome.EmptySlot);
-            if (CannotCastReason(_owner, ability) != null) return new CombatResult(CombatOutcome.NeedsWeapon);
+            string cannot = CannotCastReason(_owner, ability);
+            if (cannot != null) return new CombatResult(CombatOutcome.NeedsWeapon, reason: cannot);
             if (!AttackReady || !slot.IsReady) return new CombatResult(CombatOutcome.OnCooldown);
             if (_owner.Energy < ability.EnergyCost) return new CombatResult(CombatOutcome.NotEnoughEnergy);
             var target = FindTarget(playerX, playerY, enemies);

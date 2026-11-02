@@ -9,10 +9,11 @@ namespace WarInLocked.Core.Tests;
 public class AbilityTests
 {
     // Str 8 / Int 13 so a slime survives a hit; plenty of energy for repeated casts.
-    private static Character Make(bool armed, bool energyBall = true)
+    private static Character Make(bool armed, bool energyBall = true, bool staff = false)
     {
         var c = new Character("Tester", Race.Human, StatDistribution.Warrior, new StatBlock(8, 8, 13, 13, 13, 10, 8, 8));
         if (armed) c.Equipment.AddAndEquip(ItemLibrary.PracticeSword);
+        if (staff) c.Equipment.AddAndEquip(ItemLibrary.PracticeStaff);
         c.LearnAbility(AbilityLibrary.Slash);
         if (energyBall) c.LearnAbility(AbilityLibrary.EnergyBall);
         c.Combat.Update(0.016);
@@ -232,7 +233,7 @@ public class AbilityTests
     [Fact]
     public void EnergyBallIsMagicDamageCostsFiveAndHasAFiveSecondCooldown()
     {
-        var c = Make(true);
+        var c = Make(false, staff: true);
         var d = Dummy();
         int before = c.Energy;
         Assert.Equal("energy-ball", c.Combat.Hotbar[1].AbilityId);
@@ -240,7 +241,7 @@ public class AbilityTests
         var r = c.Combat.UseHotbar(1, 5, 5, new List<Enemy> { d });
 
         Assert.True(r.Succeeded);
-        Assert.Equal(35, r.Damage);                         // (10 + 5) x Int 13 modifier 2.3 = 34.5 -> 35, weapon ignored
+        Assert.Equal(46, r.Damage);                         // (10 + 5 staff + 5) x Int 13 modifier 2.3 = 46
         Assert.Equal(before - 5, c.Energy);
         Assert.Equal(5.0, c.Combat.Hotbar[1].CooldownRemaining, 2);
         Assert.Equal(1, c.GetAbility("energy-ball").Uses);
@@ -248,23 +249,41 @@ public class AbilityTests
     }
 
     [Fact]
-    public void EnergyBallNeedsNoWeapon()
+    public void EnergyBallNeedsAStaffInTheMainHand()   // #39, Dyllan: "Yes it does..."
     {
-        var c = Make(false);
-        Assert.Null(CombatController.CannotCastReason(c, AbilityLibrary.EnergyBallDefinition));
-        Assert.True(c.Combat.UseHotbar(1, 5, 5, new List<Enemy> { Dummy() }).Succeeded);
+        var unarmed = Make(false);
+        Assert.Equal(AbilityDefinition.NeedsStaffText, CombatController.CannotCastReason(unarmed, AbilityLibrary.EnergyBallDefinition));
+        var r = unarmed.Combat.UseHotbar(1, 5, 5, new List<Enemy> { Dummy() });
+        Assert.Equal(CombatOutcome.NeedsWeapon, r.Outcome);
+        Assert.Equal("Needs a staff", r.Reason);
+        Assert.Equal(unarmed.MaxEnergy, unarmed.Energy);                      // nothing spent
+
+        var sword = Make(true);
+        Assert.Equal("Needs a staff", CombatController.CannotCastReason(sword, AbilityLibrary.EnergyBallDefinition));   // a sword is not a staff
+
+        var staff = Make(false, staff: true);
+        Assert.Null(CombatController.CannotCastReason(staff, AbilityLibrary.EnergyBallDefinition));
+        Assert.True(staff.Combat.UseHotbar(1, 5, 5, new List<Enemy> { Dummy() }).Succeeded);
+    }
+
+    [Fact]
+    public void SlashStillWorksWithAStaffUntilDyllanSaysOtherwise()   // open question: does a staff count as a weapon for Slash (placeholder: yes)
+    {
+        var c = Make(false, staff: true);
+        Assert.Null(CombatController.CannotCastReason(c, AbilityLibrary.SlashDefinition));
+        Assert.Equal("Needs a weapon", CombatController.CannotCastReason(Make(false), AbilityLibrary.SlashDefinition));
     }
 
     [Fact]
     public void EnergyBallKillCountsTowardsSlimeQuests()
     {
-        var c = Make(false);
+        var c = Make(false, staff: true);
         var q = c.Quests.Offer(QuestLibrary.SliceAndSlime());
         c.Quests.Accept(q.Id);
         var slime = new Enemy(Enemy.SlimeType, 30);
         slime.TileX = 6; slime.TileY = 5;
         var r = c.Combat.UseHotbar(1, 5, 5, new List<Enemy> { slime });
-        Assert.Equal(CombatOutcome.Killed, r.Outcome);           // 35 damage vs 30 HP
+        Assert.Equal(CombatOutcome.Killed, r.Outcome);           // 46 damage vs 30 HP
         Assert.Equal("Slimes slain 1/5", q.ProgressText);
     }
 }

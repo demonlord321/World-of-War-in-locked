@@ -149,7 +149,7 @@ public class EnergyBallQuestTests
 
         Assert.True(ColonelPowersQuest.Accept(c, out var notice));
 
-        Assert.Equal("Practice staff given", notice);
+        Assert.Equal("Press I to open your character sheet and equip the staff.", notice);   // #39 popup text
         Assert.Equal(1, c.Inventory.CountOf(ItemLibrary.PracticeStaffId));
         Assert.Equal(ItemLibrary.PracticeSwordId, c.Equipment.Get(EquipmentSlot.MainHand).Id);   // given, not equipped: the player equips it
         var q3 = c.Quests.Get(QuestLibrary.EnergyBallPracticeId);
@@ -173,7 +173,7 @@ public class EnergyBallQuestTests
         Assert.Equal("colonel-powers-energy-offer", ColonelPowersQuest.DialogueIdFor(c));
         Assert.Same(q3, ColonelPowersQuest.QuestToOfferAfterDialogue(c));
         Assert.True(ColonelPowersQuest.Accept(c, out var ok));
-        Assert.Equal("Practice staff given", ok);
+        Assert.Equal(ColonelPowersQuest.StaffNotice, ok);
         Assert.Equal(QuestState.Active, q3.State);
     }
 
