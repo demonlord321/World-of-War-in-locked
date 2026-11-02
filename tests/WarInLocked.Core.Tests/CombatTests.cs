@@ -56,7 +56,7 @@ public class CombatTests
         var w = Warrior();   // Con 13, Wis 7
         Assert.Equal(13, w.Stats.Constitution);
         Assert.Equal(7, w.Stats.Wisdom);
-        Assert.Equal(230, w.MaxHealth);   // 100 x 2.3
+        Assert.Equal(130, w.MaxHealth);   // 100 x 1.3
         Assert.Equal(35, w.MaxEnergy);
 
         var me = Make(StatDistribution.Merchant);   // Con 9, Wis 9
@@ -65,7 +65,7 @@ public class CombatTests
 
         var m = Make(StatDistribution.Mystic);   // Con 5, Wis 13
         Assert.Equal(50, m.MaxHealth);   // 100 x 0.5
-        Assert.Equal(115, m.MaxEnergy);   // 50 x 2.3
+        Assert.Equal(65, m.MaxEnergy);    // 50 x 1.3
     }
 
     [Theory]
@@ -73,12 +73,12 @@ public class CombatTests
     [InlineData(3, 30)]
     [InlineData(5, 50)]
     [InlineData(9, 90)]
-    [InlineData(10, 200)]    // first milestone: 100 x 2.0
-    [InlineData(11, 210)]
-    [InlineData(13, 230)]
-    [InlineData(24, 340)]
-    [InlineData(25, 450)]    // 100 x 4.5
-    [InlineData(50, 800)]    // 100 x 8.0
+    [InlineData(10, 100)]    // flat 0.1 per point, no milestone jump (#46): 100 x 1.0
+    [InlineData(11, 110)]
+    [InlineData(13, 130)]
+    [InlineData(24, 240)]
+    [InlineData(25, 250)]    // 100 x 2.5
+    [InlineData(50, 500)]    // 100 x 5.0
     public void MaxHealthFollowsTheConModifierCurve(int con, int expected)
     {
         var c = new Character("C", Race.Human, StatDistribution.Warrior, new StatBlock(8, 8, con, 8, 8, 8, 8, 8));
@@ -92,10 +92,10 @@ public class CombatTests
     [InlineData(3, 15)]
     [InlineData(7, 35)]
     [InlineData(9, 45)]
-    [InlineData(10, 100)]    // first milestone: 50 x 2.0
-    [InlineData(13, 115)]
-    [InlineData(25, 225)]    // 50 x 4.5
-    [InlineData(50, 400)]    // 50 x 8.0
+    [InlineData(10, 50)]     // 50 x 1.0, no milestone jump (#46)
+    [InlineData(13, 65)]
+    [InlineData(25, 125)]    // 50 x 2.5
+    [InlineData(50, 250)]    // 50 x 5.0
     public void MaxEnergyFollowsTheWisModifierCurve(int wis, int expected)
     {
         var c = new Character("W", Race.Human, StatDistribution.Warrior, new StatBlock(8, 8, 8, wis, 8, 8, 8, 8));
@@ -117,11 +117,11 @@ public class CombatTests
         var c = new Character("M", Race.Human, StatDistribution.Warrior, new StatBlock(7, 9, 13, 10, 25, 50, 11, 8));
         Assert.Equal(0.7, c.Modifier(StatType.Strength), 5);
         Assert.Equal(0.9, c.Modifier(StatType.Dexterity), 5);
-        Assert.Equal(2.3, c.Modifier(StatType.Constitution), 5);
-        Assert.Equal(2.0, c.Modifier(StatType.Wisdom), 5);
-        Assert.Equal(4.5, c.Modifier(StatType.Intelligence), 5);
-        Assert.Equal(8.0, c.Modifier(StatType.Perception), 5);
-        Assert.Equal(2.1, c.Modifier(StatType.Charisma), 5);
+        Assert.Equal(1.3, c.Modifier(StatType.Constitution), 5);
+        Assert.Equal(1.0, c.Modifier(StatType.Wisdom), 5);
+        Assert.Equal(2.5, c.Modifier(StatType.Intelligence), 5);
+        Assert.Equal(5.0, c.Modifier(StatType.Perception), 5);
+        Assert.Equal(1.1, c.Modifier(StatType.Charisma), 5);
         Assert.Equal(0.8, c.Modifier(StatType.Luck), 5);
     }
 
@@ -132,7 +132,7 @@ public class CombatTests
         c.GainXp(50);
         Assert.Equal(0.9, c.Modifier(StatType.Wisdom), 5);
         c.AssignPoint(StatType.Wisdom);
-        Assert.Equal(2.0, c.Modifier(StatType.Wisdom), 5);
+        Assert.Equal(1.0, c.Modifier(StatType.Wisdom), 5);
     }
 
     [Fact]
@@ -149,8 +149,8 @@ public class CombatTests
     {
         var c = Warrior();
         Assert.Equal(60, c.TakeDamage(60));
-        Assert.Equal(170, c.Health);
-        Assert.Equal(170, c.TakeDamage(1000));
+        Assert.Equal(70, c.Health);
+        Assert.Equal(70, c.TakeDamage(1000));
         Assert.True(c.IsDead);
         c.Heal(10000);
         Assert.Equal(c.MaxHealth, c.Health);
@@ -180,14 +180,14 @@ public class CombatTests
     [Fact]
     public void PracticeSwordDamageIsFifteenTimesTheStrengthModifier()
     {
-        Assert.Equal(35, CombatController.BasicAttackDamage(ArmedStarterWarrior()));   // Str 13 -> 2.3 x 15 = 34.5 -> 35
+        Assert.Equal(20, CombatController.BasicAttackDamage(ArmedStarterWarrior()));   // Str 13 -> 1.3 x 15 = 19.5 -> 20
         Assert.Equal(12, CombatController.BasicAttackDamage(ArmedWarrior()));          // Str 8  -> 0.8 x 15
     }
 
     [Fact]
     public void UnarmedDamageIsTenTimesTheStrengthModifier()
     {
-        Assert.Equal(23, CombatController.BasicAttackDamage(Warrior()));   // Str 13 -> 2.3 x 10
+        Assert.Equal(13, CombatController.BasicAttackDamage(Warrior()));   // Str 13 -> 1.3 x 10
         Assert.Equal(8, CombatController.BasicAttackDamage(Rookie()));
         var weak = new Character("W", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(3));
         Assert.Equal(3, CombatController.BasicAttackDamage(weak));         // 0.3 x 10
@@ -198,7 +198,7 @@ public class CombatTests
     {
         var strong = new Character("S", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(25));
         strong.Equipment.AddAndEquip(ItemLibrary.PracticeSword);
-        Assert.Equal(68, CombatController.BasicAttackDamage(strong));      // 4.5 x 15 = 67.5 -> 68
+        Assert.Equal(38, CombatController.BasicAttackDamage(strong));      // 2.5 x 15 = 37.5 -> 38
     }
 
     private static Character ArmedStarterWarrior()
@@ -211,8 +211,8 @@ public class CombatTests
     [Fact]
     public void SlashDamageIsTenPlusWeaponPlusPowerTimesStrength()
     {
-        // (10 + weapon 5 + n 5) x 2.3 = 46
-        Assert.Equal(46, CombatController.AbilityDamage(ArmedStarterWarrior(), AbilityLibrary.SlashDefinition));
+        // (10 + weapon 5 + n 5) x 1.3 = 26
+        Assert.Equal(26, CombatController.AbilityDamage(ArmedStarterWarrior(), AbilityLibrary.SlashDefinition));
         var c = ArmedWarrior();   // Str 8: 20 x 0.8 = 16
         Assert.Equal(16, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition));
         Assert.Equal(10, AbilityLibrary.SlashDefinition.EnergyCost);
@@ -222,10 +222,10 @@ public class CombatTests
     }
 
     [Theory]
-    [InlineData(1, 5, 46)]    // 20 x 2.3
-    [InlineData(2, 6, 48)]    // 21 x 2.3 = 48.3
-    [InlineData(3, 7, 51)]    // 22 x 2.3 = 50.6
-    [InlineData(10, 14, 67)]  // 29 x 2.3 = 66.7
+    [InlineData(1, 5, 26)]    // 20 x 1.3
+    [InlineData(2, 6, 27)]    // 21 x 1.3 = 27.3
+    [InlineData(3, 7, 29)]    // 22 x 1.3 = 28.6
+    [InlineData(10, 14, 38)]  // 29 x 1.3 = 37.7
     public void SlashPowerGrowsByOnePerLevel(int level, int n, int expected)
     {
         Assert.Equal(n, AbilityLibrary.SlashDefinition.PowerAt(level));

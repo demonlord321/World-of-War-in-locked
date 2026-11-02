@@ -23,9 +23,9 @@ Placeholders until you confirm them:
 
 ## 4b. Health and energy maximum (#12) - ANSWERED
 
-Answered by Dyllan: **MaxEnergy**: first 5 x Wisdom, then changed with #17 to **50 x the Wisdom modifier** (same curve as health and damage), rounded half up. **EnergyBase = 50 is a placeholder** - is 50 the right base? **MaxHealth** was first 20 x Constitution, then changed with #15 to **100 x the Constitution modifier** (the same curve as damage: 0.1 per point, +1.0 per milestone at 10, 25, 50), rounded half up. Warrior (Con 13) = 230, Merchant (Con 9) = 90, Mystic (Con 5) = 50; Con 10 = 200, Con 25 = 450. Energy (#17): Warrior (Wis 7) = 35, Merchant (Wis 9) = 45, Mystic (Wis 13) = 115; Wis 10 = 100, Wis 25 = 225. Slash costs 10, so every class can afford it from full energy.
+Answered by Dyllan: **MaxEnergy**: first 5 x Wisdom, then changed with #17 to **50 x the Wisdom modifier** (same curve as health and damage), rounded half up. **EnergyBase = 50 is a placeholder** - is 50 the right base? **MaxHealth** was first 20 x Constitution, then changed with #15 to **100 x the Constitution modifier** (the same curve as damage: a flat 0.1 per point since #46, no milestone bonus), rounded half up. Warrior (Con 13) = 130, Merchant (Con 9) = 90, Mystic (Con 5) = 50; Con 10 = 100, Con 25 = 250. Energy (#17): Warrior (Wis 7) = 35, Merchant (Wis 9) = 45, Mystic (Wis 13) = 65; Wis 10 = 50, Wis 25 = 125. Slash costs 10, so every class can afford it from full energy.
 
-Note: reaching a milestone is a big jump (Con 9 to 10 is 90 to 200 health, +110; Wis 9 to 10 is 45 to 100 energy, +55). Current health rises by the same amount when a point is assigned, and drops by it when the point is given back.
+Note (#46): there is no milestone jump any more (Con 9 to 10 is 90 to 100 health, +10; Wis 9 to 10 is 45 to 50 energy, +5). Current health rises by the same amount when a point is assigned, and drops by it when the point is given back.
 
 ## 5. Colonel Powers' other lines (#8)
 
@@ -46,13 +46,13 @@ XP cost to go from level L to L+1 follows the issue: 50, 100, 150, 200 (L1-4), t
 Still placeholders, please confirm:
 - **Stat points:** RESOLVED. Dyllan confirmed each level-up gives **3** points, but every 5th level gives **5 instead of 3**. The constants are `Leveling.StatPointsPerLevel` and `StatPointsOnBonusLevel`.
 - **Points are spent one at a time into any of the eight stats**, with no cap. Assigned points can be taken back (Unassign) until the player leaves the menu or the game decides to lock them in; there is no "confirm" step in Core yet.
-- **Health and energy:** when Constitution or Wisdom rises, the maximum follows the stat's modifier curve (so it jumps at milestones 10 / 25 / 50) and the **current** value rises by the same amount the maximum rose (so a full bar stays full). Giving a point back lowers the current value too, but never kills the player (health stays at least 1). Levelling up by itself does **not** heal.
+- **Health and energy:** when Constitution or Wisdom rises, the maximum follows the stat's modifier curve (a flat 0.1 per point, no milestone jump since #46) and the **current** value rises by the same amount the maximum rose (so a full bar stays full). Giving a point back lowers the current value too, but never kills the player (health stays at least 1). Levelling up by itself does **not** heal.
 - XP is kept as a running total (`Xp`); the bar uses `XpIntoLevel / XpForNextLevel`. Extra XP carries over into the next level.
 
 ## 8. Physical and magical damage (#14, #16)
 
 Dyllan's rules, as built:
-- **Stat modifier** = 0.1 per stat point **plus 1.0 for every milestone reached**. Milestones are 10, 25 and 50 (a list, `StatModifier.Milestones`). So 9 -> 0.9, 10 -> 2.0, 11 -> 2.1, 25 -> 4.5, 50 -> 8.0.
+- **Stat modifier** = a flat **0.1 per stat point, no milestone bonus** (#46, 2 Nov; it was 0.1 per point plus 1.0 per milestone at 10 / 25 / 50). So 9 -> 0.9, 10 -> 1.0, 11 -> 1.1, 25 -> 2.5, 50 -> 5.0. The thresholds 10 / 25 / 50 stay defined (`StatModifier.Milestones`, `MilestoneTenths = 0`) for a different milestone bonus later. See "Stat modifier curve (#46)".
 - **Base attack** is 10 for everyone. **Physical damage** = (10 + Physical Attack) x Strength modifier. **Unarmed** = 10 x Strength modifier. **Slash** = (10 + Physical Attack + n) x Strength modifier (entry 9). **Magic damage** = (10 + Magical Attack + n) x Intelligence modifier (entry 10).
 - **Rounding:** the result is rounded **half up** to a whole number (10.5 becomes 11), once at the very end (so abilities are not rounded twice).
 
@@ -223,8 +223,20 @@ Dyllan (1 Nov): "Have slimes that have been angered chase the player." Core: `Co
 - **Diagonal steps never cut a wall corner** (both tiles beside the step must be walkable). A guess.
 - Slimes never chase into safe zones or other maps: slimes live in one map's list and do not follow through doors.
 
-## Adventurer title and milestones (#33)
-Dyllan (1 Nov): the title's +2 stops short of the milestone. Per stat: bonus = max(0, min(2, nextMilestone - 1 - base stat)), milestones 10 / 25 / 50, where base = creation + assigned points (`StatModifier.LimitedBonus`, `Character.TitleBonus(stat)`, `Character.TitleBonusFor(title, stat)`). Examples: 10 -> 12, 8 -> 9 (+1), 9 -> 9 (+0), 23 -> 24, 24 -> 24, 25 -> 27; invest two points into 8 to reach 10 and the full +2 applies again (12). The rule is in the title's description text (`TitleLibrary.AdventurerBonusExplanation`). Above 50 there is no milestone, so the full +2 applies. I read "invest to 9 stays 9" as the bonus dropping from +1 to +0 (effective 9 either way). Open: for a stat sitting at 9 there is no bonus at all, as Dyllan described it.
+## Adventurer title and milestones (#33) - RESOLVED (2 Nov)
+Dyllan (1 Nov) first asked for the title's +2 to stop short of the next milestone (`StatModifier.LimitedBonus`). On 2 Nov, after the #46 change, he said, verbatim: "With this Chang we can remove the titles restriction, the flat bonus is no longer going to cause such a drastic jump" (read: "With this change we can remove the title's restriction; the flat bonus is no longer going to cause such a drastic jump").
+Done: the cap is removed. The Adventurer title gives a flat +2 to every stat (`Character.TitleBonus`, `TitleBonusFor`); `StatModifier.LimitedBonus` and the milestone line of the description were deleted, so the description is just Dyllan's #27 text. Nothing open here.
+
+## Stat modifier curve (#46)
+Dyllan's comment on #46 (2 Nov, 21:21 UTC), verbatim: "Let's change it to be more percentile based. Stats below 10 will be a hindrance with this set up, but make the modifiers go up by 0.01. so a stat of 8 will be 0.08. then at the first milestone 10, we add the bonus. Which will be 1, so 10 will be 1.1. this means stats below 10 have negitive effects, those above 10 adds to what they effect." (table 1(0.01) ... 9(0.09), 10(1.1), 11(1.11), "Then at the next milestone which I think is 25 it looks like this 25(2.25)").
+Corrected: "...negative effects, those above 10 add to what they affect."
+That version (0.01 per point) was tried and not committed: it made the starting characters unplayable (a Mystic had 5 max HP, a Warrior's 4 energy could not cast Slash) and made the 9 to 10 jump about 12x (0.09 to 1.1).
+Follow-ups, verbatim (they reached me through the team room, not the issue thread):
+- "Ok set the stat in tease to 5% then" (read: "Ok, set the stat increase to 5% then"). Tried as 0.05 per point + 1.0 per milestone (9 = 0.45, 10 = 1.50): still a ~3.3x jump, so not committed either.
+- "Ok with 10% then there is no milestone jump. We could do the 0.9 at a stat of 9, then at 10 it is only 1 but at 25 this value would be 3.5" (intermediate; not committed).
+- **Final:** "Ok let's leave it at 10% per point with no milestone jump. We can use something else for a milestone bonus"
+Built (final): modifier = a flat 0.1 per stat point, no milestone bonus: 5 = 0.5, 9 = 0.9, 10 = 1.0, 11 = 1.1, 25 = 2.5, 50 = 5.0. `StatModifier.MilestoneTenths = 0`; the thresholds 10 / 25 / 50 stay in `StatModifier.Milestones` for the future bonus. Starting vitals: Warrior 130 HP / 35 energy, Mystic 50 HP / 65 energy, Merchant 90 HP / 45 energy (all can cast Slash).
+Open: what the "something else" milestone bonus is, and whether `NextMilestone` should be used for anything until then (nothing uses it now that the title cap is gone).
 
 ## Slime kills: XP and Slime Jelly (#36)
 Dyllan (1 Nov): level 1 slimes give 5 XP, level 2 give 10, level 3 give 15, and each kill drops one Slime Jelly regardless of level, which can only be sold; no currency drops from monsters. Core: `CombatResult.XpGained`, `LevelsGained`, `DroppedItem`, `DropLost` on a kill; XP is added to the character at once and the jelly goes into the inventory (it stacks). Questions and placeholders:

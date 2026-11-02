@@ -169,8 +169,8 @@ public class ShopTitleItemTests
         var t = TitleLibrary.Adventurer;
         Assert.Equal("Adventurer", t.Name);
         Assert.StartsWith("You have completed the tutorial. The Adventurer is one who is prepared for the upcoming adventure.", t.Description);
-        Assert.Equal(TitleLibrary.AdventurerDescription + " " + TitleLibrary.AdventurerBonusExplanation, t.Description);   // #33: the milestone rule is in the text
-        Assert.Contains("never takes a stat up to or past its next milestone (10, 25, 50)", t.Description);
+        Assert.Equal(TitleLibrary.AdventurerDescription, t.Description);   // #33: the milestone-cap line was removed, the +2 is flat
+        Assert.DoesNotContain("milestone", t.Description);
         Assert.Equal(new[] { "+2 to all stats when equipped." }, t.BonusLines);
     }
 
@@ -204,7 +204,7 @@ public class ShopTitleItemTests
         foreach (StatType s in System.Enum.GetValues(typeof(StatType)))
         {
             Assert.Equal(baseStats[s], c.Stats[s]);        // the I menu shows base + assigned
-            int expected = StatModifier.LimitedBonus(baseStats[s], 2);   // #33: never up to or past the next milestone
+            int expected = 2;   // #33: a flat +2, no milestone cap
             Assert.Equal(baseStats[s] + expected, c.EffectiveStats[s]);
             Assert.Equal(expected, c.TitleBonus(s));
         }
@@ -248,11 +248,11 @@ public class ShopTitleItemTests
     [Fact]
     public void MilestonesCountEffectiveStats()
     {
-        // #33: the title can no longer carry a stat onto the milestone: 8 + title = 9 (0.9), but a stat of 10 gets the full +2 (12 = 2.2).
+        // #33 (cap removed): the title's flat +2 counts everywhere: 8 + title = 10 (1.0), 10 + title = 12 (1.2).
         var c = new Character("Test", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(8));
         c.GrantTitle(TitleLibrary.AdventurerId);
         c.EquipTitle(TitleLibrary.AdventurerId);
-        Assert.Equal(StatModifier.Value(9), c.Modifier(StatType.Constitution));
+        Assert.Equal(StatModifier.Value(10), c.Modifier(StatType.Constitution));
         var d = new Character("Test", Race.Human, StatDistribution.Warrior, StatBlock.Uniform(10));
         d.GrantTitle(TitleLibrary.AdventurerId);
         d.EquipTitle(TitleLibrary.AdventurerId);

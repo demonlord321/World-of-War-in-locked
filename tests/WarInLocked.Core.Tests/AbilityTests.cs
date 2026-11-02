@@ -241,7 +241,7 @@ public class AbilityTests
         var r = c.Combat.UseHotbar(1, 5, 5, new List<Enemy> { d });
 
         Assert.True(r.Succeeded);
-        Assert.Equal(46, r.Damage);                         // (10 + 5 staff + 5) x Int 13 modifier 2.3 = 46
+        Assert.Equal(26, r.Damage);                         // (10 + 5 staff + 5) x Int 13 modifier 1.3 = 26
         Assert.Equal(before - 5, c.Energy);
         Assert.Equal(5.0, c.Combat.Hotbar[1].CooldownRemaining, 2);
         Assert.Equal(1, c.GetAbility("energy-ball").Uses);
@@ -280,10 +280,10 @@ public class AbilityTests
         var c = Make(false, staff: true);
         var q = c.Quests.Offer(QuestLibrary.SliceAndSlime());
         c.Quests.Accept(q.Id);
-        var slime = new Enemy(Enemy.SlimeType, 30);
+        var slime = new Enemy(Enemy.SlimeType, 20);
         slime.TileX = 6; slime.TileY = 5;
         var r = c.Combat.UseHotbar(1, 5, 5, new List<Enemy> { slime });
-        Assert.Equal(CombatOutcome.Killed, r.Outcome);           // 46 damage vs 30 HP
+        Assert.Equal(CombatOutcome.Killed, r.Outcome);           // 26 damage vs 20 HP
         Assert.Equal("Slimes slain 1/5", q.ProgressText);
     }
 }

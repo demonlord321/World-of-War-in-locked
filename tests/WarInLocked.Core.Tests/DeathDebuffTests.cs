@@ -34,7 +34,7 @@ public class DeathDebuffTests
         Assert.Null(c.DeathDebuffName);
         Assert.Null(c.DeathDebuffText);
         Assert.True(c.EarnsKillXp);
-        Assert.Equal(230, c.MaxHealth);
+        Assert.Equal(130, c.MaxHealth);
     }
 
     [Fact]
@@ -55,9 +55,9 @@ public class DeathDebuffTests
     [Fact]
     public void TheCutAppliesToMaxHealthAndEnergyAndRespawnFillsToTheReducedMax()
     {
-        var c = Hero();                       // 230 HP, 35 energy
+        var c = Hero();                       // 130 HP, 35 energy
         Die(c);
-        Assert.Equal(173, c.MaxHealth);       // 230 x 0.75 = 172.5 -> 173
+        Assert.Equal(98, c.MaxHealth);        // 130 x 0.75 = 97.5 -> 98
         Assert.Equal(26, c.MaxEnergy);        // 35 x 0.75 = 26.25 -> 26
         Assert.Equal(c.MaxHealth, c.Health);
         Assert.Equal(c.MaxEnergy, c.Energy);
@@ -67,14 +67,14 @@ public class DeathDebuffTests
     public void AttackPowerIsCutToo()
     {
         var c = Hero();
-        // Warrior Strength 13 -> modifier 2.3, Practice Sword: (10 + 5) x 2.3 = 34.5 -> 35; the cut is applied before the one rounding.
-        Assert.Equal(35, CombatController.BasicAttackDamage(c));
+        // Warrior Strength 13 -> modifier 1.3, Practice Sword: (10 + 5) x 1.3 = 19.5 -> 20; the cut is applied before the one rounding.
+        Assert.Equal(20, CombatController.BasicAttackDamage(c));
         Die(c);
-        Assert.Equal(26, CombatController.BasicAttackDamage(c));   // 25.875
+        Assert.Equal(15, CombatController.BasicAttackDamage(c));   // 14.625
         Die(c);
-        Assert.Equal(17, CombatController.BasicAttackDamage(c));   // 17.25
+        Assert.Equal(10, CombatController.BasicAttackDamage(c));   // 9.75
         Die(c);
-        Assert.Equal(9, CombatController.BasicAttackDamage(c));    // 8.625
+        Assert.Equal(5, CombatController.BasicAttackDamage(c));    // 4.875
         Assert.Equal(DamageCalculator.UnarmedDamage(c) > 0, true);
     }
 
@@ -89,7 +89,7 @@ public class DeathDebuffTests
         Assert.Equal(60.0, c.DeathDebuffRemaining);
         Assert.Equal(0.5, c.DeathDebuffMultiplier);
         Assert.Equal("Death debuff 2: -50% health, attack and energy (1:00)", c.DeathDebuffText);
-        Assert.Equal(115, c.MaxHealth);
+        Assert.Equal(65, c.MaxHealth);
         c.Combat.Update(18);
         Assert.Equal("Death debuff 2: -50% health, attack and energy (0:42)", c.DeathDebuffText);
         Die(c);
@@ -97,7 +97,7 @@ public class DeathDebuffTests
         Assert.Equal(60.0, c.DeathDebuffRemaining);
         Assert.Equal(0.25, c.DeathDebuffMultiplier);
         Assert.Equal("Death debuff 3: -75% health, attack and energy, no XP from kills (1:00)", c.DeathDebuffText);
-        Assert.Equal(58, c.MaxHealth);        // 57.5 -> 58
+        Assert.Equal(33, c.MaxHealth);        // 32.5 -> 33
         c.Combat.Update(25);
         Die(c);
         Assert.Equal(3, c.DeathDebuffLevel);                 // level 3 is the maximum
@@ -154,7 +154,7 @@ public class DeathDebuffTests
         c.Combat.Update(0.2);
         Assert.Equal(0, c.DeathDebuffLevel);
         Assert.Equal(0.0, c.DeathDebuffRemaining);
-        Assert.Equal(230, c.MaxHealth);
+        Assert.Equal(130, c.MaxHealth);
         Assert.Equal(1, changed);
         Assert.Null(c.DeathDebuffText);
         Die(c);                                               // the next death starts again at level 1
@@ -167,10 +167,10 @@ public class DeathDebuffTests
         var c = Hero();
         Die(c);
         c.Combat.Update(30.1);
-        Assert.Equal(173, c.Health);                          // guess: the lost part is not handed back
-        Assert.Equal(230, c.MaxHealth);
+        Assert.Equal(98, c.Health);                           // guess: the lost part is not handed back
+        Assert.Equal(130, c.MaxHealth);
         c.Heal(1000);
-        Assert.Equal(230, c.Health);
+        Assert.Equal(130, c.Health);
     }
 
     [Fact]

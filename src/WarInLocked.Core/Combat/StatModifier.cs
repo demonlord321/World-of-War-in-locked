@@ -4,17 +4,19 @@ using System.Collections.Generic;
 namespace WarInLocked.Core.Combat
 {
     /// <summary>
-    /// The damage modifier a stat gives (#14, #16): <b>0.1 per stat point, plus 1.0 for every milestone reached</b>
-    /// (the milestone's own 0.1 still counts). With milestones 10, 25 and 50:
-    /// 9 points = 0.9, 10 = 2.0, 11 = 2.1, 25 = 4.5, 50 = 8.0.
+    /// The damage modifier a stat gives (#14, #16, changed by #46): <b>a flat 0.1 per stat point, with no milestone bonus</b>:
+    /// 9 points = 0.9, 10 = 1.0, 25 = 2.5, 50 = 5.0.
+    /// Dyllan, #46: "Ok let's leave it at 10% per point with no milestone jump. We can use something else for a milestone bonus".
+    /// The milestone thresholds (10, 25, 50) stay defined in <see cref="Milestones"/> because a different milestone bonus will use them later
+    /// (the title cap of #33 is gone: titles give their full bonus); <see cref="MilestoneTenths"/> is the bonus per milestone and is 0 for now.
     /// Everything is counted in tenths so there is no floating point error.
     /// </summary>
     public static class StatModifier
     {
         /// <summary>Tenths every stat point adds (0.1).</summary>
         public const int PointTenths = 1;
-        /// <summary>Extra tenths added once for each milestone reached (1.0).</summary>
-        public const int MilestoneTenths = 10;
+        /// <summary>Extra tenths added once for each milestone reached: 0 since #46 (no milestone bonus; set it to give milestones a bonus again).</summary>
+        public const int MilestoneTenths = 0;
 
         private static IReadOnlyList<int> _milestones = new[] { 10, 25, 50 };
 
@@ -25,7 +27,7 @@ namespace WarInLocked.Core.Combat
             set => _milestones = value ?? throw new ArgumentNullException(nameof(value));
         }
 
-        /// <summary>The modifier in tenths for a stat value, using <see cref="Milestones"/>. 9 -> 9, 10 -> 20, 25 -> 45.</summary>
+        /// <summary>The modifier in tenths for a stat value, using <see cref="Milestones"/>. 9 -> 9, 10 -> 10, 25 -> 25.</summary>
         public static int Tenths(int statPoints) => Tenths(statPoints, _milestones);
 
         /// <summary>The modifier in tenths with an explicit milestone list (each milestone counted once, however often it is listed).</summary>
@@ -46,19 +48,6 @@ namespace WarInLocked.Core.Combat
             foreach (int m in _milestones)
                 if (m > statPoints && (next == 0 || m < next)) next = m;
             return next;
-        }
-
-        /// <summary>
-        /// The part of a flat bonus (a title, #33) that really applies to a stat of <paramref name="baseValue"/>: at most <paramref name="bonus"/>, but it never takes the stat
-        /// up to or past its next milestone, so <c>max(0, min(bonus, nextMilestone - 1 - baseValue))</c>. Base 10 +2 = 12, 8 gives +1 (9), 9 gives 0, 23 gives +1 (24), 24 gives 0, 25 gives +2.
-        /// Own points can still reach the milestone; once they do, the full bonus applies again. With no milestone left the whole bonus applies. A bonus of 0 or less is returned unchanged.
-        /// </summary>
-        public static int LimitedBonus(int baseValue, int bonus)
-        {
-            if (bonus <= 0) return bonus;
-            int next = NextMilestone(baseValue);
-            if (next == 0) return bonus;
-            return Math.Max(0, Math.Min(bonus, next - 1 - baseValue));
         }
 
         /// <summary>The modifier as a number, e.g. 1.9.</summary>

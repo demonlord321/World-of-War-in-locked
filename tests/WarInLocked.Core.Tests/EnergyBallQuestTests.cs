@@ -68,11 +68,11 @@ public class EnergyBallQuestTests
     [Fact]
     public void SlashWorksWithAStaffUsingPhysicalBasePlainTen()
     {
-        var c = Hero();   // Str 13 = 2.3
+        var c = Hero();   // Str 13 = 1.3
         c.LearnAbility(AbilityLibrary.Slash);
         c.Equipment.AddAndEquip(ItemLibrary.PracticeStaff);
         Assert.Null(CombatController.CannotCastReason(c, AbilityLibrary.SlashDefinition));
-        Assert.Equal(35, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition));   // (10 + 0 + 5) x 2.3 = 34.5 -> 35: the staff adds nothing physical
+        Assert.Equal(20, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition));   // (10 + 0 + 5) x 1.3 = 19.5 -> 20: the staff adds nothing physical
     }
 
     // ---- copper (#21)

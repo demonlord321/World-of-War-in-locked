@@ -133,7 +133,7 @@ namespace WarInLocked.Core.Characters
         }
 
         /// <summary>
-        /// Max health = <c>HealthBase</c> x the Constitution modifier (0.1 per point, +1.0 per milestone; see <c>StatModifier</c>),
+        /// Max health = <c>HealthBase</c> x the Constitution modifier (a flat 0.1 per point, no milestone bonus since #46; see <c>StatModifier</c>),
         /// rounded half up. Warrior (Con 13) = 230, Merchant (Con 9) = 90, Mystic (Con 5) = 50; Con 10 = 200, Con 25 = 450 (#15).
         /// </summary>
         public const int HealthBase = 100;
@@ -185,7 +185,7 @@ namespace WarInLocked.Core.Characters
             DeathDebuffChanged?.Invoke();
         }
 
-        /// <summary>The modifier of a stat's effective value (with the equipped title's bonus; milestones count the effective value, #27) (0.1 per point, +1.0 per milestone), e.g. 2.3 for 13 Constitution.</summary>
+        /// <summary>The modifier of a stat's effective value (with the equipped title's bonus; milestones count the effective value, #27) (a flat 0.1 per point), e.g. 1.3 for 13 Constitution.</summary>
         public double Modifier(StatType stat) => StatModifier.Value(EffectiveStats[stat]);
 
         /// <summary>Current health, 0..<see cref="MaxHealth"/>. Starts full.</summary>
@@ -577,7 +577,7 @@ namespace WarInLocked.Core.Characters
 
         /// <summary>
         /// <see cref="Stats"/> plus the equipped title's bonus (#27). Everything that uses a stat (modifiers, max health and energy, damage) reads this,
-        /// so a milestone (10, 25, 50) is reached by the effective value.
+        /// so a title's bonus counts everywhere.
         /// </summary>
         public StatBlock EffectiveStats
         {
@@ -591,12 +591,11 @@ namespace WarInLocked.Core.Characters
             }
         }
 
-        /// <summary>What the equipped title really adds to a stat (0 when no title is equipped). It never takes the stat up to or past its next milestone (#33, see <see cref="TitleBonusFor"/>).</summary>
+        /// <summary>What the equipped title adds to a stat (0 when no title is equipped): the title's flat bonus, e.g. +2 for the Adventurer (#33: no milestone cap any more).</summary>
         public int TitleBonus(StatType stat) => EquippedTitle == null ? 0 : TitleBonusFor(EquippedTitle, stat);
 
-        /// <summary>What a title would add to a stat of this character right now (worn or not): the title's bonus limited so the stat stays below its next milestone (#33). For previews.</summary>
-        public int TitleBonusFor(Title title, StatType stat) =>
-            title == null ? 0 : StatModifier.LimitedBonus(Stats[stat], title.AllStatsBonus);
+        /// <summary>What a title would add to a stat (worn or not): its flat <see cref="Title.AllStatsBonus"/>. For previews.</summary>
+        public int TitleBonusFor(Title title, StatType stat) => title == null ? 0 : title.AllStatsBonus;
 
         private readonly List<Title> _titles = new List<Title>();
         /// <summary>Titles earned so far, in the order they were earned.</summary>

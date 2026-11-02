@@ -71,8 +71,8 @@ public class SlimeTests
         var c = new CharacterCreation { Name = "W", Race = Race.Human, Distribution = StatDistribution.Warrior }.Create();
         c.Equipment.AddAndEquip(ItemLibrary.PracticeSword);
         var weak = new Enemy("weakling", 100, 1, 0, 1.25, 1.25);
-        Assert.Equal(58, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition, 1, weak));   // 20 x 2.3 x 1.25 = 57.5 -> 58
-        Assert.Equal(43, CombatController.BasicAttackDamage(c, weak));                                   // 15 x 2.3 x 1.25 = 43.125 -> 43
+        Assert.Equal(33, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition, 1, weak));   // 20 x 1.3 x 1.25 = 32.5 -> 33
+        Assert.Equal(24, CombatController.BasicAttackDamage(c, weak));                                   // 15 x 1.3 x 1.25 = 24.375 -> 24
     }
 
     [Fact]
@@ -93,11 +93,11 @@ public class SlimeTests
         var c = new CharacterCreation { Name = "W", Race = Race.Human, Distribution = StatDistribution.Warrior }.Create();
         c.Equipment.AddAndEquip(ItemLibrary.PracticeSword);
         var weak = new Enemy("weakling", 100, 1, 0, 1.25, 1.25);
-        // Slash: (10 + 5 + 5) x 2.3 x 1.25 = 57.5 -> 58 (rounding 46 x 1.25 = 57.5 would give the same here; basic attack differs):
-        Assert.Equal(58, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition, 1, weak));
-        Assert.Equal(43, CombatController.BasicAttackDamage(c, weak));   // 15 x 2.3 = 34.5 -> 35 first would give 44; once gives 43.125 -> 43
-        Assert.Equal(35, CombatController.BasicAttackDamage(c));
-        Assert.Equal(35, CombatController.BasicAttackDamage(c, Enemy.NewSlime(1)));   // a slime takes standard damage
+        // Slash: (10 + 5 + 5) x 1.3 x 1.25 = 32.5 -> 33 (rounding 26 x 1.25 = 32.5 would give the same here; basic attack differs):
+        Assert.Equal(33, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition, 1, weak));
+        Assert.Equal(24, CombatController.BasicAttackDamage(c, weak));   // 15 x 1.3 = 19.5 -> 20 first would give 25; once gives 24.375 -> 24
+        Assert.Equal(20, CombatController.BasicAttackDamage(c));
+        Assert.Equal(20, CombatController.BasicAttackDamage(c, Enemy.NewSlime(1)));   // a slime takes standard damage
     }
 
     [Fact]
