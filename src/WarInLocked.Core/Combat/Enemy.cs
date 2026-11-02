@@ -19,7 +19,7 @@ namespace WarInLocked.Core.Combat
         public const int PathMinSlimeLevel = 4, PathMaxSlimeLevel = 5;
         /// <summary>The slime levels that exist at all: 1 to 15 (levels above 5 are PLACEHOLDERS so night slimes, base level + 10, have stats).</summary>
         public const int LowestSlimeLevel = 1, HighestSlimeLevel = 15;
-        /// <summary>At night (7 pm to 8 am, #57) monsters are this many levels stronger than their base level (Dyllan: "ten levels stronger").</summary>
+        /// <summary>At night (7 pm to 7 am, #57) monsters are this many levels stronger than their base level (Dyllan: "ten levels stronger").</summary>
         public const int NightLevelBonus = 10;
         /// <summary>XP a slime gives per level (#36, Dyllan: level 1 = 5, level 2 = 10, level 3 = 15). PLACEHOLDER for levels above 3 (path levels 4-5 and night levels): 5 x level.</summary>
         public const int SlimeXpPerLevel = 5;

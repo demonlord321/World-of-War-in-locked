@@ -3,7 +3,7 @@ using System;
 namespace WarInLocked.Core.World
 {
     /// <summary>
-    /// The in-game clock (#56, Dyllan: "Starts at 8 am and runs 5 times faster than normal time."). Day 1 starts at 8:00 am.
+    /// The in-game clock (#56, Dyllan: "Starts at 8 am and runs 5 times faster than normal time."; sped up to 6x on 2 Nov so a game day is 4 real hours). Day 1 starts at 8:00 am.
     /// One real second is <see cref="SpeedFactor"/> game seconds. It only moves when <see cref="Update"/> is called, which
     /// <c>Character.Combat.Update(seconds)</c> does every frame, so it pauses whenever the Game stops updating (menus, dialogue, pause).
     /// <see cref="Advance"/> jumps it forward (resting, #55). Day/night rules for monsters (#57) read <see cref="IsNight"/>.
@@ -11,15 +11,15 @@ namespace WarInLocked.Core.World
     public sealed class GameClock
     {
         /// <summary>The clock runs this many times faster than real time.</summary>
-        public const double SpeedFactor = 5.0;
+        public const double SpeedFactor = 6.0;
         public const int StartHour = 8;
         public const int MinutesPerDay = 24 * 60;
 
-        /// <summary>Night begins at 7 pm (19:00) and lasts until 8 am; day is 8 am to 7 pm, with no gaps (Dyllan, #57).</summary>
+        /// <summary>Night begins at 7 pm (19:00) and lasts until 7 am; day is 7 am to 7 pm, 12 game hours each (2 real hours each at 6x), with no gaps (Dyllan, #57, 2 Nov).</summary>
         public const int NightStartHour = 19;
-        /// <summary>Night ends, and day begins, at 8 am (Dyllan, #57).</summary>
-        public const int NightEndHour = 8;
-        /// <summary>The hour a night's sleep ends: 8 am (#55), the start of the day.</summary>
+        /// <summary>Night ends, and day begins, at 7 am (2 Nov; it was 8 am). The single dawn constant: change it here (and <see cref="NightStartHour"/> to keep 12 hour halves) and sleep, <see cref="IsNight"/> and the HUD follow. The game still starts at 8 am, which is day.</summary>
+        public const int NightEndHour = 7;
+        /// <summary>The hour a night's sleep ends: 7 am, the start of the day (#55; follows <see cref="NightEndHour"/>).</summary>
         public const int WakeHour = NightEndHour;
 
         private double _totalMinutes = StartHour * 60;   // game minutes since midnight of day 1
@@ -41,7 +41,7 @@ namespace WarInLocked.Core.World
         /// <summary>The minute, 0-59.</summary>
         public int Minute => (int)(MinutesIntoDay % 60);
 
-        /// <summary>True from 7 pm (19:00) up to 8 am (07:59 is still night); <see cref="IsDay"/> is 8 am to 7 pm (Dyllan, #57).</summary>
+        /// <summary>True from 7 pm (19:00) up to 7 am (06:59 is still night); <see cref="IsDay"/> is 7 am to 7 pm (Dyllan, #57).</summary>
         public bool IsNight => Hour >= NightStartHour || Hour < NightEndHour;
         public bool IsDay => !IsNight;
 
@@ -74,8 +74,8 @@ namespace WarInLocked.Core.World
         }
 
         /// <summary>
-        /// Skips to the next 8:00 am: later the same day when it is before 8 am (after midnight), otherwise the next day (#55).
-        /// Returns the game hours that passed. Exactly 8:00 am goes to the next day's 8:00 am.
+        /// Skips to the next dawn (<see cref="WakeHour"/>, 7:00 am): later the same day when it is before 7 am (after midnight), otherwise the next day (#55).
+        /// Returns the game hours that passed. Exactly 7:00 am goes to the next day's 7:00 am.
         /// </summary>
         public double AdvanceToMorning()
         {

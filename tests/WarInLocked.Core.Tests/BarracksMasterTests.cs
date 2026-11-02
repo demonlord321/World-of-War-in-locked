@@ -76,27 +76,27 @@ public class BarracksMasterTests
     }
 
     [Fact]
-    public void SleepBeforeMidnightWakesAtEightNextDay()
+    public void SleepBeforeMidnightWakesAtSevenNextDay()
     {
         var c = Hero();
         c.Clock.Advance(14);   // 10 pm day 1
         c.TakeDamage(10);
         Assert.True(BarracksMaster.Apply(c, BarracksActions.Sleep, BindPoint.Tutorial, out var notice));
         Assert.Equal(2, c.Clock.Day);
-        Assert.Equal("8:00 am", c.Clock.TimeText);
+        Assert.Equal("7:00 am", c.Clock.TimeText);
         Assert.Equal(c.MaxHealth, c.Health);
-        Assert.Contains("Day 2, 8:00 am", notice);
+        Assert.Contains("Day 2, 7:00 am", notice);
     }
 
     [Fact]
-    public void SleepAfterMidnightWakesAtEightSameDay()
+    public void SleepAfterMidnightWakesAtSevenSameDay()
     {
         var c = Hero();
         c.Clock.Advance(17);   // 1 am day 2
         Assert.Equal(2, c.Clock.Day);
         Assert.True(BarracksMaster.Apply(c, BarracksActions.Sleep, BindPoint.Tutorial, out _));
         Assert.Equal(2, c.Clock.Day);
-        Assert.Equal("8:00 am", c.Clock.TimeText);
+        Assert.Equal("7:00 am", c.Clock.TimeText);
     }
 
     [Fact]

@@ -14,8 +14,8 @@ namespace WarInLocked.Core.Characters
     /// </summary>
     public static class NameValidator
     {
-        /// <summary>NOT a rule any more. A suggested limit for text boxes so a long name still fits the screen; <see cref="Validate"/> does not enforce it.</summary>
-        public const int MaxLength = 20;
+        /// <summary>NOT a rule any more. A suggested limit for text boxes so a long name still fits the screen; <see cref="Validate"/> does not enforce it. PLACEHOLDER value 64 (was 20; Dyllan wants no name restriction, #45).</summary>
+        public const int MaxLength = 64;
 
         /// <summary>Removes leading and trailing whitespace. Null becomes an empty string.</summary>
         public static string Normalize(string name)

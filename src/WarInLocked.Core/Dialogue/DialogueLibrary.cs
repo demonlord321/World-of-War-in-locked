@@ -139,7 +139,7 @@ namespace WarInLocked.Core.Dialogue
         /// <summary>Dyllan's option labels (#55).</summary>
         public const string RestOptionText = "Rest";
         public const string SetAsHomeOptionText = "Set as home";
-        /// <summary>PLACEHOLDER label of the night-only option ("Awakening at 8 am").</summary>
+        /// <summary>PLACEHOLDER label of the night-only option (Dyllan's issue said "Awakening at 8 am"; it now wakes at <c>GameClock.WakeHour</c>, 7 am).</summary>
         public const string SleepOptionText = "Sleep until morning";
         /// <summary>PLACEHOLDER label that leaves the menu without doing anything (Dyllan listed only Rest and Set as home).</summary>
         public const string BarracksLeaveOptionText = "Leave";

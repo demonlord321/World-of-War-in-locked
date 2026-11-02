@@ -22,23 +22,24 @@ public class GameClockTests
     }
 
     [Fact]
-    public void RunsFiveTimesFasterThanRealTime()
+    public void RunsSixTimesFasterThanRealTime()
     {
         var c = new GameClock();
-        c.Update(60);                       // one real minute = five game minutes
+        Assert.Equal(6.0, GameClock.SpeedFactor);
+        c.Update(60);                       // one real minute = six game minutes
         Assert.Equal(8, c.Hour);
-        Assert.Equal(5, c.Minute);
-        c.Update(12 * 60);                  // twelve real minutes = one game hour
+        Assert.Equal(6, c.Minute);
+        c.Update(10 * 60);                  // ten real minutes = one game hour
         Assert.Equal(9, c.Hour);
-        Assert.Equal(5, c.Minute);
-        Assert.Equal("9:05 am", c.TimeText);
+        Assert.Equal(6, c.Minute);
+        Assert.Equal("9:06 am", c.TimeText);
     }
 
     [Fact]
-    public void ADayIsFourPointEightRealHours()
+    public void ADayIsFourRealHours()
     {
         var c = new GameClock();
-        c.Update(288 * 60);
+        c.Update(240 * 60);          // 4 real hours = 24 game hours (Dyllan, 2 Nov)
         Assert.Equal(2, c.Day);
         Assert.Equal(8, c.Hour);
         Assert.Equal(0, c.Minute);
@@ -63,14 +64,14 @@ public class GameClockTests
 
     [Theory]
     [InlineData(0, true)]
-    [InlineData(6, true)]
-    [InlineData(7, true)]    // 7-8 am is still night (no gap)
-    [InlineData(8, false)]   // day starts at 8 am
+    [InlineData(6, true)]    // 6-7 am is still night (no gap)
+    [InlineData(7, false)]   // day starts at 7 am
+    [InlineData(8, false)]
     [InlineData(12, false)]
     [InlineData(18, false)]  // 6-7 pm is day (no gap)
     [InlineData(19, true)]   // night starts at 7 pm
     [InlineData(23, true)]
-    public void NightIsSevenPmToEightAm(int hour, bool night)
+    public void NightIsSevenPmToSevenAm(int hour, bool night)
     {
         var c = new GameClock();
         c.Advance((hour - 8 + 24) % 24);
@@ -90,44 +91,50 @@ public class GameClockTests
     }
 
     [Fact]
-    public void AdvanceToMorningWakesAtEightAmHandlingMidnight()
+    public void AdvanceToMorningWakesAtSevenAmHandlingMidnight()
     {
         var evening = new GameClock();
         evening.Advance(12);                                   // 8 pm day 1
-        Assert.Equal(12.0, evening.AdvanceToMorning(), 6);
+        Assert.Equal(11.0, evening.AdvanceToMorning(), 6);
         Assert.Equal(2, evening.Day);
-        Assert.Equal("8:00 am", evening.TimeText);
+        Assert.Equal("7:00 am", evening.TimeText);
 
         var afterMidnight = new GameClock();
         afterMidnight.Advance(19);                             // 3 am day 2
         Assert.Equal(2, afterMidnight.Day);
-        Assert.Equal(5.0, afterMidnight.AdvanceToMorning(), 6);
+        Assert.Equal(4.0, afterMidnight.AdvanceToMorning(), 6);
         Assert.Equal(2, afterMidnight.Day);                    // same day, not day 3
-        Assert.Equal("8:00 am", afterMidnight.TimeText);
+        Assert.Equal("7:00 am", afterMidnight.TimeText);
 
         var exact = new GameClock();
-        Assert.Equal(24.0, exact.AdvanceToMorning(), 6);       // exactly 8 am goes to tomorrow
+        Assert.Equal(23.0, exact.AdvanceToMorning(), 6);       // 8 am (the start) is day, so the next dawn is tomorrow's 7 am
         Assert.Equal(2, exact.Day);
+        Assert.Equal("7:00 am", exact.TimeText);
+
+        var dawn = new GameClock();
+        dawn.Advance(23);                                      // exactly 7 am day 2: it is day, so the next dawn is a day later
+        Assert.Equal(24.0, dawn.AdvanceToMorning(), 6);
+        Assert.Equal(3, dawn.Day);
 
         var late = new GameClock();
         late.Advance(15.99);                                   // 11:59 pm
         Assert.Equal(1, late.Day);
         late.AdvanceToMorning();
         Assert.Equal(2, late.Day);
-        Assert.Equal(8, late.Hour);
+        Assert.Equal(7, late.Hour);
     }
 
     [Fact]
-    public void SevenFiftyNineAmIsStillNightAndSleepWakesAtEightTheSameDay()
+    public void SixFiftyNineAmIsStillNightAndSleepWakesAtSevenTheSameDay()
     {
         var c = new GameClock();
-        c.Advance(23.99);                                      // 7:59 am day 2
+        c.Advance(22.99);                                      // 6:59 am day 2
         Assert.Equal(2, c.Day);
-        Assert.Equal(7, c.Hour);
+        Assert.Equal(6, c.Hour);
         Assert.True(c.IsNight);
         c.AdvanceToMorning();
         Assert.Equal(2, c.Day);
-        Assert.Equal("8:00 am", c.TimeText);
+        Assert.Equal("7:00 am", c.TimeText);
         Assert.True(c.IsDay);
     }
 
@@ -137,9 +144,9 @@ public class GameClockTests
         var c = Hero();
         Assert.Equal("Day 1, 8:00 am", c.Clock.Text);
         c.Combat.Update(60);
-        Assert.Equal("8:05 am", c.Clock.TimeText);
+        Assert.Equal("8:06 am", c.Clock.TimeText);
         c.Combat.Update(60);
-        Assert.Equal("8:10 am", c.Clock.TimeText);
+        Assert.Equal("8:12 am", c.Clock.TimeText);
     }
 
     [Fact]

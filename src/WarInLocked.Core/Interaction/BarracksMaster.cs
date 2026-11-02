@@ -40,7 +40,7 @@ namespace WarInLocked.Core.Interaction
         /// Does what the picked option says. <paramref name="action"/> is <c>DialogueRunner.Action</c> (null or unknown does nothing and returns false).
         /// <list type="bullet">
         /// <item><see cref="BarracksActions.Rest"/>: full health and energy, clock +3 hours.</item>
-        /// <item><see cref="BarracksActions.Sleep"/>: full health and energy and the clock jumps to 8:00 am (the next morning; the same day if it is already after midnight). Only at night, otherwise refused.</item>
+        /// <item><see cref="BarracksActions.Sleep"/>: full health and energy and the clock jumps to the dawn (GameClock.WakeHour, 7:00 am) (the next morning; the same day if it is already after midnight). Only at night, otherwise refused.</item>
         /// <item><see cref="BarracksActions.SetAsHome"/>: <see cref="Character.SetBindPoint"/> with <paramref name="homePoint"/>.</item>
         /// </list>
         /// <paramref name="notice"/> is the short message to show.

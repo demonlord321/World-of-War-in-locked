@@ -49,7 +49,7 @@ namespace WarInLocked.Core.Characters
         /// <summary>Quests offered, active and finished (#8).</summary>
         public QuestLog Quests { get; }
 
-        /// <summary>The in-game clock (#56): starts 8:00 am day 1, runs 5x real time, ticked by <c>Combat.Update</c>. See <see cref="GameClock"/>.</summary>
+        /// <summary>The in-game clock (#56): starts 8:00 am day 1, runs 6x real time, ticked by <c>Combat.Update</c>. See <see cref="GameClock"/>.</summary>
         public GameClock Clock { get; } = new GameClock();
 
         /// <summary>Real-time combat rules, hotbar and cooldowns (#11). Call <c>Combat.Update(seconds)</c> every frame.</summary>
