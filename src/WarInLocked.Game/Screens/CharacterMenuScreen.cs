@@ -382,7 +382,7 @@ public sealed class CharacterMenuScreen : Screen
         {
             string? why = _character.CanUse(item.Id);
             string status = why == null ? "Ready to use"
-                : why == ItemUseResult.OnCooldownText ? $"On cooldown {_character.ItemCooldownRemaining:0.0}s (runs in the forest)"
+                : why == ItemUseResult.OnCooldownText ? $"On cooldown {_character.ItemCooldownRemaining:0.0}s"
                 : why;
             gfx.Text(sb, status, new Vector2(x, r.Bottom - 26), why == null ? Theme.Positive : Theme.Negative, 14f);
             gfx.Text(sb, "Enter/U: use  -  1-5: hotbar  -  X: drop", new Vector2(bx, r.Bottom - 26), Theme.TextDim, 14f);
@@ -437,7 +437,7 @@ public sealed class CharacterMenuScreen : Screen
             var v = _character.EffectiveStats[stat].ToString();   // includes the worn title (#27)
             gfx.Text(sb, v, new Vector2(row.X + 126 - gfx.Measure(v, 18f).X, row.Y + 2), added > 0 ? Theme.Positive : bonus != 0 ? Theme.Positive : Theme.Accent, 18f);
             // #18: the stat's modifier in brackets, dimmer gold so it reads as secondary; recomputed every frame.
-            var mod = $"({_character.Modifier(stat).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)})";
+            var mod = $"({_character.Modifier(stat).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)})";
             gfx.Text(sb, mod, new Vector2(row.X + 130, row.Y + 5), Theme.Accent * 0.7f, 14f);
             if (bonus != 0)   // "+2" from the worn title, next to the modifier
                 gfx.Text(sb, $"+{bonus}", new Vector2(row.X + 130 + gfx.Measure(mod, 14f).X + 6, row.Y + 5), Theme.Positive, 14f);
@@ -462,8 +462,8 @@ public sealed class CharacterMenuScreen : Screen
         gfx.Border(sb, cb, Theme.PanelBorder, 2);
         gfx.TextCentered(sb, "Combat", new Rectangle(cb.X, cb.Y + 4, cb.Width, 22), Theme.TextDim, 16f);
         var inv = System.Globalization.CultureInfo.InvariantCulture;
-        string phys = $"Physical Attack: {DamageCalculator.PhysicalDamage(_character)} (x{DamageCalculator.StrengthModifier(_character).ToString("0.0", inv)} Str)";
-        string mag = $"Magic Attack: {DamageCalculator.MagicDamage(_character)} (x{DamageCalculator.IntelligenceModifier(_character).ToString("0.0", inv)} Int)";
+        string phys = $"Physical Attack: {DamageCalculator.PhysicalDamage(_character)} (x{DamageCalculator.StrengthModifier(_character).ToString("0.00", inv)} Str)";
+        string mag = $"Magic Attack: {DamageCalculator.MagicDamage(_character)} (x{DamageCalculator.IntelligenceModifier(_character).ToString("0.00", inv)} Int)";
         gfx.TextLeft(sb, phys, new Rectangle(cb.X, cb.Y + 28, cb.Width, 24), Theme.Text, 15f, 12);
         gfx.TextLeft(sb, mag, new Rectangle(cb.X, cb.Y + 54, cb.Width, 24), Theme.Text, 15f, 12);
 
