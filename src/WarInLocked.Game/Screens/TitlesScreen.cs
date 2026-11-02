@@ -157,7 +157,7 @@ public sealed class TitlesScreen : Screen
             foreach (var stat in StatTypes.All)
             {
                 int baseValue = _character.Stats[stat];
-                int shown = baseValue + _character.TitleBonusFor(title, stat);   // capped below the next milestone (#33)
+                int shown = baseValue + _character.TitleBonusFor(title, stat);   // flat title bonus (#33)
                 var pos = new Vector2(x + (col % 2) * 300, y + (col / 2) * 26);
                 gfx.Text(sb, $"{stat}  {baseValue} -> {shown}", pos, Theme.Text, 17f);
                 col++;
