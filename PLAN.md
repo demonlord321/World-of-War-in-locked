@@ -195,3 +195,4 @@ Needed before a 3 to 4 hour build is testable:
 - Decided (#46, 2 Nov): stat modifier = 0.1 x stat, no milestone jumps (10 = 1.0, 25 = 2.5, 50 = 5.0); milestone rewards to be something else later. Titles give a flat +2.
 - #46 and #33 done (2 Nov): the stat modifier is a flat 0.1 per point with no milestone bonus, and the Adventurer title is a flat +2 with no cap. The 0.01 and 0.05 versions were tried and dropped. Milestone bonus to be decided.
 - Game clock (2 Nov): speed 6x (a game day = 4 real hours); night is 7 pm to 7 am, day 7 am to 7 pm; Sleep until morning wakes at 7 am; game still starts at 8 am. Dawn is one constant (`GameClock.NightEndHour`); 7-7 vs 8-8 is open. Name text box limit raised to 64 (placeholder).
+- Decided (2 Nov): clock runs 6x real time (a game day is 4 real hours); day 7 am to 7 pm, night 7 pm to 7 am (2 real hours each); new game starts at 8 am.
