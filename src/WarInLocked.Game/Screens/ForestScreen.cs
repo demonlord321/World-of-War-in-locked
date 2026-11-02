@@ -52,6 +52,8 @@ public sealed class ForestScreen : Screen
     private string? _dialogueNpc;
     private float _markerTime;
     private QuestPrompt? _questPrompt;
+    private SlotList? _saveSlots;   // #42: slot picker opened at a save point
+    private string _autosavedMap = "";   // #42 PLACEHOLDER: autosave on entering a new map (when is still Dyllan's call)
     private string? _toast;
     private float _toastLeft;
 
@@ -226,6 +228,20 @@ public sealed class ForestScreen : Screen
             return;
         }
 
+        if (_saveSlots != null)
+        {
+            var pick = _saveSlots.Update(input, out bool cancelled);
+            if (cancelled) _saveSlots = null;
+            else if (pick != null)
+            {
+                var t = new Point((int)((_player.X + PlayerSize / 2f) / TileSize), (int)((_player.Y + PlayerSize / 2f) / TileSize));
+                SavePoints.Interact(_character, _mapId, t.X, t.Y, pick.Value, out var n);
+                _saveSlots = null;
+                Toast(n + " (" + SaveSlots.LabelOf(pick.Value) + ")", 3f);
+            }
+            return;
+        }
+
         if (_questPrompt != null)
         {
             // The quest prompt is modal too: the world waits and Esc is ignored.
@@ -234,7 +250,7 @@ public sealed class ForestScreen : Screen
             {
                 ColonelPowersQuest.Accept(_character, out var notice); // gives + equips the Practice Sword once
                 _questPrompt = null;
-                if (notice != null) Toast(notice);
+                if (notice != null) Toast(notice, 6f);   // #39: the staff notice stays up long enough to read
             }
             else if (answer == false)
             {
@@ -358,6 +374,12 @@ public sealed class ForestScreen : Screen
         _camera.X = MathHelper.Clamp(_player.X + PlayerSize / 2f - w / 2f, 0, Math.Max(0, _map.Width * TileSize - w));
         _camera.Y = MathHelper.Clamp(_player.Y + PlayerSize / 2f - h / 2f, 0, Math.Max(0, _map.Height * TileSize - h));
 
+        if (_mapId != _autosavedMap && !_character.IsDead)
+        {
+            if (_autosavedMap != "") SaveSlots.Autosave(_character, _mapId, playerTile.X, playerTile.Y, out _);
+            _autosavedMap = _mapId;
+        }
+
         _talkTarget = _character.IsDead ? null : TalkTarget.Find(playerTile.X, playerTile.Y, NpcSpots());
         // #54: on or next to a save point the "Save (E)" prompt shows. Where an NPC is in reach too, talking wins unless the player stands on the save tile.
         _savePointTile = null;
@@ -377,8 +399,7 @@ public sealed class ForestScreen : Screen
         }
         if (_savePointTile != null && (input.Pressed(Keys.E) || input.Pressed(Keys.Enter)))
         {
-            SavePoints.Interact(_character, _mapId, playerTile.X, playerTile.Y, out var saveNotice);
-            Toast(saveNotice, 3f);
+            _saveSlots = new SlotList(saveMode: true);
             return;
         }
         if (_talkTarget != null && (input.Pressed(Keys.E) || input.Pressed(Keys.Enter)))
@@ -756,6 +777,8 @@ public sealed class ForestScreen : Screen
             gfx.Border(sb, box, Theme.Accent, 2);
             gfx.TextCentered(sb, _toast, box, Theme.Text, 20f);
         }
+
+        _saveSlots?.Draw(sb, gfx);
 
         if (_questPrompt != null)
         {

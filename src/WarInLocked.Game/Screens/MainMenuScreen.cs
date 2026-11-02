@@ -14,7 +14,8 @@ public sealed class MainMenuScreen : Screen
 {
     private readonly Button _newGame = new(new Rectangle(500, 292, 280, 56), "New Game");
     // #54: Load Game is enabled only while a save file exists; otherwise it is greyed out, focus skips it and clicks ignore it.
-    private readonly Button _loadGame = new(new Rectangle(500, 360, 280, 56), "Load Game") { Enabled = SaveGame.Exists() };
+    private readonly Button _loadGame = new(new Rectangle(500, 360, 280, 56), "Load Game") { Enabled = SaveSlots.AnyExists() };
+    private SlotList? _slots;   // #42: the Load list (Auto save, then Save 1-3)
     private string? _loadError;
     private readonly Button _exit = new(new Rectangle(500, 428, 280, 56), "Exit");
     private int _focus;
@@ -29,6 +30,13 @@ public sealed class MainMenuScreen : Screen
 
     public override void Update(GameTime time, InputState input)
     {
+        if (_slots != null)
+        {
+            var pick = _slots.Update(input, out bool cancelled);
+            if (cancelled) _slots = null;
+            else if (pick != null) LoadSlot(pick.Value);
+            return;
+        }
         if (input.Pressed(Keys.Down) || input.Pressed(Keys.Tab)) MoveFocus(1);
         if (input.Pressed(Keys.Up)) MoveFocus(-1);
         if (input.MouseMoved)
@@ -50,7 +58,13 @@ public sealed class MainMenuScreen : Screen
     /// <summary>Loads the save and opens the game on the saved map and tile (a map switch straight onto that tile).</summary>
     private void LoadSavedGame()
     {
-        if (!SaveGame.TryLoad(null, out var save, out var error)) { _loadError = error; return; }
+        _loadError = null;
+        _slots = new SlotList(saveMode: false);
+    }
+
+    private void LoadSlot(SaveSlot slot)
+    {
+        if (!SaveSlots.TryLoad(slot, out var save, out var error)) { _loadError = error; _slots = null; return; }
         var character = save.ToCharacter();
         Screens.Replace(new ForestScreen(character, save.MapId, save.TileX, save.TileY));
     }
@@ -79,5 +93,6 @@ public sealed class MainMenuScreen : Screen
         _exit.Draw(sb, gfx, input, _focus == 2);
 
         gfx.TextCentered(sb, "Up/Down to choose  -  Enter to select", new Rectangle(0, h - 60, w, 30), Theme.TextDim, 18f);
+        _slots?.Draw(sb, gfx);
     }
 }
