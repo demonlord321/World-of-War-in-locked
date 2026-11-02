@@ -217,7 +217,7 @@ public class CombatTests
         Assert.Equal(16, CombatController.AbilityDamage(c, AbilityLibrary.SlashDefinition));
         Assert.Equal(10, AbilityLibrary.SlashDefinition.EnergyCost);
         Assert.Equal(5.0, AbilityLibrary.SlashDefinition.CooldownSeconds);
-        Assert.Equal("Cut an arch with your blade.", AbilityLibrary.SlashDefinition.Description);
+        Assert.Equal("Cut an arc with your blade.", AbilityLibrary.SlashDefinition.Description);
         Assert.True(AbilityLibrary.SlashDefinition.RequiresWeapon);
     }
 

@@ -18,7 +18,7 @@ public class DialogueTests
 
         Assert.False(d.IsEnded);
         Assert.Equal("Colonel Powers", d.Speaker);
-        Assert.Equal("Greetings Maggot... Welcome to the first day of the start of your journey. Who are you...", d.Text);
+        Assert.Equal("Greetings, maggot... Welcome to the first day of the start of your journey. Who are you...", d.Text);
         Assert.True(d.HasOptions);
         Assert.Equal(new[] { "My name is Aragorn", "Who the hell are you...", "Where the hell am I." }, d.Options);
     }
@@ -52,7 +52,7 @@ public class DialogueTests
         d.Choose(2);
 
         Assert.False(d.IsEnded);
-        Assert.Equal("This is the forest of beginnings. Where you learn to survive.", d.Text);
+        Assert.Equal("This is the Forest of Beginnings, where you learn to survive.", d.Text);
         Assert.Equal(original, d.Options);
     }
 
@@ -77,7 +77,7 @@ public class DialogueTests
 
         Assert.False(d.IsEnded);
         Assert.False(d.HasOptions);
-        Assert.Equal("I am Colonel Powers, your drill sergeant... Get ready maggot, it is time to learn to survive.", d.Text);
+        Assert.Equal("I am Colonel Powers, your drill sergeant... Get ready, maggot, it is time to learn to survive.", d.Text);
 
         d.Advance();
 

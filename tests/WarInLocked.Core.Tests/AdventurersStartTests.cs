@@ -49,7 +49,7 @@ public class AdventurersStartTests
     {
         var q = QuestLibrary.AdventurersStart();
         Assert.Equal("Quest: Adventurers start.", q.Title);
-        Assert.Equal("Enter the Adventurers camp and speak with Whiplash", q.Description);
+        Assert.Equal("Enter the Adventurers' camp and speak with Whiplash", q.Description);
         Assert.Equal("Whiplash spoken with 0/1", q.Objectives[0].ProgressText);
         Assert.Equal("whiplash", q.Objectives[0].NpcId);
         Assert.Equal(ObjectiveKind.Talk, q.Objectives[0].Kind);
@@ -78,7 +78,7 @@ public class AdventurersStartTests
         var lines = Lines(ColonelPowersQuest.CreateDialogue(c));   // quest 4 turn-in speech, ends in the offer
         Assert.Equal(DialogueLibrary.AdventurersSpeech2, lines[lines.Length - 1]);
         Assert.Equal(
-            "Your barely passable but there will be plenty of time to train you up before the pilgrimage. Journey through the woods and enter the Adventurers encampment in the nearby clearing, speak with my colleague Whiplash. He will advise you moveing forward.",
+            "You're barely passable, but there will be plenty of time to train you up before the pilgrimage. Journey through the woods and enter the Adventurers' Encampment in the nearby clearing, and speak with my colleague Whiplash. He will advise you moving forward.",
             lines[lines.Length - 2] + " " + lines[lines.Length - 1]);
 
         var offer = ColonelPowersQuest.QuestToOfferAfterDialogue(c, out _);

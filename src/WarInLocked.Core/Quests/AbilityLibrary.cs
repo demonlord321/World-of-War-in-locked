@@ -23,7 +23,7 @@ namespace WarInLocked.Core.Quests
         public string Id { get; }
         public string Name { get; }
         public AbilityKind Kind { get; }
-        /// <summary>One line for the abilities screen, e.g. "Cut an arch with your blade.".</summary>
+        /// <summary>One line for the abilities screen, e.g. "Cut an arc with your blade.".</summary>
         public string Description { get; }
         /// <summary>The power n at level 1. Physical damage is (10 + Physical Attack + n) x Strength modifier; magic is (10 + Magical Attack + n) x Intelligence modifier.</summary>
         public int BasePower { get; }
@@ -46,7 +46,7 @@ namespace WarInLocked.Core.Quests
 
         /// <summary>Slash: physical, needs a weapon in the main hand, (10 + weapon bonus + n) x Strength modifier with n = 5 + (level - 1), 10 energy, 5 s cooldown.</summary>
         public static readonly AbilityDefinition SlashDefinition = new AbilityDefinition(
-            Slash, "Slash", AbilityKind.Physical, "Cut an arch with your blade.", 5, 10, 5.0, requiresWeapon: true);
+            Slash, "Slash", AbilityKind.Physical, "Cut an arc with your blade.", 5, 10, 5.0, requiresWeapon: true);
 
         /// <summary>Energy Ball (#23): magic, (magic base + n) x Intelligence modifier with n = 5 + (level - 1), 5 energy, 5 s cooldown.
         /// Magic base = 10 + main-hand Magical Attack (a staff adds to it). It does NOT require a staff (placeholder, see QUESTIONS.md).</summary>

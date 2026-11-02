@@ -237,7 +237,7 @@ public class QuestTests
     {
         var c = FinishedQuest1();
         var talk = ColonelPowersQuest.CreateDialogue(c);
-        Assert.Equal("Not bad scrub, but you have much to learn. But do not worry, I shall train you, till you are ready...", talk.Text);
+        Assert.Equal("Not bad, scrub, but you have much to learn. But do not worry, I shall train you, till you are ready...", talk.Text);
         Assert.False(talk.HasOptions);
         talk.Advance();
         Assert.Equal("You now have your first ability, why not test it out...", talk.Text);

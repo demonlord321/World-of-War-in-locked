@@ -28,7 +28,7 @@ namespace WarInLocked.Core.Items
         public const string LesserHealingPotionDescription = "A dull red colour. Tastes oddly like strawberries.";
         /// <summary>Dyllan's text from issue #26, verbatim. It describes the effect, so it is the description (there is no flavour line).</summary>
         public const string AdventurersRationsDescription =
-            "When outside of combat, recover completely. Up till level 10. After that the rations are only half as effective.";
+            "When outside of combat, recover completely. Up to level 10. After that the rations are only half as effective.";
 
         /// <summary>Physical Attack bonus of the sword (#22), added to the base attack of 10 before the Strength modifier.</summary>
         public const int PracticeSwordPhysicalAttack = 5;
@@ -37,9 +37,9 @@ namespace WarInLocked.Core.Items
 
         /// <summary>Dyllan's text from issue #22, verbatim (including his spelling).</summary>
         public const string PracticeSwordDescription =
-            "Not overly impressive, the practice sword has a dull edge but for a novice is still use full to learn the craft.";
+            "Not overly impressive, the practice sword has a dull edge but for a novice is still useful to learn the craft.";
         public const string PracticeStaffDescription =
-            "Looks somewhat like drift wood... But don't let it's looks deceive you, it still dies what it needs to do...";
+            "Looks somewhat like driftwood... But don't let its looks deceive you, it still does what it needs to do...";
 
         /// <summary>The sword Colonel Powers hands out in the tutorial quest (issue #8): Physical Attack +5.</summary>
         public static readonly Item PracticeSword = new Item(PracticeSwordId, "Practice Sword", ItemType.Weapon, EquipSlot.MainHand,

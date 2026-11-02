@@ -41,14 +41,14 @@ namespace WarInLocked.Core.Quests
             EnergyBallPracticeShortTitle);
 
         /// <summary>
-        /// Tutorial quest 4 (#25), Dyllan's text (including "baught"): buy a Potion of lesser healing from the Colonel.
+        /// Tutorial quest 4 (#25), Dyllan's text (typos corrected per Dyllan, 2 Nov): buy a Potion of lesser healing from the Colonel.
         /// Reward: title Adventurer, 50 XP and Adventurer's rations.
         /// </summary>
         public static Quest ShoppingBeforeAdventure() => new Quest(
             ShoppingBeforeAdventureId,
             "Quest: Shopping before adventure.",
             "Colonel Powers has a potion of lesser healing he is willing to sell to you.",
-            new[] { QuestObjective.Buy(Items.ItemLibrary.LesserHealingPotionId, 1, "Potion of lesser healing baught") },
+            new[] { QuestObjective.Buy(Items.ItemLibrary.LesserHealingPotionId, 1, "Potion of lesser healing bought") },
             new QuestReward(50, null, 0, new[] { Characters.TitleLibrary.AdventurerId }, new[] { Items.ItemLibrary.AdventurersRationsId }),
             "None",
             ShoppingBeforeAdventureShortTitle);
@@ -60,7 +60,7 @@ namespace WarInLocked.Core.Quests
         public static Quest AdventurersStart() => new Quest(
             AdventurersStartId,
             "Quest: Adventurers start.",
-            "Enter the Adventurers camp and speak with Whiplash",
+            "Enter the Adventurers' camp and speak with Whiplash",
             new[] { QuestObjective.TalkTo(WhiplashNpcId, "Whiplash spoken with") },
             new QuestReward(50, null, 50),
             "None",

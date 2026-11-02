@@ -32,7 +32,7 @@ namespace WarInLocked.Core.Quests
         public static QuestObjective UseAbility(string abilityId, int required, string label) =>
             new QuestObjective(ObjectiveKind.UseAbility, null, abilityId, required, label);
 
-        /// <summary>An objective that counts purchases of an item from a shop (#25), e.g. "Potion of lesser healing baught 0/1".</summary>
+        /// <summary>An objective that counts purchases of an item from a shop (#25), e.g. "Potion of lesser healing bought 0/1".</summary>
         public static QuestObjective Buy(string itemId, int required, string label) =>
             new QuestObjective(ObjectiveKind.Buy, null, null, required, label) { ItemId = itemId };
 

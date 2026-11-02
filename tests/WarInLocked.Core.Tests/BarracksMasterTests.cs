@@ -19,7 +19,7 @@ public class BarracksMasterTests
     {
         var d = BarracksMaster.CreateDialogue(Hero());
         Assert.Equal("Barracks Master", d.Speaker);
-        Assert.Equal("Welcome adventurer to the Adventurers encampment. Until you are prepared for the pilgrimage you may rest up here and train.", d.Text);
+        Assert.Equal("Welcome, adventurer, to the Adventurers' Encampment. Until you are prepared for the pilgrimage, you may rest up here and train.", d.Text);
         Assert.Equal(new[] { "Rest", "Set as home", "Leave" }, d.Options.ToArray());
         Assert.Equal("barracks-master", BarracksMaster.NpcId);
         Assert.True(DialogueLibrary.Exists("barracks-master"));

@@ -47,7 +47,7 @@ public class AbilityTests
         Assert.Equal(5, a.UsesForNextLevel);
         Assert.Equal(0.0, a.Fraction);
         Assert.Equal("Slash", a.Name);
-        Assert.Equal("Cut an arch with your blade.", a.Description);
+        Assert.Equal("Cut an arc with your blade.", a.Description);
         Assert.Equal(5, a.Power);
         Assert.Equal(2, c.LearnedAbilities.Count);
         Assert.Null(c.GetAbility("nope"));

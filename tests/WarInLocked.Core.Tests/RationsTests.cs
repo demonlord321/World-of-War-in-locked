@@ -28,7 +28,7 @@ public class RationsTests
     public void RationsHaveDyllansTextAndAreUsable()
     {
         var r = ItemLibrary.AdventurersRations;
-        Assert.Equal("When outside of combat, recover completely. Up till level 10. After that the rations are only half as effective.", r.Description);
+        Assert.Equal("When outside of combat, recover completely. Up to level 10. After that the rations are only half as effective.", r.Description);
         Assert.True(r.IsUsable);
         Assert.Equal(new[] { "Cooldown after use 5s" }, r.EffectLines);
     }

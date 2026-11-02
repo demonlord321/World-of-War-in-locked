@@ -276,16 +276,16 @@ public class ShopTitleItemTests
         for (int i = 0; i < 5; i++) c.Quests.RecordAbilityUse("energy-ball");
 
         var d = ColonelPowersQuest.CreateDialogue(c);
-        Assert.Equal("you might just be a believable spell slinger.", d.Text);
+        Assert.Equal("You might just be a believable spell slinger.", d.Text);
         d.Advance();
-        Assert.Equal("Now one cannot survive with out economic power, to prepare for adventure you must use your skills, or buy supplies that shall aid you. I just so happen to have a potion of healing on me. I shall sell it to you.", d.Text);
+        Assert.Equal("Now one cannot survive without economic power. To prepare for adventure you must use your skills, or buy supplies that shall aid you. I just so happen to have a potion of healing on me. I shall sell it to you.", d.Text);
         d.Advance();
         Assert.True(d.IsEnded);
 
         var q4 = ColonelPowersQuest.QuestToOfferAfterDialogue(c, out _)!;
         Assert.Equal("Quest: Shopping before adventure.", q4.Title);
         Assert.Equal("Colonel Powers has a potion of lesser healing he is willing to sell to you.", q4.Description);
-        Assert.Equal("Potion of lesser healing baught 0/1", q4.ProgressText);
+        Assert.Equal("Potion of lesser healing bought 0/1", q4.ProgressText);
         Assert.Equal("Title Adventurer, 50 XP, Adventurer's rations", q4.Reward.Text);
         Assert.Equal("Colonel Powers", q4.TurnInNpcName);
         Assert.Equal(QuestState.Offered, q4.State);
@@ -369,7 +369,7 @@ public class ShopTitleItemTests
         Assert.Equal("Not enough copper", r.Reason);
         Assert.Equal(24, c.Copper);
         Assert.Equal(0, c.Inventory.CountOf(ItemLibrary.LesserHealingPotionId));
-        Assert.Equal("Potion of lesser healing baught 0/1", c.Quests.Get(QuestLibrary.ShoppingBeforeAdventureId).ProgressText);
+        Assert.Equal("Potion of lesser healing bought 0/1", c.Quests.Get(QuestLibrary.ShoppingBeforeAdventureId).ProgressText);
     }
 
     [Fact]
@@ -382,7 +382,7 @@ public class ShopTitleItemTests
         Assert.False(r.Success);
         Assert.Equal("Inventory full", r.Reason);
         Assert.Equal(100, c.Copper);
-        Assert.Equal("Potion of lesser healing baught 0/1", c.Quests.Get(QuestLibrary.ShoppingBeforeAdventureId).ProgressText);
+        Assert.Equal("Potion of lesser healing bought 0/1", c.Quests.Get(QuestLibrary.ShoppingBeforeAdventureId).ProgressText);
     }
 
     [Fact]
@@ -407,7 +407,7 @@ public class ShopTitleItemTests
         var talk = ColonelPowersQuest.CreateDialogue(c);
         Assert.Equal(new[] { "Talk", "Shop" }, talk.Options);
         talk.Choose(0);
-        Assert.Equal("Stop waiting time and let's get moveing.", talk.Text);
+        Assert.Equal("Stop wasting time and let's get moving.", talk.Text);
         talk.Advance();
         Assert.True(talk.IsEnded);
         Assert.Null(talk.Action);

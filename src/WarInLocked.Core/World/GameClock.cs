@@ -3,7 +3,7 @@ using System;
 namespace WarInLocked.Core.World
 {
     /// <summary>
-    /// The in-game clock (#56, Dyllan: "Starts at 8 am and runs 5 times faster then normal time."). Day 1 starts at 8:00 am.
+    /// The in-game clock (#56, Dyllan: "Starts at 8 am and runs 5 times faster than normal time."). Day 1 starts at 8:00 am.
     /// One real second is <see cref="SpeedFactor"/> game seconds. It only moves when <see cref="Update"/> is called, which
     /// <c>Character.Combat.Update(seconds)</c> does every frame, so it pauses whenever the Game stops updating (menus, dialogue, pause).
     /// <see cref="Advance"/> jumps it forward (resting, #55). Day/night rules for monsters (#57) read <see cref="IsNight"/>.

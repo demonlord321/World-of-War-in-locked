@@ -35,7 +35,7 @@ public class EnergyBallQuestTests
         var s = ItemLibrary.PracticeSword;
         Assert.Equal(5, s.PhysicalAttack);
         Assert.Equal(0, s.MagicalAttack);
-        Assert.Equal("Not overly impressive, the practice sword has a dull edge but for a novice is still use full to learn the craft.", s.Description);
+        Assert.Equal("Not overly impressive, the practice sword has a dull edge but for a novice is still useful to learn the craft.", s.Description);
         Assert.Equal(new[] { "Physical Attack +5" }, s.BonusLines);
         Assert.Equal(EquipSlot.MainHand, s.EquipSlot);
     }
@@ -49,7 +49,7 @@ public class EnergyBallQuestTests
         Assert.Equal(EquipSlot.MainHand, s.EquipSlot);
         Assert.Equal(0, s.PhysicalAttack);
         Assert.Equal(5, s.MagicalAttack);
-        Assert.Equal("Looks somewhat like drift wood... But don't let it's looks deceive you, it still dies what it needs to do...", s.Description);
+        Assert.Equal("Looks somewhat like driftwood... But don't let its looks deceive you, it still does what it needs to do...", s.Description);
         Assert.Equal(new[] { "Magical Attack +5" }, s.BonusLines);
     }
 
@@ -135,9 +135,9 @@ public class EnergyBallQuestTests
         }
         Assert.Equal(3, spoken.Count);
         Assert.Equal(
-            "You are starting to learn, you might just survive this war torn world... Congrats on getting your first spell. " +
+            "You are starting to learn, you might just survive this war-torn world... Congrats on getting your first spell. " +
             "Now take this and show me you can use the wonderful art that is magic... " +
-            "The energy is with in you, you have used it for your slash... Now manifest it as an attack.",
+            "The energy is within you, you have used it for your slash... Now manifest it as an attack.",
             string.Join(" ", spoken));
     }
 

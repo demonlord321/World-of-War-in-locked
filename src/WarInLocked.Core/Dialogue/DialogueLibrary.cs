@@ -46,18 +46,18 @@ namespace WarInLocked.Core.Dialogue
         public const string TalkOptionText = "Talk";
         public const string ShopOptionText = "Shop";
         /// <summary>Dyllan's text from issue #28, verbatim (including his spelling).</summary>
-        public const string TalkLine = "Stop waiting time and let's get moveing.";
+        public const string TalkLine = "Stop wasting time and let's get moving.";
 
         /// <summary>Dyllan's quest 4 speech (#25), verbatim, split into two boxes after the first sentence.</summary>
-        public const string ShopSpeech1 = "you might just be a believable spell slinger.";
-        public const string ShopSpeech2 = "Now one cannot survive with out economic power, to prepare for adventure you must use your skills, or buy supplies that shall aid you. I just so happen to have a potion of healing on me. I shall sell it to you.";
+        public const string ShopSpeech1 = "You might just be a believable spell slinger.";
+        public const string ShopSpeech2 = "Now one cannot survive without economic power. To prepare for adventure you must use your skills, or buy supplies that shall aid you. I just so happen to have a potion of healing on me. I shall sell it to you.";
 
         /// <summary>
-        /// Dyllan's quest 5 speech (#52), verbatim including his typos ("Your" for "You're", "moveing"), split into two boxes after the first sentence;
+        /// Dyllan's quest 5 speech (#52), typos corrected per Dyllan (2 Nov), split into two boxes after the first sentence;
         /// joined with a space it is his text.
         /// </summary>
-        public const string AdventurersSpeech1 = "Your barely passable but there will be plenty of time to train you up before the pilgrimage.";
-        public const string AdventurersSpeech2 = "Journey through the woods and enter the Adventurers encampment in the nearby clearing, speak with my colleague Whiplash. He will advise you moveing forward.";
+        public const string AdventurersSpeech1 = "You're barely passable, but there will be plenty of time to train you up before the pilgrimage.";
+        public const string AdventurersSpeech2 = "Journey through the woods and enter the Adventurers' Encampment in the nearby clearing, and speak with my colleague Whiplash. He will advise you moving forward.";
 
         /// <summary>Whiplash, NPC id "whiplash" (Adventurers encampment, #52/#53). Said while "Adventurers start" is active (the talk completes it). PLACEHOLDER text.</summary>
         public const string WhiplashId = "whiplash";
@@ -69,11 +69,11 @@ namespace WarInLocked.Core.Dialogue
         public const string WhiplashIdleLine = "Stay sharp out there, {name}.";
 
         /// <summary>Dyllan's quest 3 speech (#21), split into three boxes at his "..." pauses; joined with spaces it is his text verbatim.</summary>
-        public const string EnergySpeech1 = "You are starting to learn, you might just survive this war torn world... Congrats on getting your first spell.";
+        public const string EnergySpeech1 = "You are starting to learn, you might just survive this war-torn world... Congrats on getting your first spell.";
         public const string EnergySpeech2 = "Now take this and show me you can use the wonderful art that is magic...";
-        public const string EnergySpeech3 = "The energy is with in you, you have used it for your slash... Now manifest it as an attack.";
+        public const string EnergySpeech3 = "The energy is within you, you have used it for your slash... Now manifest it as an attack.";
 
-        public const string TurnInLine1 = "Not bad scrub, but you have much to learn. But do not worry, I shall train you, till you are ready...";
+        public const string TurnInLine1 = "Not bad, scrub, but you have much to learn. But do not worry, I shall train you, till you are ready...";
         public const string TurnInLine2 = "You now have your first ability, why not test it out...";
 
         /// <summary>Dyllan's line from issue #8, said right after the intro.</summary>
@@ -135,7 +135,7 @@ namespace WarInLocked.Core.Dialogue
         public const string BarracksMasterId = "barracks-master";
         public const string BarracksMasterSpeaker = "Barracks Master";
         /// <summary>Dyllan's welcome (#55), verbatim.</summary>
-        public const string BarracksWelcomeLine = "Welcome adventurer to the Adventurers encampment. Until you are prepared for the pilgrimage you may rest up here and train.";
+        public const string BarracksWelcomeLine = "Welcome, adventurer, to the Adventurers' Encampment. Until you are prepared for the pilgrimage, you may rest up here and train.";
         /// <summary>Dyllan's option labels (#55).</summary>
         public const string RestOptionText = "Rest";
         public const string SetAsHomeOptionText = "Set as home";
@@ -219,16 +219,16 @@ namespace WarInLocked.Core.Dialogue
             return new DialogueGraph("greeting", new[]
             {
                 new DialogueNode("greeting", speaker,
-                    "Greetings Maggot... Welcome to the first day of the start of your journey. Who are you...",
+                    "Greetings, maggot... Welcome to the first day of the start of your journey. Who are you...",
                     options: ThreeOptions()),
                 new DialogueNode("who", speaker,
                     "I suppose you should know. I am the one who shall teach you to fight...",
                     options: ThreeOptions()),
                 new DialogueNode("where", speaker,
-                    "This is the forest of beginnings. Where you learn to survive.",
+                    "This is the Forest of Beginnings, where you learn to survive.",
                     options: ThreeOptions()),
                 new DialogueNode("introduce", speaker,
-                    "I am Colonel Powers, your drill sergeant... Get ready maggot, it is time to learn to survive.",
+                    "I am Colonel Powers, your drill sergeant... Get ready, maggot, it is time to learn to survive.",
                     nextId: "lack"),
                 new DialogueNode("lack", speaker, LackSkillLine),
             });
