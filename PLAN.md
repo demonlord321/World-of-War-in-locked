@@ -87,10 +87,10 @@ Decided 1 Nov: every 5th level gives 5 points instead of 3 (Dyllan). Curve as re
 
 ### Added 1 Nov: #14 Physical Damage, #15 Physical Defense, #16 Magical Damage
 Order (Dyllan): #14 and #16 first; #15 is to be discussed.
-- #14: unarmed damage = 10 x Strength modifier. The modifier is +0.1 per Strength point and +1 at each milestone (10, 25, 50), so 9 Strength gives 0.9. Equipment adds on top. Replaces the 10 + half Strength placeholder.
+- #14: unarmed damage = 10 x Strength modifier. The modifier is +0.1 per Strength point and +1 at each milestone (10, 25, 50), so 9 Strength gives 0.9. (Superseded 2 Nov by #46: flat 0.1 per point, no milestone bonus.) Equipment adds on top. Replaces the 10 + half Strength placeholder.
 - #16: magic damage works the same way but uses Intelligence.
 - #15: defense works the same way but uses Constitution. Its design is still to be discussed with Dyllan.
-Decided 1 Nov: a milestone point adds 1 on top of its usual 0.1, so modifier = 0.1 x stat + 1 per milestone reached (9 gives 0.9, 10 gives 2.0, 25 gives 4.5, 50 gives 8.0).
+Decided 1 Nov: a milestone point adds 1 on top of its usual 0.1, so modifier = 0.1 x stat + 1 per milestone reached (9 gives 0.9, 10 gives 2.0, 25 gives 4.5, 50 gives 8.0). (Superseded 2 Nov by #46.)
 Status 1 Nov, 08:23: #14 and #16 rules in 6703ac8 (179 tests), Combat box in the I menu in ad4fefd. Placeholders: Practice Sword +5 before the multiply, slimes 30 HP. #15 under discussion: health = base x Constitution modifier (base 10 or 100?), and whether defense is also a separate damage reduction.
 Decided 1 Nov (#15): max health = 100 x Constitution modifier (Mystic 50, Merchant 90, Warrior 230). Energy stays 5 per Wisdom point for now.
 
@@ -196,3 +196,4 @@ Needed before a 3 to 4 hour build is testable:
 - #46 and #33 done (2 Nov): the stat modifier is a flat 0.1 per point with no milestone bonus, and the Adventurer title is a flat +2 with no cap. The 0.01 and 0.05 versions were tried and dropped. Milestone bonus to be decided.
 - Game clock (2 Nov): speed 6x (a game day = 4 real hours); night is 7 pm to 7 am, day 7 am to 7 pm; Sleep until morning wakes at 7 am; game still starts at 8 am. Dawn is one constant (`GameClock.NightEndHour`); 7-7 vs 8-8 is open. Name text box limit raised to 64 (placeholder).
 - Decided (2 Nov): clock runs 6x real time (a game day is 4 real hours); day 7 am to 7 pm, night 7 pm to 7 am (2 real hours each); new game starts at 8 am.
+- Open (#63, 2 Nov): idea for a reward on reaching a stat milestone (10, 25, 50), such as a perk, title or ability, now that the modifier has no milestone jump. To design later.
