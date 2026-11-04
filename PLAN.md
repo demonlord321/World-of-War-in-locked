@@ -141,7 +141,8 @@ Status 1 Nov, 11:47: #29 rules in 9238d93 (322 tests). Placeholders: respawn wit
 Decided 1 Nov (#29): respawn at full health and energy. Death costs 50 XP up to level 5, 100 XP from 5 to 10. Calmed slimes reset to full HP (bfc013f). Open: can you lose a level, or does XP stop at 0 within the level? Penalty after level 10?
 Status 1 Nov, 12:25 (UTC+2): respawn XP penalty in Core: 50 XP (levels 1-5), 100 XP (6+; above 10 is a placeholder), never below the level start or 0. Character.RespawnXpPenalty, LastRespawnXpLost.
 Decided 1 Nov: the death penalty never removes a level; XP stops at 0 within the current level. Levels 1-5 lose 50, 6-10 lose 100; above 10 stays 100 (placeholder).
-Status 1 Nov, 11:54: death XP penalty in 722f05d, shown on the fallen screen in 0fcd3fc (328 tests). Open gaps and balance points are logged as issues #30, #31, #33 to #37, #39 to #46, #48 and #51 for Dyllan to review.
+Status 1 Nov, 11:54: death XP penalty in 722f05d, shown on the fallen screen in 0fcd3fc (328 tests). Open gaps and balance points are logged as issues #30, #31, #33 to #37, #39 to #46, #48, #50 and #51 for Dyllan to review.
+- Open (#50): quest 2 (Slash practice) can't be finished if the player unequips or loses the Practice Sword, since Slash needs a weapon. Options: lock the sword during quest 2, have the Colonel replace it, or count unarmed hits. Waiting on Dyllan.
 
 ### Added 1 Nov: Milestone "Adventurers start" (#52, #53)
 - #52 Main Quest 1 "Adventurers start": after quest 4, the Colonel sends you through the woods to the Adventurers' Encampment to speak with Whiplash (0/1). Reward: 50 XP, 50 copper.
@@ -164,7 +165,7 @@ Needed before a 3 to 4 hour build is testable:
 - Inns or rest spots for bind points (#43), once there are towns.
 - The story from Whiplash to the pilgrimage: quests, maps, enemies and NPCs, logged by Dyllan as issues.
 - #56 Core (1 Nov): GameClock, Character.Clock, ticked from Combat.Update. HUD display is Mapmaker's.
-- #57 Core (1 Nov): night = +10 monster levels (Enemy.LevelFor / NewSlime(base, clock)), slime stats to level 15 (placeholder), MapIds.IsSafeZone. Night is 7 pm to 8 am, day 8 am to 7 pm (confirmed by Dyllan).
+- #57 Core (1 Nov): night = +10 monster levels (Enemy.LevelFor / NewSlime(base, clock)), slime stats to level 15 (placeholder), MapIds.IsSafeZone. Night is 7 pm to 8 am, day 8 am to 7 pm (confirmed by Dyllan). (Superseded 2 Nov: night 7 pm to 7 am, day 7 am to 7 pm.)
 - #55 Core (1 Nov): Barracks Master dialogue + BarracksMaster.Apply (Rest +3 h, Sleep until morning at night, Set as home). Mapmaker wires the NPC menu and the notices.
 - #54 Core (1 Nov): SaveGame (JSON, version 1) capture/restore/Save/Load, SavePoints (save-colonel, save-whiplash). Mapmaker wires Load game, the save point interaction and a clock HUD.
 - #54 to #57 Game wiring done (1 Nov, 532d4e5): clock HUD, night overlay and night slimes, Barracks Master menu, save point interaction and Load game on the main menu. Issues #54 to #57 are still open on GitHub for Dyllan to test and close.
